@@ -65,8 +65,14 @@ static void collectIRDumpDebugInfo(State& state, DFG::Graph& graph, CodeBlock* c
     auto debugInfo = makeUnique<IRDumpDebugInfo>(codeBlock->inferredName());
     auto nodeToLineIndex = graph.collectIRDumpDebugInfo(*debugInfo);
 
+    // Cache repeated accesses to avoid redundant pointer chasing through state.
     auto& originMap = state.proc->pcToOriginMap();
-    void* codeStart = state.b3CodeLinkBuffer->entrypoint<DisassemblyPtrTag>().untaggedPtr();
+    auto& ranges = originMap.ranges();
+    LinkBuffer& linkBuffer = *state.b3CodeLinkBuffer;
+    void* codeStart = linkBuffer.entrypoint<DisassemblyPtrTag>().untaggedPtr();
+
+    // Reserve capacity upfront so appends don't reallocate across the range loop.
+    debugInfo->codeEntries.reserveInitialCapacity(ranges.size());
 
     DFG::Node* current = nullptr;
     uint32_t currentLineIndex = 0;
@@ -88,7 +94,7 @@ static void collectIRDumpDebugInfo(State& state, DFG::Graph& graph, CodeBlock* c
             currentCodeOffset = codeOffset;
     };
 
-    for (auto& range : originMap.ranges()) {
+    for (auto& range : ranges) {
         auto origin = range.origin;
         if (!origin || !origin.isDFGOrigin())
             continue;
@@ -100,13 +106,13 @@ static void collectIRDumpDebugInfo(State& state, DFG::Graph& graph, CodeBlock* c
         if (it == nodeToLineIndex.end())
             continue;
 
-        auto location = state.b3CodeLinkBuffer->locationOf<DisassemblyPtrTag>(range.label);
+        auto location = linkBuffer.locationOf<DisassemblyPtrTag>(range.label);
         uint32_t codeOffset = static_cast<uint32_t>(location.dataLocation<uintptr_t>() - reinterpret_cast<uintptr_t>(codeStart));
         append(node, codeOffset, it->value);
     }
     flush();
 
-    state.b3CodeLinkBuffer->setIRDumpDebugInfo(WTF::move(debugInfo));
+    linkBuffer.setIRDumpDebugInfo(WTF::move(debugInfo));
 }
 
 static void collectSourceCodeDumpDebugInfo(State& state, CodeBlock* codeBlock)
@@ -116,8 +122,14 @@ static void collectSourceCodeDumpDebugInfo(State& state, CodeBlock* codeBlock)
 
     auto debugInfo = makeUnique<SourceCodeDumpDebugInfo>(codeBlock->inferredName());
 
+    // Cache repeated accesses to avoid redundant pointer chasing through state.
     auto& originMap = state.proc->pcToOriginMap();
-    void* codeStart = state.b3CodeLinkBuffer->entrypoint<DisassemblyPtrTag>().untaggedPtr();
+    auto& ranges = originMap.ranges();
+    LinkBuffer& linkBuffer = *state.b3CodeLinkBuffer;
+    void* codeStart = linkBuffer.entrypoint<DisassemblyPtrTag>().untaggedPtr();
+
+    // Reserve capacity upfront so appends don't reallocate across the range loop.
+    debugInfo->codeEntries.reserveInitialCapacity(ranges.size());
 
     CodeOrigin currentOrigin;
     std::optional<uint32_t> currentCodeOffset;
@@ -132,7 +144,7 @@ static void collectSourceCodeDumpDebugInfo(State& state, CodeBlock* codeBlock)
         currentProvider = nullptr;
     };
 
-    for (auto& range : originMap.ranges()) {
+    for (auto& range : ranges) {
         auto origin = range.origin;
         if (!origin || !origin.isDFGOrigin())
             continue;
@@ -164,12 +176,12 @@ static void collectSourceCodeDumpDebugInfo(State& state, CodeBlock* codeBlock)
         currentLineColumn = originCodeBlock->lineColumnForBytecodeIndex(bytecodeIndex);
         currentProvider = originCodeBlock->ownerExecutable()->source().provider();
 
-        auto location = state.b3CodeLinkBuffer->locationOf<DisassemblyPtrTag>(range.label);
+        auto location = linkBuffer.locationOf<DisassemblyPtrTag>(range.label);
         currentCodeOffset = static_cast<uint32_t>(location.dataLocation<uintptr_t>() - reinterpret_cast<uintptr_t>(codeStart));
     }
     flush();
 
-    state.b3CodeLinkBuffer->setSourceCodeDumpDebugInfo(WTF::move(debugInfo));
+    linkBuffer.setSourceCodeDumpDebugInfo(WTF::move(debugInfo));
 }
 
 void compile(State& state, Safepoint::Result& safepointResult)
@@ -178,15 +190,18 @@ void compile(State& state, Safepoint::Result& safepointResult)
     CodeBlock* codeBlock = graph.m_codeBlock;
     VM& vm = graph.m_vm;
 
-    if (shouldDumpDisassembly() || vm.m_perBytecodeProfiler)
-        state.proc->code().setDisassembler(makeUniqueWithoutFastMallocCheck<B3::Air::Disassembler>());
+    // Cache frequently accessed members to avoid repeated indirection through state.proc.
+    B3::Procedure& proc = *state.proc;
 
-    if (!shouldDumpDisassembly() && !verboseCompilationEnabled() && !Options::verboseValidationFailure() && !graph.compilation() && !state.proc->needsPCToOriginMap())
+    if (shouldDumpDisassembly() || vm.m_perBytecodeProfiler)
+        proc.code().setDisassembler(makeUniqueWithoutFastMallocCheck<B3::Air::Disassembler>());
+
+    if (!shouldDumpDisassembly() && !verboseCompilationEnabled() && !Options::verboseValidationFailure() && !graph.compilation() && !proc.needsPCToOriginMap())
         graph.freeDFGIRAfterLowering();
 
     {
         GraphSafepoint safepoint(state.graph, safepointResult);
-        B3::prepareForGeneration(*state.proc);
+        B3::prepareForGeneration(proc);
     }
     if (safepointResult.didGetCancelled())
         return;
@@ -195,11 +210,11 @@ void compile(State& state, Safepoint::Result& safepointResult)
     if (state.allocationFailed)
         return;
     
-    RegisterAtOffsetList registerOffsets = state.proc->calleeSaveRegisterAtOffsetList();
+    RegisterAtOffsetList registerOffsets = proc.calleeSaveRegisterAtOffsetList();
     dataLogLnIf(shouldDumpDisassembly(), tierName, "Unwind info for ", CodeBlockWithJITType(codeBlock, JITType::FTLJIT), ": ", registerOffsets);
     state.jitCode->m_calleeSaveRegisters = RegisterAtOffsetList(WTF::move(registerOffsets));
-    ASSERT(!(state.proc->frameSize() % sizeof(EncodedJSValue)));
-    state.jitCode->common.frameRegisterCount = state.proc->frameSize() / sizeof(EncodedJSValue);
+    ASSERT(!(proc.frameSize() % sizeof(EncodedJSValue)));
+    state.jitCode->common.frameRegisterCount = proc.frameSize() / sizeof(EncodedJSValue);
 
     int localsOffset =
         state.capturedValue->offsetFromFP() / sizeof(EncodedJSValue) + graph.m_nextMachineLocal;
@@ -245,7 +260,7 @@ void compile(State& state, Safepoint::Result& safepointResult)
     CCallHelpers jit(codeBlock);
     {
         GraphSafepoint safepoint(state.graph, safepointResult, true);
-        B3::generate(*state.proc, jit);
+        B3::generate(proc, jit);
     }
     if (safepointResult.didGetCancelled())
         return;
@@ -254,7 +269,7 @@ void compile(State& state, Safepoint::Result& safepointResult)
     *state.exceptionHandler = jit.label();
     jit.jumpThunk(CodeLocationLabel(vm.getCTIStub(CommonJITThunkID::HandleException).template retaggedCode<NoPtrTag>()));
 
-    CCallHelpers::Label mainPathLabel = state.proc->code().entrypointLabel(0);
+    CCallHelpers::Label mainPathLabel = proc.code().entrypointLabel(0);
     CCallHelpers::Label entryLabel = mainPathLabel;
     CCallHelpers::Label arityCheckLabel = mainPathLabel;
 
@@ -326,24 +341,26 @@ void compile(State& state, Safepoint::Result& safepointResult)
     collectSourceCodeDumpDebugInfo(state, codeBlock);
 
     if (vm.shouldBuilderPCToCodeOriginMapping()) {
-        B3::PCToOriginMap originMap = state.proc->releasePCToOriginMap();
+        B3::PCToOriginMap originMap = proc.releasePCToOriginMap();
         state.jitCode->common.m_pcToCodeOriginMap = makeUnique<PCToCodeOriginMap>(PCToCodeOriginMapBuilder(PCToCodeOriginMapBuilder::JSCodeOriginMap, vm, WTF::move(originMap)), *state.b3CodeLinkBuffer);
     }
 
-    state.jitCode->initializeAddressForCall(state.b3CodeLinkBuffer->locationOf<JSEntryPtrTag>(entryLabel));
-    state.jitCode->initializeAddressForArityCheck(state.b3CodeLinkBuffer->locationOf<JSEntryPtrTag>(arityCheckLabel));
-    state.jitCode->initializeB3Byproducts(state.proc->releaseByproducts());
+    // Cache the link buffer reference for the several locationOf calls that follow.
+    LinkBuffer& linkBuffer = *state.b3CodeLinkBuffer;
+    state.jitCode->initializeAddressForCall(linkBuffer.locationOf<JSEntryPtrTag>(entryLabel));
+    state.jitCode->initializeAddressForArityCheck(linkBuffer.locationOf<JSEntryPtrTag>(arityCheckLabel));
+    state.jitCode->initializeB3Byproducts(proc.releaseByproducts());
 
     for (auto pair : state.graph.m_entrypointIndexToCatchBytecodeIndex) {
         BytecodeIndex catchBytecodeIndex = pair.value;
         unsigned entrypointIndex = pair.key;
         Vector<FlushFormat> argumentFormats = state.graph.m_argumentFormats[entrypointIndex];
-        state.graph.appendCatchEntrypoint(catchBytecodeIndex, state.b3CodeLinkBuffer->locationOf<ExceptionHandlerPtrTag>(state.proc->code().entrypointLabel(entrypointIndex)), WTF::move(argumentFormats));
+        state.graph.appendCatchEntrypoint(catchBytecodeIndex, linkBuffer.locationOf<ExceptionHandlerPtrTag>(proc.code().entrypointLabel(entrypointIndex)), WTF::move(argumentFormats));
     }
     state.jitCode->common.finalizeCatchEntrypoints(WTF::move(state.graph.m_catchEntrypoints));
 
     if (shouldDumpDisassembly())
-        state.dumpDisassembly(WTF::dataFile(), *state.b3CodeLinkBuffer);
+        state.dumpDisassembly(WTF::dataFile(), linkBuffer);
 
     Profiler::Compilation* compilation = graph.compilation();
     if (compilation) [[unlikely]] {
@@ -400,7 +417,7 @@ void compile(State& state, Safepoint::Result& safepointResult)
         compilation->addDescription(Profiler::OriginStack(), out.toCString());
         out.reset();
 
-        state.dumpDisassembly(out, *state.b3CodeLinkBuffer, scopedLambda<void(Node*)>([&] (Node*) {
+        state.dumpDisassembly(out, linkBuffer, scopedLambda<void(Node*)>([&] (Node*) {
             compilation->addDescription({ }, out.toCString());
             out.reset();
         }));
@@ -415,4 +432,3 @@ void compile(State& state, Safepoint::Result& safepointResult)
 } } // namespace JSC::FTL
 
 #endif // ENABLE(FTL_JIT)
-
