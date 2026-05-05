@@ -81,6 +81,9 @@ JIT::JIT(VM& vm, BaselineJITPlan& plan, CodeBlock* codeBlock)
     , m_profiledCodeBlock(codeBlock)
     , m_unlinkedCodeBlock(codeBlock->unlinkedCodeBlock())
 {
+    // Pre-reserve capacity for vectors that grow during compilation to avoid repeated reallocations.
+    m_constantPool.reserveInitialCapacity(64);
+    m_slowCases.reserveInitialCapacity(128);
 }
 
 JIT::~JIT() = default;
@@ -177,8 +180,12 @@ void JIT::privateCompileMainPass()
     jitAssertTagsInPlace();
     jitAssertArgumentCountSane();
     
+    // Cache these locals to avoid repeated member dereferences in the hot loop.
     auto& instructions = m_unlinkedCodeBlock->instructions();
-    unsigned instructionCount = m_unlinkedCodeBlock->instructions().size();
+    const unsigned instructionCount = m_unlinkedCodeBlock->instructions().size();
+    const bool dumpSizeStats = Options::dumpBaselineJITSizeStatistics();
+    const bool traceExecution = Options::traceBaselineJITExecution();
+    const bool eagerlyUpdateCF = Options::eagerlyUpdateTopCallFrame();
 
     BytecodeIndex startBytecodeIndex(0);
 
@@ -206,7 +213,7 @@ void JIT::privateCompileMainPass()
         OpcodeID opcodeID = currentInstruction->opcodeID();
 
         std::optional<JITSizeStatistics::Marker> sizeMarker;
-        if (m_bytecodeIndex >= startBytecodeIndex && Options::dumpBaselineJITSizeStatistics()) {
+        if (dumpSizeStats) [[unlikely]] {
             String id = makeString("Baseline_fast_"_s, opcodeNames[opcodeID]);
             sizeMarker = m_vm->jitSizeStatistics->markStart(id, *this);
         }
@@ -229,11 +236,11 @@ void JIT::privateCompileMainPass()
             JIT_COMMENT(*this, "First non-trace instruction");
         }
         
-        if (Options::eagerlyUpdateTopCallFrame())
+        if (eagerlyUpdateCF)
             updateTopCallFrame();
 
         unsigned bytecodeOffset = m_bytecodeIndex.offset();
-        if (Options::traceBaselineJITExecution()) [[unlikely]] {
+        if (traceExecution) [[unlikely]] {
             VM* vm = m_vm;
             probeDebug([=] (Probe::Context& ctx) {
                 CallFrame* callFrame = ctx.fp<CallFrame*>();
@@ -485,6 +492,10 @@ void JIT::privateCompileSlowCases()
     m_instanceOfIndex = 0;
     m_privateBrandAccessIndex = 0;
 
+    // Cache these option reads outside the loop so each iteration doesn't re-call into Options.
+    const bool dumpSizeStats = Options::dumpBaselineJITSizeStatistics();
+    const bool traceExecution = Options::traceBaselineJITExecution();
+
     unsigned bytecodeCountHavingSlowCase = 0;
     for (Vector<SlowCaseEntry>::iterator iter = m_slowCases.begin(); iter != m_slowCases.end();) {
         m_bytecodeIndex = iter->to;
@@ -504,12 +515,12 @@ void JIT::privateCompileSlowCases()
         OpcodeID opcodeID = currentInstruction->opcodeID();
 
         std::optional<JITSizeStatistics::Marker> sizeMarker;
-        if (Options::dumpBaselineJITSizeStatistics()) [[unlikely]] {
+        if (dumpSizeStats) [[unlikely]] {
             String id = makeString("Baseline_slow_"_s, opcodeNames[opcodeID]);
             sizeMarker = m_vm->jitSizeStatistics->markStart(id, *this);
         }
 
-        if (Options::traceBaselineJITExecution()) [[unlikely]] {
+        if (traceExecution) [[unlikely]] {
             unsigned bytecodeOffset = m_bytecodeIndex.offset();
             probeDebug([=] (Probe::Context& ctx) {
                 CodeBlock* codeBlock = ctx.fp<CallFrame*>()->codeBlock();
