@@ -183,16 +183,16 @@ private:
     HashSet<AnimatableCSSProperty> m_explicitFromProperties; // The properties with an explicit value for the 0% keyframe.
     HashSet<AnimatableCSSProperty> m_propertiesSetToInherit;
     HashSet<AnimatableCSSProperty> m_propertiesSetToCurrentColor;
-    bool m_usesRelativeFontWeight { false };
-    bool m_containsSubstitutionFunctions { false };
-    bool m_usesAnchorFunctions { false };
-    bool m_hasWidthDependentTransform { false };
-    bool m_hasHeightDependentTransform { false };
-    bool m_hasDiscreteTransformInterval { false };
-    bool m_hasExplicitlyInheritedKeyframeProperty { false };
-    bool m_hasKeyframeNotUsingRangeOffset { false };
-    bool m_hasPropertiesWithRevertRuleOrLayer { false };
-    bool m_animatesOffsetDistanceToPercentOrCalculated { false };
+    bool m_usesRelativeFontWeight : 1 { false };
+    bool m_containsSubstitutionFunctions : 1 { false };
+    bool m_usesAnchorFunctions : 1 { false };
+    bool m_hasWidthDependentTransform : 1 { false };
+    bool m_hasHeightDependentTransform : 1 { false };
+    bool m_hasDiscreteTransformInterval : 1 { false };
+    bool m_hasExplicitlyInheritedKeyframeProperty : 1 { false };
+    bool m_hasKeyframeNotUsingRangeOffset : 1 { false };
+    bool m_hasPropertiesWithRevertRuleOrLayer : 1 { false };
+    bool m_animatesOffsetDistanceToPercentOrCalculated : 1 { false };
 };
 
 } // namespace WebCore

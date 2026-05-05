@@ -603,6 +603,7 @@ void WebGLRenderingContextBase::initializeContextState()
     context->viewport(0, 0, canvasSize.width(), canvasSize.height());
     context->scissor(0, 0, canvasSize.width(), canvasSize.height());
 
+    m_compressedTextureFormats.clear();
     m_supportedTexImageSourceInternalFormats.clear();
     m_supportedTexImageSourceFormats.clear();
     m_supportedTexImageSourceTypes.clear();

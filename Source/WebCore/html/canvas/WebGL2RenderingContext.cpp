@@ -163,6 +163,9 @@ void WebGL2RenderingContext::initializeContextState()
     m_max3DTextureLevel = WebGLTexture::computeLevelCount(m_max3DTextureSize, m_max3DTextureSize);
     m_maxArrayTextureLayers = context->getInteger(GraphicsContextGL::MAX_ARRAY_TEXTURE_LAYERS);
 
+    for (auto& activeQuery : m_activeQueries)
+        activeQuery = nullptr;
+
     m_boundSamplers.clear();
     m_boundSamplers.grow(m_textureUnits.size());
 }

@@ -529,6 +529,8 @@ webkit.org/b/139828 svg/animations/animateMotion-additive-2d.svg [ Pass ImageOnl
 
 [ Debug ] editing/undo/remove-css-property-and-remove-style.html [ Pass Failure ]
 
+webkit.org/b/309824 [ x86_64 ] media/media-source/media-source-h264-bframes-lowfps.html [ Failure ]
+
 ### END OF (3) Unclassified failures
 ########################################
 
@@ -816,7 +818,6 @@ webkit.org/b/197662 imported/w3c/web-platform-tests/webrtc/RTCPeerConnection-get
 
 imported/w3c/web-platform-tests/webrtc/RTCIceTransport.html [ Skip ]
 
-webkit.org/b/198195 fast/css/sticky/sticky-left-percentage.html [ Pass ImageOnlyFailure ]
 
 webkit.org/b/187828 [ Release ] fast/css-grid-layout/flex-content-sized-columns-resize.html [ Pass ImageOnlyFailure ]
 

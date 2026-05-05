@@ -28,25 +28,17 @@
 
 #if ENABLE(VIDEO) && USE(GSTREAMER) && ENABLE(MEDIA_SOURCE)
 
-#include "AppendPipeline.h"
 #include "AudioTrackPrivateGStreamer.h"
 #include "GStreamerCommon.h"
 #include "GStreamerRegistryScannerMSE.h"
 #include "InbandTextTrackPrivateGStreamer.h"
-#include "MIMETypeRegistry.h"
-#include "MediaDescription.h"
 #include "MediaPlayer.h"
+#include "MediaSourcePrivateClient.h"
 #include "MediaSourceTrackGStreamer.h"
 #include "SourceBufferPrivateGStreamer.h"
-#include "TimeRanges.h"
 #include "VideoTrackPrivateGStreamer.h"
 #include "WebKitMediaSourceGStreamer.h"
 
-#include <gst/app/gstappsink.h>
-#include <gst/app/gstappsrc.h>
-#include <gst/gst.h>
-#include <gst/pbutils/pbutils.h>
-#include <gst/video/video.h>
 #include <wtf/Condition.h>
 #include <wtf/HashSet.h>
 #include <wtf/NativePromise.h>

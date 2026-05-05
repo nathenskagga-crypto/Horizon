@@ -545,12 +545,9 @@ webkit.org/b/200304 svg/as-image/svg-image-with-data-uri-background.html [ Image
 
 webkit.org/b/212082 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/mo-form-minus-plus.html [ ImageOnlyFailure ]
 
-webkit.org/b/213231 fast/block/float/float-with-anonymous-previous-sibling.html [ ImageOnlyFailure Pass ]
-
 webkit.org/b/213717 fast/scrolling/overflow-scrollable-after-back.html [ Timeout ]
 
 webkit.org/b/219465 [ Debug ] imported/w3c/web-platform-tests/html/browsers/browsing-the-web/history-traversal/persisted-user-state-restoration/resume-timer-on-history-back.html [ Failure Pass ]
-webkit.org/b/235277 [ Debug ] imported/w3c/web-platform-tests/html/canvas/offscreen/text/2d.text.drawing.style.measure.rtl.text.worker.html [ Failure Pass ]
 
 webkit.org/b/307139 imported/w3c/web-platform-tests/html/canvas/offscreen/text/canvas.2d.fontStretch.normal.html [ ImageOnlyFailure Pass ]
 webkit.org/b/307139 imported/w3c/web-platform-tests/html/canvas/element/manual/text/canvas.2d.fontStretch.normal.html [ Pass ImageOnlyFailure ]
@@ -957,7 +954,6 @@ compositing/visible-rect/iframe-with-layers-outside-viewport.html [ Failure ]
 compositing/visible-rect/mask-layer-coverage.html [ Failure ]
 compositing/visible-rect/nested-transform.html [ Failure ]
 compositing/visible-rect/scrolled.html [ Failure ]
-compositing/video/video-border-radius-clipping.html [ Pass ImageOnlyFailure ]
 
 # No support for blend modes on compositing layers
 imported/w3c/web-platform-tests/css/compositing/mix-blend-mode/mix-blend-mode-blended-element-overflow-scroll.html [ ImageOnlyFailure ]

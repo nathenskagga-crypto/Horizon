@@ -709,8 +709,16 @@ sk_sp<SkImage> SkiaCompositingLayer::maskImage()
 
 void SkiaCompositingLayer::paintWithIntermediateSurface(SkCanvas& canvas, PaintContext& context, const IntRect& contentsRect, SkPaint* paint, PaintFunction&& paintFunction)
 {
+    auto bounds = clipBounds(canvas, context);
+    if (bounds.isEmpty())
+        return;
+
+    auto surfaceRect = intersection(bounds, contentsRect);
+    if (surfaceRect.isEmpty())
+        return;
+
     auto* grContext = PlatformDisplay::sharedDisplay().skiaGrContext();
-    auto imageInfo = SkImageInfo::Make(contentsRect.width(), contentsRect.height(), kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
+    auto imageInfo = SkImageInfo::Make(surfaceRect.width(), surfaceRect.height(), kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
     auto surface = SkSurfaces::RenderTarget(grContext, skgpu::Budgeted::kNo, imageInfo, 0, kTopLeft_GrSurfaceOrigin, nullptr);
     if (!surface)
         return;
@@ -720,12 +728,12 @@ void SkiaCompositingLayer::paintWithIntermediateSurface(SkCanvas& canvas, PaintC
         return;
 
     surfaceCanvas->clear(SK_ColorTRANSPARENT);
-    surfaceCanvas->translate(-contentsRect.x(), -contentsRect.y());
+    surfaceCanvas->translate(-surfaceRect.x(), -surfaceRect.y());
     SetForScope scopedOffset(context.offset, toIntSize(contentsRect.location()));
     paintFunction(*surfaceCanvas, context);
     grContext->flushAndSubmit(surface.get(), GrSyncCpu::kNo);
 
-    canvas.drawImageRect(surface->makeImageSnapshot(), SkRect::MakeWH(contentsRect.width(), contentsRect.height()), SkRect::Make(SkIRect(contentsRect)), SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone), paint, SkCanvas::kFast_SrcRectConstraint);
+    canvas.drawImageRect(surface->makeImageSnapshot(), SkRect::MakeWH(surfaceRect.width(), surfaceRect.height()), SkRect::Make(surfaceRect), SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone), paint, SkCanvas::kFast_SrcRectConstraint);
 }
 
 void SkiaCompositingLayer::paintSelfAndChildrenWithFilterAndMask(SkCanvas& canvas, PaintContext& context)

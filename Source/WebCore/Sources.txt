@@ -581,6 +581,7 @@ Modules/webxr/WebXRRay.cpp
 Modules/webxr/XRReferenceSpaceEvent.cpp
 Modules/webxr/XRSessionEvent.cpp
 Modules/webxr/XRSubImage.cpp
+Modules/webxr/XRWebGLCylinderLayerBacking.cpp
 Modules/webxr/XRWebGLEquirectLayerBacking.cpp
 Modules/webxr/XRWebGLLayerBacking.cpp
 Modules/webxr/XRWebGLProjectionLayerBacking.cpp
@@ -4414,7 +4415,7 @@ JSHTMLObjectElement.cpp
 JSHTMLOptGroupElement.cpp
 JSHTMLOptionElement.cpp
 JSHTMLOptionsCollection.cpp
-JSHTMLOrForeignElement.cpp
+JSHTMLOrSVGOrMathMLElement.cpp
 JSHTMLOutputElement.cpp
 JSHTMLParagraphElement.cpp
 JSHTMLParamElement.cpp

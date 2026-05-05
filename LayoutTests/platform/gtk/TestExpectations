@@ -589,8 +589,6 @@ webkit.org/b/208809 imported/w3c/web-platform-tests/css/WOFF2/tabledata-transfor
 webkit.org/b/208809 imported/w3c/web-platform-tests/css/WOFF2/tabledata-transform-hmtx-003.xht [ ImageOnlyFailure Pass ]
 webkit.org/b/208809 imported/w3c/web-platform-tests/css/WOFF2/tabledata-transform-hmtx-004.xht [ ImageOnlyFailure Pass ]
 
-webkit.org/b/211836 imported/w3c/web-platform-tests/fetch/api/abort/general.any.worker.html [ Failure Pass ]
-
 webkit.org/b/214801 fast/forms/datalist/datalist-show-hide.html [ Failure Pass ]
 
 webkit.org/b/262852 fast/forms/datalist/datalist-show-picker.html [ Failure ]
@@ -709,6 +707,9 @@ webkit.org/b/308032 fast/events/popup-allowed-from-gesture-initiated-event.html 
 webkit.org/b/308100 fast/dom/Window/window-property-invalid-characters-ignored.html [ Failure Pass ]
 
 webkit.org/b/308632 svg/repaint/non-scaling-stroke-transform-animation.html [ ImageOnlyFailure Pass ]
+
+webkit.org/b/313973 inspector/timeline/timeline-recording.html [ Failure Pass ]
+webkit.org/b/313973 inspector/timeline/timeline-recording-autocapture.html [ Failure Pass ]
 
 #////////////////////////////////////////////////////////////////////////////////////////
 # End of Flaky tests
@@ -1144,7 +1145,6 @@ css3/masking/reference-clip-path-animate-transform-repaint.html [ Failure Pass ]
 editing/pasteboard/paste-rtl-paragraph-with-leading-ltr-text.html [ ImageOnlyFailure ]
 
 webkit.org/b/308631 fast/flexbox/001.html [ Failure Pass ]
-webkit.org/b/308630 fast/css/sticky/sticky-left-percentage.html [ ImageOnlyFailure Pass ]
 #////////////////////////////////////////////////////////////////////////////////////////
 # End of non-crashing, non-flaky tests failing
 #////////////////////////////////////////////////////////////////////////////////////////
@@ -1449,3 +1449,5 @@ webkit.org/b/313649 editing/pasteboard/copy-text-with-wrapped-tag.html [ Failure
 webkit.org/b/313649 editing/pasteboard/paste-4039777-fix.html [ Failure ]
 webkit.org/b/313649 editing/pasteboard/paste-noscript.html [ Failure ]
 webkit.org/b/313649 editing/pasteboard/reveal-selection-after-pasting-images.html [ Failure ]
+
+webkit.org/b/313985 fullscreen/fullscreen-clears-hover-on-overlay.html [ Failure Pass ]

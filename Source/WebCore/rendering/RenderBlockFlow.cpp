@@ -4229,7 +4229,8 @@ RenderBlockFlow::InlineContentStatus RenderBlockFlow::markInlineContentDirtyForL
 
         // Non inline box inline level elements (e.g. <img>) report self-needs-layout on style change, and RenderText also reports self-needs-layout on content change.
         // Inline boxes report normal-child-needs-layout when their children need (any) layout.
-        contentNeedsNormalChildLayoutOnly = contentNeedsNormalChildLayoutOnly.value_or(true) && (!renderer.needsLayout() || renderer.needsNormalChildOrSimplifiedLayoutOnly());
+        if (renderer.needsLayout())
+            contentNeedsNormalChildLayoutOnly = contentNeedsNormalChildLayoutOnly.value_or(true) && renderer.needsNormalChildOrSimplifiedLayoutOnly();
 
         if (isAnyOf<RenderLineBreak, RenderInline, RenderText>(renderer))
             renderer.clearNeedsLayout();

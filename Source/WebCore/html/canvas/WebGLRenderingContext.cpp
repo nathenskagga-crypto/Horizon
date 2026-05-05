@@ -124,6 +124,12 @@ WebGLRenderingContext::~WebGLRenderingContext()
     m_activeQuery = nullptr;
 }
 
+void WebGLRenderingContext::initializeContextState()
+{
+    WebGLRenderingContextBase::initializeContextState();
+    m_activeQuery = nullptr;
+}
+
 void WebGLRenderingContext::initializeDefaultObjects()
 {
     WebGLRenderingContextBase::initializeDefaultObjects();

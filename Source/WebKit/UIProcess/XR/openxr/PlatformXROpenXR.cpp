@@ -301,6 +301,11 @@ void OpenXRCoordinator::createCompositionLayer(PlatformXR::CompositionLayerType 
                     layer = OpenXREquirectLayer::create(WTF::move(swapchain), layout);
 #endif
                     break;
+                case PlatformXR::CompositionLayerType::Cylinder:
+#if defined(XR_KHR_composition_layer_cylinder)
+                    layer = OpenXRCylinderLayer::create(WTF::move(swapchain), layout);
+#endif
+                    break;
                 }
                 if (!layer) {
                     RELEASE_LOG(XR, "OpenXRCoordinator: failed to create composition layer");
@@ -323,6 +328,7 @@ void OpenXRCoordinator::createCompositionLayer(PlatformXR::CompositionLayerType 
             });
         });
 }
+
 #endif // ENABLE(WEBXR_LAYERS)
 
 void OpenXRCoordinator::startSession(WebPageProxy& page, WeakPtr<PlatformXRCoordinatorSessionEventClient>&& sessionEventClient, const WebCore::SecurityOriginData&, PlatformXR::SessionMode sessionMode, const PlatformXR::Device::FeatureList&, std::optional<WebCore::XRCanvasConfiguration>&&)
@@ -665,6 +671,10 @@ void OpenXRCoordinator::createInstance()
 #if defined(XR_KHR_composition_layer_equirect2)
     if (OpenXRExtensions::singleton().isExtensionSupported(XR_KHR_COMPOSITION_LAYER_EQUIRECT2_EXTENSION_NAME ""_span))
         extensions.append(const_cast<char*>(XR_KHR_COMPOSITION_LAYER_EQUIRECT2_EXTENSION_NAME));
+#endif
+#if defined(XR_KHR_composition_layer_cylinder)
+    if (OpenXRExtensions::singleton().isExtensionSupported(XR_KHR_COMPOSITION_LAYER_CYLINDER_EXTENSION_NAME ""_span))
+        extensions.append(const_cast<char*>(XR_KHR_COMPOSITION_LAYER_CYLINDER_EXTENSION_NAME));
 #endif
 
     XrInstanceCreateInfo createInfo = createOpenXRStruct<XrInstanceCreateInfo, XR_TYPE_INSTANCE_CREATE_INFO >();

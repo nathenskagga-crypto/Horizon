@@ -314,6 +314,8 @@ private:
     WeakPtr<AcceleratedEffect> m_acceleratedRepresentation;
 #endif
 
+    size_t m_transformFunctionListsMatchPrefix { 0 };
+
     AcceleratedAction m_lastRecordedAcceleratedAction { AcceleratedAction::Stop };
     WebAnimationType m_animationType { WebAnimationType::WebAnimation };
     IterationCompositeOperation m_iterationCompositeOperation { IterationCompositeOperation::Replace };
@@ -321,19 +323,18 @@ private:
     AcceleratedProperties m_acceleratedPropertiesState { AcceleratedProperties::None };
     AnimationEffectPhase m_phaseAtLastApplication { AnimationEffectPhase::Idle };
     RunningAccelerated m_runningAccelerated { RunningAccelerated::NotStarted };
-    bool m_needsForcedLayout { false };
-    bool m_triggersStackingContext { false };
-    size_t m_transformFunctionListsMatchPrefix { 0 };
-    bool m_inTargetEffectStack { false };
-    bool m_someKeyframesUseLinearTimingFunctionWithPoints { false };
-    bool m_someKeyframesUseStepsTimingFunction { false };
-    bool m_hasImplicitKeyframeForAcceleratedProperty { false };
-    bool m_hasKeyframeComposingAcceleratedProperty { false };
-    bool m_hasAcceleratedPropertyOverriddenByCascadeProperty { false };
-    bool m_hasReferenceFilter { false };
-    bool m_animatesSizeAndSizeDependentTransform { false };
-    bool m_isAssociatedWithProgressBasedTimeline { false };
-    bool m_needsComputedKeyframeOffsetsUpdate { false };
+    bool m_needsForcedLayout : 1 { false };
+    bool m_triggersStackingContext : 1 { false };
+    bool m_inTargetEffectStack : 1 { false };
+    bool m_someKeyframesUseLinearTimingFunctionWithPoints : 1 { false };
+    bool m_someKeyframesUseStepsTimingFunction : 1 { false };
+    bool m_hasImplicitKeyframeForAcceleratedProperty : 1 { false };
+    bool m_hasKeyframeComposingAcceleratedProperty : 1 { false };
+    bool m_hasAcceleratedPropertyOverriddenByCascadeProperty : 1 { false };
+    bool m_hasReferenceFilter : 1 { false };
+    bool m_animatesSizeAndSizeDependentTransform : 1 { false };
+    bool m_isAssociatedWithProgressBasedTimeline : 1 { false };
+    bool m_needsComputedKeyframeOffsetsUpdate : 1 { false };
 };
 
 } // namespace WebCore

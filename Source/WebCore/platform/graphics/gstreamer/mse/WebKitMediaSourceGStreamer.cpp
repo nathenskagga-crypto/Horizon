@@ -26,11 +26,10 @@
 
 #if ENABLE(VIDEO) && ENABLE(MEDIA_SOURCE) && USE(GSTREAMER)
 
-#include "GStreamerCommon.h"
+#include "MediaSourcePrivateClient.h"
 #include "MediaSourceTrackGStreamer.h"
 #include "VideoTrackPrivateGStreamer.h"
 #include <cassert>
-#include <gst/gst.h>
 #include <wtf/Condition.h>
 #include <wtf/DataMutex.h>
 #include <wtf/HashMap.h>
@@ -120,7 +119,6 @@ struct WebKitMediaSrcPadClass {
 
 namespace WTF {
 
-WTF_DEFINE_GREF_TRAITS(WebKitMediaSrc, gst_object_ref_sink, gst_object_unref, g_object_is_floating)
 WTF_DEFINE_GREF_TRAITS_INLINE(WebKitMediaSrcPad, gst_object_ref_sink, gst_object_unref, g_object_is_floating)
 
 } // namespace WTF

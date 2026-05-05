@@ -18123,9 +18123,9 @@
 		AAA728F116D1D8BC00D3BBC6 /* WebAccessibilityObjectWrapperIOS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WebAccessibilityObjectWrapperIOS.h; sourceTree = "<group>"; };
 		AAA728F216D1D8BC00D3BBC6 /* WebAccessibilityObjectWrapperIOS.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = WebAccessibilityObjectWrapperIOS.mm; sourceTree = "<group>"; };
 		AAA728F316D1D8BC00D3BBC6 /* AXObjectCacheIOS.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AXObjectCacheIOS.mm; sourceTree = "<group>"; };
-		AACC83D62316569E00EB6BF5 /* HTMLOrForeignElement.idl */ = {isa = PBXFileReference; lastKnownFileType = text; path = HTMLOrForeignElement.idl; sourceTree = "<group>"; };
-		AACC83D72316576A00EB6BF5 /* JSHTMLOrForeignElement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSHTMLOrForeignElement.h; sourceTree = "<group>"; };
-		AACC83D82316576B00EB6BF5 /* JSHTMLOrForeignElement.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = JSHTMLOrForeignElement.cpp; sourceTree = "<group>"; };
+		AACC83D62316569E00EB6BF5 /* HTMLOrSVGOrMathMLElement.idl */ = {isa = PBXFileReference; lastKnownFileType = text; path = HTMLOrSVGOrMathMLElement.idl; sourceTree = "<group>"; };
+		AACC83D72316576A00EB6BF5 /* JSHTMLOrSVGOrMathMLElement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSHTMLOrSVGOrMathMLElement.h; sourceTree = "<group>"; };
+		AACC83D82316576B00EB6BF5 /* JSHTMLOrSVGOrMathMLElement.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = JSHTMLOrSVGOrMathMLElement.cpp; sourceTree = "<group>"; };
 		AAD9D0B121DFA80C001B11C7 /* LazyLoadImageObserver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LazyLoadImageObserver.cpp; sourceTree = "<group>"; };
 		AAD9D0B321DFA80E001B11C7 /* LazyLoadImageObserver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LazyLoadImageObserver.h; sourceTree = "<group>"; };
 		AADEFE4325AF4FCB0040DD67 /* FocusOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FocusOptions.h; sourceTree = "<group>"; };
@@ -33123,7 +33123,7 @@
 				A81369BE097374F500D74463 /* HTMLOptionsCollection.h */,
 				85DF2F920AA3C9B600AD64C5 /* HTMLOptionsCollection.idl */,
 				CD814C362996CD82005A780A /* HTMLOptionsCollectionInlines.h */,
-				AACC83D62316569E00EB6BF5 /* HTMLOrForeignElement.idl */,
+				AACC83D62316569E00EB6BF5 /* HTMLOrSVGOrMathMLElement.idl */,
 				4AD01005127E642A0015035F /* HTMLOutputElement.cpp */,
 				4AD01006127E642A0015035F /* HTMLOutputElement.h */,
 				4AD01007127E642A0015035F /* HTMLOutputElement.idl */,
@@ -34722,8 +34722,8 @@
 				A80E7E8F0A1A83E3007FB8C5 /* JSHTMLOptionElement.h */,
 				448A29BE0A46D9CB0030759F /* JSHTMLOptionsCollection.cpp */,
 				448A29BD0A46D9CB0030759F /* JSHTMLOptionsCollection.h */,
-				AACC83D82316576B00EB6BF5 /* JSHTMLOrForeignElement.cpp */,
-				AACC83D72316576A00EB6BF5 /* JSHTMLOrForeignElement.h */,
+				AACC83D82316576B00EB6BF5 /* JSHTMLOrSVGOrMathMLElement.cpp */,
+				AACC83D72316576A00EB6BF5 /* JSHTMLOrSVGOrMathMLElement.h */,
 				4AD0173A127E82860015035F /* JSHTMLOutputElement.cpp */,
 				4AD0173B127E82860015035F /* JSHTMLOutputElement.h */,
 				1AE2AB9E0A1CE90500B42B25 /* JSHTMLParagraphElement.cpp */,

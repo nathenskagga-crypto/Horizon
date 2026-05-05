@@ -61,6 +61,7 @@ protected:
 
 private:
     using WebGLRenderingContextBase::WebGLRenderingContextBase;
+    void initializeContextState() final;
 };
 
 WebCoreOpaqueRoot NODELETE root(const WebGLExtension<WebGLRenderingContext>*);
