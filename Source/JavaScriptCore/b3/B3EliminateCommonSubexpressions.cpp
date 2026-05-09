@@ -79,10 +79,11 @@ public:
 
     void add(MemoryValue* memory)
     {
+        // Use add() to get-or-insert in one lookup instead of two.
         Matches& matches = m_map.add(memory->lastChild(), Matches()).iterator->value;
-        if (matches.contains(memory))
-            return;
-        matches.append(memory);
+        // Duplicates are rare; contains() is O(n) on a small vector so only skip if already present.
+        if (!matches.contains(memory))
+            matches.append(memory);
     }
 
     template<typename Functor>
@@ -112,6 +113,7 @@ public:
     MemoryValue* find(Value* ptr, const Functor& functor)
     {
         dataLogLnIf(B3EliminateCommonSubexpressionsInternal::verbose, "        Looking for ", pointerDump(ptr), " in ", *this);
+        // Reuse the pointer-returning overload to avoid a second map lookup.
         if (Matches* matches = find(ptr)) {
             dataLogLnIf(B3EliminateCommonSubexpressionsInternal::verbose, "        Matches: ", pointerListDump(*matches));
             for (Value* candidateValue : *matches) {
@@ -150,11 +152,11 @@ public:
 
     void add(WasmStructFieldValue* value)
     {
+        // Build the key once and reuse it for both add() and the contains() check.
         WasmStructFieldKey key(value->child(0), value->fieldHeapKey());
         Matches& matches = m_map.add(key, Matches()).iterator->value;
-        if (matches.contains(value))
-            return;
-        matches.append(value);
+        if (!matches.contains(value))
+            matches.append(value);
     }
 
     template<typename Functor>
@@ -208,11 +210,11 @@ public:
 
     void add(WasmArrayElementValue* value)
     {
+        // Build the key once and reuse it for both add() and the contains() check.
         WasmArrayElementKey key(value->child(0), value->child(1));
         Matches& matches = m_map.add(key, Matches()).iterator->value;
-        if (matches.contains(value))
-            return;
-        matches.append(value);
+        if (!matches.contains(value))
+            matches.append(value);
     }
 
     template<typename Functor>
@@ -427,6 +429,7 @@ private:
             return;
         }
 
+        // Cache effects() once — it may do non-trivial work and is used multiple times below.
         Effects effects = m_value->effects();
 
         if (effects.writesPinned) {
@@ -474,7 +477,7 @@ private:
         // since the dominated store nodes may dependent on the data
         // read from the processed block. Note that there is no need to
         // update reads info if the node is deleted.
-        m_data.reads.add(m_value->effects().reads);
+        m_data.reads.add(effects.reads);
     }
 
     // Return true if we got rid of the operation. If you changed IR in this function, you have to
@@ -522,6 +525,7 @@ private:
     {
         data.writes.add(writes);
 
+        // Only walk the maps if they are non-empty — removeIf iterates everything.
         data.memoryValuesAtTail.removeIf(
             [&](MemoryValue* memory) {
                 // If memory reads is immutable, clobbering never changes the result.
@@ -1507,4 +1511,3 @@ bool eliminateCommonSubexpressions(Procedure& proc)
 } } // namespace JSC::B3
 
 #endif // ENABLE(B3_JIT)
-
