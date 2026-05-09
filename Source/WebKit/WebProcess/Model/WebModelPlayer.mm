@@ -170,6 +170,8 @@ static Vector<uint8_t> loadData(RetainPtr<CFStringRef> filename)
 void WebModelPlayer::load(WebCore::Model& modelSource, WebCore::LayoutSize size)
 {
     RefPtr corePage = m_page.get();
+    if (!corePage)
+        return;
     m_modelLoader = nil;
     m_didFinishLoading = false;
     m_renderTextureIndex = 0;
@@ -197,6 +199,8 @@ void WebModelPlayer::load(WebCore::Model& modelSource, WebCore::LayoutSize size)
         if (surfaceHandles.size())
             protectedThis->m_displayBuffers = WTF::move(surfaceHandles);
     });
+    if (!m_currentModel)
+        return;
     m_currentModel->setViewportSize(cssSize.width().toFloat(), cssSize.height().toFloat());
 
     m_modelLoader = adoptNS([allocWKBridgeModelLoaderInstance() initWithGPUFamily:MTLGPUFamilyApple7]);

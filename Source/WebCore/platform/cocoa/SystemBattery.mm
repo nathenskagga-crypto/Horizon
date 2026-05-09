@@ -28,7 +28,6 @@
 
 #import <notify.h>
 #import <pal/spi/cocoa/IOPSLibSPI.h>
-#import <wtf/RetainPtr.h>
 
 namespace WebCore {
 

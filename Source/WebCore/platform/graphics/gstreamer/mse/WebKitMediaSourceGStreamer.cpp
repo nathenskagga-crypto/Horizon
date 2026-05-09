@@ -181,14 +181,21 @@ struct Stream : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<Stream> {
 };
 
 #ifndef GST_DISABLE_GST_DEBUG
-static GRefPtr<GstElement> findPipeline(GRefPtr<GstElement> element)
+[[nodiscard]] static GRefPtr<GstElement> findPipeline(const GRefPtr<GstElement>& element)
 {
+#if GST_CHECK_VERSION(1, 28, 0)
+    return adoptGRef(GST_ELEMENT_CAST(gst_object_get_toplevel(GST_OBJECT_CAST(element.get()))));
+#else
+    GRefPtr current = element;
     while (true) {
-        GRefPtr<GstElement> parentElement = adoptGRef(GST_ELEMENT(gst_element_get_parent(element.get())));
+        GRefPtr<GstElement> parentElement = adoptGRef(GST_ELEMENT_CAST(gst_element_get_parent(current.get())));
         if (!parentElement)
-            return element;
-        element = parentElement;
+            return current;
+        current = WTF::move(parentElement);
     }
+    RELEASE_ASSERT_NOT_REACHED();
+    return nullptr;
+#endif
 }
 #endif // GST_DISABLE_GST_DEBUG
 

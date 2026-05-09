@@ -422,6 +422,13 @@ static void addParametersShared(const LocalFrame* frame, NetworkResourceLoadPara
             parameters.parentCrossOriginEmbedderPolicy = ownerElement->document().crossOriginEmbedderPolicy();
             parameters.parentFrameURL = protect(ownerElement->document())->url();
         }
+    } else if (frame) {
+        RefPtr webFrame = WebFrame::webFrame(frame->frameID());
+        RefPtr parentWebFrame = webFrame ? webFrame->parentFrame() : nullptr;
+        if (RefPtr parentCoreFrame = parentWebFrame ? parentWebFrame->coreFrame() : nullptr) {
+            if (auto securityPolicy = parentCoreFrame->frameDocumentSecurityPolicy())
+                parameters.parentCrossOriginEmbedderPolicy = securityPolicy->crossOriginEmbedderPolicy;
+        }
     }
 
     auto advancedPrivacyProtections = policySourceDocumentLoader ? policySourceDocumentLoader->advancedPrivacyProtections() : OptionSet<AdvancedPrivacyProtections> { };

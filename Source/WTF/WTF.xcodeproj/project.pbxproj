@@ -10,6 +10,7 @@
 		07AC4F0E2EF5A68600468BCB /* module.modulemap in Headers */ = {isa = PBXBuildFile; fileRef = 07AC4F0D2EF5A62500468BCB /* module.modulemap */; settings = {ATTRIBUTES = (Private, ); }; };
 		07B588172F74609A00E8AF32 /* module.modulemap in Headers */ = {isa = PBXBuildFile; fileRef = 07B588162F74607A00E8AF32 /* module.modulemap */; settings = {ATTRIBUTES = (Private, ); }; };
 		07C913F32F820E86003A09D8 /* OptionCountedSet.h in Headers */ = {isa = PBXBuildFile; fileRef = 07C913F22F820E86003A09D8 /* OptionCountedSet.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		07D49BE82F41B5DC00263E9A /* wtf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D49BE72F41B5DC00263E9A /* wtf.swift */; };
 		07F5EA6F2EE8A7630085B185 /* generate-tapi-filelist.py in Headers */ = {isa = PBXBuildFile; fileRef = DD28DF2329D368BD00BBB459 /* generate-tapi-filelist.py */; settings = {ATTRIBUTES = (Private, ); }; };
 		07F5EA702EE8A7660085B185 /* GenerateModuleVerifierInputsTask.py in Headers */ = {isa = PBXBuildFile; fileRef = 076382182EE550F300DB47BC /* GenerateModuleVerifierInputsTask.py */; settings = {ATTRIBUTES = (Private, ); }; };
 		07F5EA712EE8A76A0085B185 /* library-modules-verifier.py in Headers */ = {isa = PBXBuildFile; fileRef = 077FEABB2EE007FF0071F92D /* library-modules-verifier.py */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -115,6 +116,8 @@
 		46335BEE2E778B1300860374 /* DispatchOSObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 46335BED2E778B1300860374 /* DispatchOSObject.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		46335BEF2E778B1300860375 /* NetworkOSObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 46335BEE2E778B1300860375 /* NetworkOSObject.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		463CCFBC2B251D77009AB04E /* SingleThreadIntegralWrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = 463CCFBB2B251D77009AB04E /* SingleThreadIntegralWrapper.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		463CCFBD2B251D78009AB04E /* CurrentThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 463CCFBE2B251D78009AB04E /* CurrentThread.cpp */; };
+		463CCFBF2B251D78009AB04E /* CurrentThread.h in Headers */ = {isa = PBXBuildFile; fileRef = 463CCFC02B251D78009AB04E /* CurrentThread.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		46449E8B2822E5680005A8BC /* WeakHashCountedSet.h in Headers */ = {isa = PBXBuildFile; fileRef = 46449E8A2822E5670005A8BC /* WeakHashCountedSet.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		465005D82CD2840A00950C5F /* MallocSpan.h in Headers */ = {isa = PBXBuildFile; fileRef = 465005D72CD2840A00950C5F /* MallocSpan.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		4655743627F5FC4A002D5522 /* ASCIILiteralCocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4655743527F5FC4A002D5522 /* ASCIILiteralCocoa.mm */; };
@@ -415,6 +418,7 @@
 		DD3DC8E027A4BF8E007E5B61 /* ListHashSet.h in Headers */ = {isa = PBXBuildFile; fileRef = A8A472C1151A825A004123FF /* ListHashSet.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC8E127A4BF8E007E5B61 /* LoggingHashID.h in Headers */ = {isa = PBXBuildFile; fileRef = 0F30BA8C1E78708E002CA847 /* LoggingHashID.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC8E227A4BF8E007E5B61 /* ThreadingPrimitives.h in Headers */ = {isa = PBXBuildFile; fileRef = A8A47335151A825B004123FF /* ThreadingPrimitives.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		463CCFC12B251D79009AB04E /* ThreadingEnums.h in Headers */ = {isa = PBXBuildFile; fileRef = 463CCFC22B251D79009AB04E /* ThreadingEnums.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC8E327A4BF8E007E5B61 /* DataLog.h in Headers */ = {isa = PBXBuildFile; fileRef = A8A47278151A825A004123FF /* DataLog.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC8E427A4BF8E007E5B61 /* HashCountedSet.h in Headers */ = {isa = PBXBuildFile; fileRef = A8A472B3151A825A004123FF /* HashCountedSet.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC8E527A4BF8E007E5B61 /* WeakHashMap.h in Headers */ = {isa = PBXBuildFile; fileRef = 9BE153352671F00F00C7D096 /* WeakHashMap.h */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -1125,6 +1129,7 @@
 		07AC4F0D2EF5A62500468BCB /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		07B588162F74607A00E8AF32 /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		07C913F22F820E86003A09D8 /* OptionCountedSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OptionCountedSet.h; sourceTree = "<group>"; };
+		07D49BE72F41B5DC00263E9A /* wtf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = wtf.swift; sourceTree = "<group>"; };
 		0F0C03CF29981BEB0064230A /* EmbeddedFixedVector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EmbeddedFixedVector.cpp; sourceTree = "<group>"; };
 		0F0C03D7299820EB0064230A /* WeakPtr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WeakPtr.cpp; sourceTree = "<group>"; };
 		0F0C03E6299828E50064230A /* BloomFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BloomFilter.cpp; sourceTree = "<group>"; };
@@ -1347,6 +1352,8 @@
 		46335BED2E778B1300860374 /* DispatchOSObject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DispatchOSObject.h; sourceTree = "<group>"; };
 		46335BEE2E778B1300860375 /* NetworkOSObject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NetworkOSObject.h; sourceTree = "<group>"; };
 		463CCFBB2B251D77009AB04E /* SingleThreadIntegralWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SingleThreadIntegralWrapper.h; sourceTree = "<group>"; };
+		463CCFBE2B251D78009AB04E /* CurrentThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CurrentThread.cpp; sourceTree = "<group>"; };
+		463CCFC02B251D78009AB04E /* CurrentThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CurrentThread.h; sourceTree = "<group>"; };
 		46449E8A2822E5670005A8BC /* WeakHashCountedSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WeakHashCountedSet.h; sourceTree = "<group>"; };
 		465005D72CD2840A00950C5F /* MallocSpan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MallocSpan.h; sourceTree = "<group>"; };
 		4655743527F5FC4A002D5522 /* ASCIILiteralCocoa.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ASCIILiteralCocoa.mm; sourceTree = "<group>"; };
@@ -1677,6 +1684,7 @@
 		A8A4732E151A825B004123FF /* WTFString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WTFString.h; sourceTree = "<group>"; };
 		A8A47332151A825B004123FF /* Threading.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Threading.cpp; sourceTree = "<group>"; };
 		A8A47333151A825B004123FF /* Threading.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Threading.h; sourceTree = "<group>"; };
+		463CCFC22B251D79009AB04E /* ThreadingEnums.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadingEnums.h; sourceTree = "<group>"; };
 		A8A47335151A825B004123FF /* ThreadingPrimitives.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadingPrimitives.h; sourceTree = "<group>"; };
 		A8A4733A151A825B004123FF /* BinarySemaphore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BinarySemaphore.cpp; sourceTree = "<group>"; };
 		A8A4733B151A825B004123FF /* BinarySemaphore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BinarySemaphore.h; sourceTree = "<group>"; };
@@ -2424,6 +2432,8 @@
 				A8A47274151A825A004123FF /* CryptographicallyRandomNumber.h */,
 				E15556F318A0CC18006F48FB /* CryptographicUtilities.cpp */,
 				E15556F418A0CC18006F48FB /* CryptographicUtilities.h */,
+				463CCFBE2B251D78009AB04E /* CurrentThread.cpp */,
+				463CCFC02B251D78009AB04E /* CurrentThread.h */,
 				A8A47275151A825A004123FF /* CurrentTime.cpp */,
 				A8A47277151A825A004123FF /* DataLog.cpp */,
 				A8A47278151A825A004123FF /* DataLog.h */,
@@ -2784,6 +2794,7 @@
 				E311FB161F0A568B003C08DE /* ThreadGroup.h */,
 				A8A47332151A825B004123FF /* Threading.cpp */,
 				A8A47333151A825B004123FF /* Threading.h */,
+				463CCFC22B251D79009AB04E /* ThreadingEnums.h */,
 				A8A47335151A825B004123FF /* ThreadingPrimitives.h */,
 				5311BD5B1EA822F900525281 /* ThreadMessage.cpp */,
 				5311BD591EA81A9600525281 /* ThreadMessage.h */,
@@ -2863,6 +2874,7 @@
 				E388886E20C9095100E632BC /* WorkerPool.h */,
 				E4A0AD371A96245500536DF6 /* WorkQueue.cpp */,
 				E4A0AD381A96245500536DF6 /* WorkQueue.h */,
+				07D49BE72F41B5DC00263E9A /* wtf.swift */,
 				FE05FAFE1FE5007500093230 /* WTFAssertions.cpp */,
 				FE032AD02463E43B0012D7C7 /* WTFConfig.cpp */,
 				FE032AD12463E43B0012D7C7 /* WTFConfig.h */,
@@ -3574,6 +3586,7 @@
 				DD3DC8B727A4BF8E007E5B61 /* CryptographicUtilities.h in Headers */,
 				DDF307E127C086DF006A526F /* CString.h in Headers */,
 				CDD4AC7A2D9C309A00D11414 /* CStringView.h in Headers */,
+				463CCFBF2B251D78009AB04E /* CurrentThread.h in Headers */,
 				DD3DC8E327A4BF8E007E5B61 /* DataLog.h in Headers */,
 				DD4901E927B4748A00D7E50D /* DataMutex.h in Headers */,
 				DD3DC94227A4BF8E007E5B61 /* DataRef.h in Headers */,
@@ -3959,6 +3972,7 @@
 				DD3DC8AB27A4BF8E007E5B61 /* ThreadAssertions.h in Headers */,
 				DD3DC87327A4BF8E007E5B61 /* ThreadGroup.h in Headers */,
 				DD3DC8A327A4BF8E007E5B61 /* Threading.h in Headers */,
+				463CCFC12B251D79009AB04E /* ThreadingEnums.h in Headers */,
 				DD3DC8E227A4BF8E007E5B61 /* ThreadingPrimitives.h in Headers */,
 				DD3DC92227A4BF8E007E5B61 /* ThreadMessage.h in Headers */,
 				DD3DC96927A4BF8E007E5B61 /* ThreadSafeRefCounted.h in Headers */,
@@ -4500,6 +4514,7 @@
 				E15556F518A0CC18006F48FB /* CryptographicUtilities.cpp in Sources */,
 				A8A47439151A825B004123FF /* CString.cpp in Sources */,
 				CDD4AC792D9C309A00D11414 /* CStringView.cpp in Sources */,
+				463CCFBD2B251D78009AB04E /* CurrentThread.cpp in Sources */,
 				A8A4739C151A825B004123FF /* CurrentTime.cpp in Sources */,
 				A8A4739E151A825B004123FF /* DataLog.cpp in Sources */,
 				A8A473A0151A825B004123FF /* DateMath.cpp in Sources */,
@@ -4661,6 +4676,7 @@
 				E388886F20C9095100E632BC /* WorkerPool.cpp in Sources */,
 				E4A0AD391A96245500536DF6 /* WorkQueue.cpp in Sources */,
 				E4A0AD3D1A96253C00536DF6 /* WorkQueueCocoa.cpp in Sources */,
+				07D49BE82F41B5DC00263E9A /* wtf.swift in Sources */,
 				FE05FAFF1FE5007500093230 /* WTFAssertions.cpp in Sources */,
 				FE032AD22463E43B0012D7C7 /* WTFConfig.cpp in Sources */,
 				E36BA9DE29E275DB00300057 /* WTFProcess.cpp in Sources */,

@@ -513,6 +513,7 @@ public:
     InlineWatchpointSet m_setIteratorProtocolWatchpointSet { IsWatched };
     InlineWatchpointSet m_stringIteratorProtocolWatchpointSet { IsWatched };
     InlineWatchpointSet m_stringSymbolReplaceWatchpointSet { IsWatched };
+    InlineWatchpointSet m_stringSymbolSplitWatchpointSet { IsWatched };
     InlineWatchpointSet m_stringSymbolToPrimitiveWatchpointSet { IsWatched };
     InlineWatchpointSet m_arraySymbolToPrimitiveWatchpointSet { IsWatched };
     InlineWatchpointSet m_regExpPrimordialPropertiesWatchpointSet { IsWatched };
@@ -523,6 +524,7 @@ public:
     InlineWatchpointSet m_promiseSpeciesWatchpointSet { ClearWatchpoint };
     InlineWatchpointSet m_setPrimordialPropertiesWatchpointSet { IsWatched };
     InlineWatchpointSet m_arraySpeciesWatchpointSet { ClearWatchpoint };
+    InlineWatchpointSet m_regExpSpeciesWatchpointSet { ClearWatchpoint };
     InlineWatchpointSet m_arrayJoinWatchpointSet { IsWatched };
     InlineWatchpointSet m_arrayToStringWatchpointSet { IsWatched };
     InlineWatchpointSet m_arrayNegativeOneWatchpointSet { IsWatched };
@@ -548,6 +550,8 @@ public:
 
     std::unique_ptr<ObjectPropertyChangeAdaptiveWatchpoint<InlineWatchpointSet>> m_arrayConstructorSpeciesWatchpoint;
     std::unique_ptr<ObjectPropertyChangeAdaptiveWatchpoint<InlineWatchpointSet>> m_arrayPrototypeConstructorWatchpoint;
+    std::unique_ptr<ObjectPropertyChangeAdaptiveWatchpoint<InlineWatchpointSet>> m_regExpConstructorSpeciesWatchpoint;
+    std::unique_ptr<ObjectPropertyChangeAdaptiveWatchpoint<InlineWatchpointSet>> m_regExpPrototypeConstructorWatchpoint;
     std::unique_ptr<ObjectPropertyChangeAdaptiveWatchpoint<InlineWatchpointSet>> m_promiseConstructorSpeciesWatchpoint;
     std::unique_ptr<ObjectPropertyChangeAdaptiveWatchpoint<InlineWatchpointSet>> m_promisePrototypeConstructorWatchpoint;
     std::unique_ptr<ObjectPropertyChangeAdaptiveWatchpoint<InlineWatchpointSet>> m_arrayBufferConstructorSpeciesWatchpoints[2];
@@ -584,6 +588,7 @@ public:
     InlineWatchpointSet& setIteratorProtocolWatchpointSet() LIFETIME_BOUND { return m_setIteratorProtocolWatchpointSet; }
     InlineWatchpointSet& stringIteratorProtocolWatchpointSet() LIFETIME_BOUND { return m_stringIteratorProtocolWatchpointSet; }
     InlineWatchpointSet& stringSymbolReplaceWatchpointSet() LIFETIME_BOUND { return m_stringSymbolReplaceWatchpointSet; }
+    InlineWatchpointSet& stringSymbolSplitWatchpointSet() LIFETIME_BOUND { return m_stringSymbolSplitWatchpointSet; }
     InlineWatchpointSet& stringSymbolToPrimitiveWatchpointSet() LIFETIME_BOUND { return m_stringSymbolToPrimitiveWatchpointSet; }
     InlineWatchpointSet& arraySymbolToPrimitiveWatchpointSet() LIFETIME_BOUND { return m_arraySymbolToPrimitiveWatchpointSet; }
     InlineWatchpointSet& stringToStringWatchpointSet() LIFETIME_BOUND { return m_stringToStringWatchpointSet; }
@@ -595,6 +600,7 @@ public:
     InlineWatchpointSet& promiseThenWatchpointSet() LIFETIME_BOUND { return m_promiseThenWatchpointSet; }
     InlineWatchpointSet& promiseResolveWatchpointSet() LIFETIME_BOUND { return m_promiseResolveWatchpointSet; }
     InlineWatchpointSet& arraySpeciesWatchpointSet() LIFETIME_BOUND { return m_arraySpeciesWatchpointSet; }
+    InlineWatchpointSet& regExpSpeciesWatchpointSet() LIFETIME_BOUND { return m_regExpSpeciesWatchpointSet; }
     InlineWatchpointSet& promiseSpeciesWatchpointSet() LIFETIME_BOUND { return m_promiseSpeciesWatchpointSet; }
     InlineWatchpointSet& arrayPrototypeChainIsSaneWatchpointSet() LIFETIME_BOUND { return m_arrayPrototypeChainIsSaneWatchpointSet; }
     InlineWatchpointSet& objectPrototypeChainIsSaneWatchpointSet() LIFETIME_BOUND { return m_objectPrototypeChainIsSaneWatchpointSet; }

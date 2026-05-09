@@ -535,6 +535,12 @@ void TestRunner::clearDidReceiveServerRedirectForProvisionalNavigation()
     postSynchronousPageMessage("ClearDidReceiveServerRedirectForProvisionalNavigation");
 }
 
+JSRetainPtr<JSStringRef> TestRunner::lastProvisionalNavigationFailureURL() const
+{
+    auto url = InjectedBundle::singleton().lastProvisionalNavigationFailureURL();
+    return WKStringCopyJSString(url.get());
+}
+
 void TestRunner::setPageVisibility(JSStringRef state)
 {
     InjectedBundle::singleton().setHidden(JSStringIsEqualToUTF8CString(state, "hidden"));

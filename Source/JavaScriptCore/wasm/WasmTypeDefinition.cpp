@@ -34,14 +34,15 @@
 #include "JSWebAssemblyStruct.h"
 #include "Options.h"
 #include "WasmCallee.h"
+#include "WasmCallingConvention.h"
 #include "WasmFormat.h"
+#include "WasmIPIntGenerator.h"
 #include "WasmTypeDefinitionInlines.h"
 #include "WasmTypeSectionState.h"
 #include "WebAssemblyFunctionBase.h"
 #include <wtf/CommaPrinter.h>
 #include <wtf/DataLog.h>
 #include <wtf/FastMalloc.h>
-#include <wtf/ReferenceWrapperVector.h>
 #include <wtf/StringPrintStream.h>
 #include <wtf/TZoneMallocInlines.h>
 
@@ -1063,6 +1064,345 @@ void Type::dump(PrintStream& out) const
         FOR_EACH_WASM_TYPE(CREATE_CASE)
 #undef CREATE_CASE
     }
+}
+
+void RTT::ensureArgumINTBytecode(const CallInformation& callCC) const
+{
+    ASSERT(kind() == RTTKind::Function);
+
+    if (m_argumINTBytecode) [[likely]]
+        return;
+
+    auto numArgs = argumentCount();
+
+    constexpr static int NUM_ARGUMINT_GPRS = 8;
+    constexpr static int NUM_ARGUMINT_FPRS = 8;
+
+    ASSERT_UNUSED(NUM_ARGUMINT_GPRS, wasmCallingConvention().jsrArgs.size() <= NUM_ARGUMINT_GPRS);
+    ASSERT_UNUSED(NUM_ARGUMINT_FPRS, wasmCallingConvention().fprArgs.size() <= NUM_ARGUMINT_FPRS);
+
+    // Build outside the lock; race losers drop their candidate.
+    auto candidate = IPIntSharedBytecode::createWithSizeFromGenerator(numArgs + 1,
+        [&](size_t index) -> uint8_t {
+            if (index == numArgs)
+                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::End);
+
+            const ArgumentLocation& argLoc = callCC.params[index];
+            const ValueLocation& loc = argLoc.location;
+
+            if (loc.isGPR()) {
+#if USE(JSVALUE64)
+                ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().gpr()) < NUM_ARGUMINT_GPRS);
+                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
+#elif USE(JSVALUE32_64)
+                ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_ARGUMINT_GPRS);
+                ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().tagGPR()) < NUM_ARGUMINT_GPRS);
+                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord)) / 2;
+#endif
+            }
+
+            if (loc.isFPR()) {
+                ASSERT_UNUSED(NUM_ARGUMINT_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_ARGUMINT_FPRS);
+                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgFPR) + FPRInfo::toArgumentIndex(loc.fpr());
+            }
+
+            RELEASE_ASSERT(loc.isStack());
+            switch (argLoc.width) {
+            case Width::Width64:
+                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::Stack);
+            case Width::Width128:
+                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::StackVector);
+            default:
+                RELEASE_ASSERT_NOT_REACHED("No argumINT bytecode for result width");
+            }
+        });
+
+    ASSERT(candidate->size() == numArgs + 1u);
+    ASSERT(candidate->last() == static_cast<uint8_t>(IPInt::ArgumINTBytecode::End));
+
+    Locker locker { m_ipintBytecodeLock };
+    if (m_argumINTBytecode)
+        return;
+
+    WTF::storeStoreFence();
+    m_argumINTBytecode = candidate.moveToUniquePtr();
+}
+
+void RTT::ensureUINTBytecode(const CallInformation& returnCC) const
+{
+    ASSERT(kind() == RTTKind::Function);
+
+    // uINT: the interpreter smaller than mINT
+    constexpr static int NUM_UINT_GPRS = 8;
+    constexpr static int NUM_UINT_FPRS = 8;
+    ASSERT_UNUSED(NUM_UINT_GPRS, wasmCallingConvention().jsrArgs.size() <= NUM_UINT_GPRS);
+    ASSERT_UNUSED(NUM_UINT_FPRS, wasmCallingConvention().fprArgs.size() <= NUM_UINT_FPRS);
+
+    if (m_uINTBytecode) [[likely]]
+        return;
+
+    // Offset past the last stack-typed return, in signature order.
+    uint32_t topOfReturnStackFPOffset = 0;
+    for (const auto& argLoc : returnCC.results) {
+        if (argLoc.location.isStack())
+            topOfReturnStackFPOffset = argLoc.location.offsetFromFP() + bytesForWidth(argLoc.width);
+    }
+
+    auto encode = [&](unsigned index) -> uint8_t {
+        const ArgumentLocation& argLoc = returnCC.results[index];
+        const ValueLocation& loc = argLoc.location;
+
+        if (loc.isGPR()) {
+#if USE(JSVALUE64)
+            ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().gpr()) < NUM_UINT_GPRS);
+            return static_cast<uint8_t>(IPInt::UINTBytecode::RetGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
+#elif USE(JSVALUE32_64)
+            ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_UINT_GPRS);
+            ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().tagGPR()) < NUM_UINT_GPRS);
+            return static_cast<uint8_t>(IPInt::UINTBytecode::RetGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord));
+#endif
+        }
+
+        if (loc.isFPR()) {
+            ASSERT_UNUSED(NUM_UINT_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_UINT_FPRS);
+            return static_cast<uint8_t>(IPInt::UINTBytecode::RetFPR) + FPRInfo::toArgumentIndex(loc.fpr());
+        }
+
+        RELEASE_ASSERT(loc.isStack());
+        switch (argLoc.width) {
+        case Width::Width64:
+            return static_cast<uint8_t>(IPInt::UINTBytecode::Stack);
+        case Width::Width128:
+            return static_cast<uint8_t>(IPInt::UINTBytecode::StackVector);
+        default:
+            RELEASE_ASSERT_NOT_REACHED("No uINT bytecode for result width");
+        }
+    };
+
+    // Layout: [topOfReturnStackFPOffset : u32][encode(last)..encode(first)][End].
+    // Results are consumed in reverse by the uINT dispatcher, so emit in reverse.
+    unsigned size = returnCC.results.size();
+    auto headerBytes = std::bit_cast<std::array<uint8_t, sizeof(uint32_t)>>(topOfReturnStackFPOffset);
+    auto candidate = IPIntSharedBytecode::createWithSizeFromGenerator(sizeof(uint32_t) + size + 1,
+        [&](size_t index) -> uint8_t {
+            if (index < sizeof(uint32_t))
+                return headerBytes[index];
+            size_t i = index - sizeof(uint32_t);
+            if (i == size)
+                return static_cast<uint8_t>(IPInt::UINTBytecode::End);
+            return encode(size - 1 - i);
+        });
+
+    ASSERT(candidate->size() == sizeof(uint32_t) + size + 1u);
+    ASSERT(candidate->last() == static_cast<uint8_t>(IPInt::UINTBytecode::End));
+
+    Locker locker { m_ipintBytecodeLock };
+    if (m_uINTBytecode)
+        return;
+
+    WTF::storeStoreFence();
+    m_uINTBytecode = candidate.moveToUniquePtr();
+}
+
+template<bool isTailCall>
+static Vector<uint8_t, 16> buildCallArgumentBytecode(const CallInformation& callConvention)
+{
+    constexpr static int NUM_MINT_CALL_GPRS = 8;
+    constexpr static int NUM_MINT_CALL_FPRS = 8;
+    ASSERT_UNUSED(NUM_MINT_CALL_GPRS, wasmCallingConvention().jsrArgs.size() <= NUM_MINT_CALL_GPRS);
+    ASSERT_UNUSED(NUM_MINT_CALL_FPRS, wasmCallingConvention().fprArgs.size() <= NUM_MINT_CALL_FPRS);
+
+    auto toBytecodeUint8 = [](IPInt::CallArgumentBytecode bytecode) {
+        constexpr uint8_t tailBytecodeOffset = static_cast<uint8_t>(IPInt::CallArgumentBytecode::TailCallArgDecSP) - static_cast<uint8_t>(IPInt::CallArgumentBytecode::CallArgDecSP);
+        uint8_t bytecodeUint8 = static_cast<uint8_t>(bytecode);
+        ASSERT(static_cast<uint8_t>(IPInt::CallArgumentBytecode::CallArgDecSP) <= bytecodeUint8
+            && bytecodeUint8 <= static_cast<uint8_t>(IPInt::CallArgumentBytecode::CallArgDecSPStoreVector8));
+        if constexpr (isTailCall)
+            bytecodeUint8 += tailBytecodeOffset;
+        return bytecodeUint8;
+    };
+
+    Vector<uint8_t, 16> results;
+    results.append(static_cast<uint8_t>(isTailCall ? IPInt::CallArgumentBytecode::TailCall : IPInt::CallArgumentBytecode::Call));
+
+    intptr_t spOffset = callConvention.headerIncludingThisSizeInBytes;
+    auto isAligned16 = [&spOffset]() ALWAYS_INLINE_LAMBDA {
+        return !(spOffset & 0xf);
+    };
+
+    ASSERT(isAligned16());
+    results.appendUsingFunctor(callConvention.params.size(),
+        [&](unsigned index) -> uint8_t {
+            const ArgumentLocation& argLoc = callConvention.params[index];
+            const ValueLocation& loc = argLoc.location;
+
+            if (loc.isGPR()) {
+#if USE(JSVALUE64)
+                ASSERT_UNUSED(NUM_MINT_CALL_GPRS, GPRInfo::toArgumentIndex(loc.jsr().gpr()) < NUM_MINT_CALL_GPRS);
+                return static_cast<uint8_t>(IPInt::CallArgumentBytecode::ArgumentGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
+#elif USE(JSVALUE32_64)
+                ASSERT_UNUSED(NUM_MINT_CALL_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_MINT_CALL_GPRS);
+                ASSERT_UNUSED(NUM_MINT_CALL_GPRS, GPRInfo::toArgumentIndex(loc.jsr().tagGPR()) < NUM_MINT_CALL_GPRS);
+                return static_cast<uint8_t>(IPInt::CallArgumentBytecode::ArgumentGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord));
+#endif
+            }
+
+            if (loc.isFPR()) {
+                ASSERT_UNUSED(NUM_MINT_CALL_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_MINT_CALL_FPRS);
+                return static_cast<uint8_t>(IPInt::CallArgumentBytecode::ArgumentFPR) + FPRInfo::toArgumentIndex(loc.fpr());
+            }
+            RELEASE_ASSERT(loc.isStackArgument());
+            ASSERT(loc.offsetFromSP() == spOffset);
+            IPInt::CallArgumentBytecode bytecode;
+            switch (argLoc.width) {
+            case Width64:
+                bytecode = isAligned16() ? IPInt::CallArgumentBytecode::CallArgStore0 : IPInt::CallArgumentBytecode::CallArgDecSPStore8;
+                spOffset += 8;
+                break;
+            case Width128:
+                bytecode = isAligned16() ? IPInt::CallArgumentBytecode::CallArgDecSPStoreVector0 : IPInt::CallArgumentBytecode::CallArgDecSPStoreVector8;
+                spOffset += 16;
+                break;
+            default:
+                RELEASE_ASSERT_NOT_REACHED("No bytecode for stack argument location width");
+            }
+            return toBytecodeUint8(bytecode);
+        });
+
+    if (!isAligned16()) {
+        spOffset += 8;
+        results.append(toBytecodeUint8(IPInt::CallArgumentBytecode::CallArgDecSP));
+    }
+    intptr_t frameSize = roundUpToMultipleOf<stackAlignmentBytes()>(callConvention.headerAndArgumentStackSizeInBytes);
+    ASSERT(frameSize >= spOffset);
+    ASSERT(isAligned16());
+    for (; spOffset < frameSize; spOffset += 16)
+        results.append(toBytecodeUint8(IPInt::CallArgumentBytecode::CallArgDecSP));
+    ASSERT(spOffset == frameSize);
+
+    results.reverse();
+    return results;
+}
+
+static intptr_t buildCallResultBytecode(Vector<uint8_t, 16>& results, const CallInformation& callConvention)
+{
+    constexpr static int NUM_MINT_RET_GPRS = 8;
+    constexpr static int NUM_MINT_RET_FPRS = 8;
+    ASSERT_UNUSED(NUM_MINT_RET_GPRS, wasmCallingConvention().jsrArgs.size() <= NUM_MINT_RET_GPRS);
+    ASSERT_UNUSED(NUM_MINT_RET_FPRS, wasmCallingConvention().fprArgs.size() <= NUM_MINT_RET_FPRS);
+
+    intptr_t firstStackResultSPOffset = 0;
+    bool hasSeenStackResult = false;
+    intptr_t spOffset = 0;
+
+    results.appendUsingFunctor(callConvention.results.size(),
+        [&](unsigned index) -> uint8_t {
+            const ArgumentLocation& argLoc = callConvention.results[index];
+            const ValueLocation& loc = argLoc.location;
+
+            if (loc.isGPR()) {
+                ASSERT_UNUSED(NUM_MINT_RET_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_MINT_RET_GPRS);
+#if USE(JSVALUE64)
+                return static_cast<uint8_t>(IPInt::CallResultBytecode::ResultGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
+#elif USE(JSVALUE32_64)
+                return static_cast<uint8_t>(IPInt::CallResultBytecode::ResultGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord));
+#endif
+            }
+
+            if (loc.isFPR()) {
+                ASSERT_UNUSED(NUM_MINT_RET_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_MINT_RET_FPRS);
+                return static_cast<uint8_t>(IPInt::CallResultBytecode::ResultFPR) + FPRInfo::toArgumentIndex(loc.fpr());
+            }
+            RELEASE_ASSERT(loc.isStackArgument());
+
+            if (!hasSeenStackResult) {
+                hasSeenStackResult = true;
+                spOffset = loc.offsetFromSP();
+                firstStackResultSPOffset = spOffset;
+            }
+            ASSERT(loc.offsetFromSP() == spOffset);
+            switch (argLoc.width) {
+            case Width::Width64:
+                spOffset += 8;
+                return static_cast<uint8_t>(IPInt::CallResultBytecode::ResultStack);
+            case Width::Width128:
+                spOffset += 16;
+                return static_cast<uint8_t>(IPInt::CallResultBytecode::ResultStackVector);
+            default:
+                ASSERT_NOT_REACHED("No bytecode for stack result location width");
+                return 0;
+            }
+        });
+    results.append(static_cast<uint8_t>(IPInt::CallResultBytecode::End));
+    return firstStackResultSPOffset;
+}
+
+void RTT::ensureCallBytecode() const
+{
+    ASSERT(kind() == RTTKind::Function);
+
+    if (m_callBytecode) [[likely]]
+        return;
+
+    // Build [arg bytecode][Call][CallReturnMetadata][result bytecode][End] -- the same
+    // layout the generator used to emit inline into m_metadata. MC walks the whole
+    // thing during one call: arg dispatch leaves MC at CallReturnMetadata (inside the
+    // buffer), and ret dispatch continues from there.
+    auto callConvention = wasmCallingConvention().callInformationFor(*this, CallRole::Caller);
+    Vector<uint8_t, 16> bytes = buildCallArgumentBytecode</* isTailCall */ false>(callConvention);
+
+    Checked<uint32_t> frameSize = WTF::roundUpToMultipleOf<stackAlignmentBytes()>(callConvention.headerAndArgumentStackSizeInBytes);
+    IPInt::CallReturnMetadata returnMeta {
+        .stackFrameSize = frameSize,
+        .firstStackResultSPOffset = 0,
+    };
+
+    Vector<uint8_t, 16> resultBytes;
+    Checked<uint32_t> firstStackResultSPOffset = buildCallResultBytecode(resultBytes, callConvention);
+    returnMeta.firstStackResultSPOffset = firstStackResultSPOffset;
+
+    auto toSpan = [&](auto& value) {
+        auto start = std::bit_cast<const uint8_t*>(&value);
+        return std::span { start, start + sizeof(value) };
+    };
+    bytes.append(toSpan(returnMeta));
+    bytes.append(resultBytes.span());
+
+    auto candidate = IPIntSharedBytecode::createFromVector(WTF::move(bytes));
+
+    Locker locker { m_ipintBytecodeLock };
+    if (m_callBytecode)
+        return;
+
+    WTF::storeStoreFence();
+    m_callBytecode = candidate.moveToUniquePtr();
+}
+
+void RTT::ensureTailCallBytecode() const
+{
+    ASSERT(kind() == RTTKind::Function);
+
+    if (m_tailCallBytecode) [[likely]]
+        return;
+
+    // [arg bytecode][TailCall terminator][stackArgumentsAndResultsInBytes (u32)].
+    // The trailing u32 is read by .ipint_perform_tail_call via `loadi [MC]`
+    // after mINT dispatch hits TailCall, so MC naturally lands on it.
+    auto callConvention = wasmCallingConvention().callInformationFor(*this, CallRole::Caller);
+    auto bytes = buildCallArgumentBytecode</* isTailCall */ true>(callConvention);
+
+    uint32_t stackArgumentsAndResultsInBytes = roundUpToMultipleOf<stackAlignmentBytes()>(callConvention.headerAndArgumentStackSizeInBytes) - callConvention.headerIncludingThisSizeInBytes;
+    ASSERT(!(stackArgumentsAndResultsInBytes % 16));
+    bytes.append(std::span { std::bit_cast<const uint8_t*>(&stackArgumentsAndResultsInBytes), sizeof(stackArgumentsAndResultsInBytes) });
+
+    auto candidate = IPIntSharedBytecode::createFromVector(WTF::move(bytes));
+
+    Locker locker { m_ipintBytecodeLock };
+    if (m_tailCallBytecode)
+        return;
+
+    WTF::storeStoreFence();
+    m_tailCallBytecode = candidate.moveToUniquePtr();
 }
 
 } } // namespace JSC::Wasm

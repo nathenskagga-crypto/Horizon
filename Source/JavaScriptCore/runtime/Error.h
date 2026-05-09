@@ -25,12 +25,9 @@
 #include <JavaScriptCore/ErrorInstance.h>
 #include <JavaScriptCore/ErrorType.h>
 #include <JavaScriptCore/Exception.h>
-#include <JavaScriptCore/InternalFunction.h>
 #include <JavaScriptCore/JSObject.h>
 #include <JavaScriptCore/LineColumn.h>
 #include <JavaScriptCore/ThrowScope.h>
-#include <stdint.h>
-
 
 namespace JSC {
 

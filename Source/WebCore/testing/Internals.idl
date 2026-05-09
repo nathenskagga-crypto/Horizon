@@ -726,6 +726,7 @@ enum ContentsFormat {
     readonly attribute boolean sentenceRetroCorrectionEnabled;
     boolean hasSpellingMarker(long from, long length);
     boolean hasGrammarMarker(long from, long length);
+    unsigned long appliedGrammarTextEffectCount();
     boolean isAlternativeTextUIActive();
     boolean hasAutocorrectedMarker(long from, long length);
     boolean hasDictationAlternativesMarker(long from, long length);
@@ -1071,6 +1072,7 @@ enum ContentsFormat {
     [Conditional=VIDEO] MediaControlsHost? controlsHostForMediaElement(HTMLMediaElement element);
 
     boolean isSelectPopupVisible(HTMLSelectElement element);
+    DOMPointReadOnly? lastSelectPopupLocation(HTMLSelectElement element);
 
     DOMRect selectionBounds();
     StaticRange? selectedRange();

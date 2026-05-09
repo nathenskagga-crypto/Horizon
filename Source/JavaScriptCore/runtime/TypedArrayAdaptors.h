@@ -30,7 +30,6 @@
 #include <JavaScriptCore/MathCommon.h>
 #include <JavaScriptCore/TypedArrayAdaptersForwardDeclarations.h>
 #include <JavaScriptCore/TypedArrayType.h>
-#include <wtf/MathExtras.h>
 
 namespace JSC {
 

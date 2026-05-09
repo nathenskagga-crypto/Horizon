@@ -147,7 +147,7 @@ WebFrameProxy::WebFrameProxy(WebPageProxy& page, FrameProcess& process, FrameIde
     if (previousURL)
         frameLoadState().setURL(WTF::move(*previousURL));
 
-    updateDocumentSecurityOrigin(parent ? parent : opener);
+    updateDocumentSecurityOrigin(parent ? parent : opener, ForInitialization::Yes);
 }
 
 WebFrameProxy::~WebFrameProxy()
@@ -567,7 +567,7 @@ void WebFrameProxy::prepareForProvisionalLoadInProcess(WebProcessProxy& process,
     RefPtr page = m_page.get();
     // FIXME: Main resource (of main or subframe) request redirects should go straight from the network to UI process so we don't need to make the processes for each domain in a redirect chain. <rdar://116202119>
     Site mainFrameSite(page->mainFrame()->url());
-    auto mainFrameDomain = mainFrameSite.domain();
+    auto mainFrameDomain = WebCore::RegistrableDomain { protect(page->mainFrame())->securityOrigin()->data() };
 
     // If we have an effectiveOrigin, it means we are loading about:blank which doesn't have any resources
     // to load can commit it's provisional frame immediately
@@ -815,6 +815,28 @@ auto WebFrameProxy::traverseNext(CanWrap canWrap) const -> TraversalResult
 
     }
     return { };
+}
+
+WebFrameProxy* WebFrameProxy::traverseNext(const WebFrameProxy* stayWithin) const
+{
+    if (auto* child = firstChild())
+        return child;
+
+    if (this == stayWithin)
+        return nullptr;
+
+    if (auto* sibling = nextSibling())
+        return sibling;
+
+    auto* frame = this;
+    while (frame && (!stayWithin || frame->parentFrame() != stayWithin)) {
+        frame = frame->parentFrame();
+        if (!frame)
+            return nullptr;
+        if (auto* sibling = frame->nextSibling())
+            return sibling;
+    }
+    return nullptr;
 }
 
 auto WebFrameProxy::traversePrevious(CanWrap canWrap) -> TraversalResult
@@ -1067,7 +1089,7 @@ ProvisionalFrameCreationParameters WebFrameProxy::provisionalFrameCreationParame
     };
 }
 
-void WebFrameProxy::updateDocumentSecurityOrigin(WebFrameProxy* creator)
+void WebFrameProxy::updateDocumentSecurityOrigin(WebFrameProxy* creator, ForInitialization forInitialization)
 {
     if (m_effectiveSandboxFlags.contains(SandboxFlag::Origin)) {
         m_documentSecurityOrigin = WebCore::SecurityOrigin::opaqueOrigin();
@@ -1077,7 +1099,7 @@ void WebFrameProxy::updateDocumentSecurityOrigin(WebFrameProxy* creator)
     if (SecurityPolicy::shouldInheritSecurityOriginFromOwner(url())) {
         if (RefPtr creatorFrame = creator)
             m_documentSecurityOrigin = creatorFrame->securityOrigin().ptr();
-        else
+        else if (forInitialization == ForInitialization::Yes)
             m_documentSecurityOrigin = WebCore::SecurityOrigin::opaqueOrigin();
         return;
     }

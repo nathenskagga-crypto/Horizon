@@ -765,10 +765,7 @@ std::optional<PlatformXR::FrameData::LayerData> OpenXRCylinderLayer::startFrame(
 
 Vector<XrCompositionLayerBaseHeader*> OpenXRCylinderLayer::endFrame(const PlatformXR::DeviceLayer& layer, XrSpace space, const Vector<XrView>& frameViews)
 {
-    if (!m_swapchain->acquiredTexture()) {
-        LOG_ERROR("OpenXRCylinderLayer::endFrame called without a valid acquired texture");
-        return { };
-    }
+    ASSERT(m_swapchain->acquiredTexture());
 
 #if OS(ANDROID) || USE(GBM)
     if (needsBlitTexture()) {

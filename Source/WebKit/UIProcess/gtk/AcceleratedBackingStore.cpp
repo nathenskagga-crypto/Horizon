@@ -799,7 +799,7 @@ void AcceleratedBackingStore::update(const LayerTreeContext& context)
     m_surfaceID = context.contextID;
     if (m_surfaceID && m_webPage) {
         m_legacyMainFrameProcess = m_webPage->legacyMainFrameProcess();
-        Ref { *m_legacyMainFrameProcess }->addMessageReceiver(Messages::AcceleratedBackingStore::messageReceiverName(), m_surfaceID, *this);
+        protect(*m_legacyMainFrameProcess)->addMessageReceiver(Messages::AcceleratedBackingStore::messageReceiverName(), m_surfaceID, *this);
     }
 }
 

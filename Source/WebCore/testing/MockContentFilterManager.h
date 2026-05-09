@@ -26,7 +26,6 @@
 #pragma once
 
 #include <WebCore/MockContentFilterSettingsClient.h>
-#include <wtf/RefPtr.h>
 
 namespace WebCore {
 

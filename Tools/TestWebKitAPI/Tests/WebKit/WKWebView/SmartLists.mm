@@ -412,6 +412,19 @@ TEST(SmartLists, InsertingSpaceAfterLargeNumberDoesNotGenerateOrderedList)
     runTest(input, expectedHTML.createNSString().get(), @"//body/text()", input.length);
 }
 
+TEST(SmartLists, ListPreservesTypingStyle)
+{
+    static constexpr auto expectedHTML = R"""(
+    <body contenteditable="">
+        <ol start="1" style="list-style-type: decimal;" class="Apple-decimal-list">
+            <li><b><i><u>this is styled text</u></i></b></li>
+            <li><b><i><u>this is styled text</u></i></b></li>
+            <li><b><i><u>this is styled text</u></i></b></li>
+        </ol>
+    </body>)"""_s;
+    runTest(@"𝐁𝐼𝐔1. this is styled text\n2. this is styled text\nthis is styled text", expectedHTML.createNSString().get(), @"//body/ol/li[3]/b/i/u/text()", @"this is styled text".length);
+}
+
 TEST(SmartLists, InsertingDifferentListStylesDoesNotMergeLists)
 {
     auto dashMarker = WTF::makeString(WTF::Unicode::hyphenMinus, WTF::Unicode::noBreakSpace, WTF::Unicode::noBreakSpace);

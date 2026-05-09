@@ -30,6 +30,7 @@
 #include <WebCore/FileSystemHandleIdentifier.h>
 #include <WebCore/FileSystemSyncAccessHandleIdentifier.h>
 #include <WebCore/FileSystemWritableFileStreamIdentifier.h>
+#include <wtf/CheckedArithmetic.h>
 #include <wtf/FileHandle.h>
 #include <wtf/Identified.h>
 #include <wtf/RefCountedAndCanMakeWeakPtr.h>
@@ -60,7 +61,12 @@ public:
     Type type() const { return m_type; }
     uint64_t allocatedUnusedCapacity();
 
+    void addTransferReference() { if (!m_transferReferenceCount.hasOverflowed()) [[likely]] m_transferReferenceCount++; }
+    void removeTransferReference();
+    bool hasTransferReferences() const { return !m_transferReferenceCount.hasOverflowed() && m_transferReferenceCount; }
+
     void close();
+    void requestClose();
     bool isSameEntry(WebCore::FileSystemHandleIdentifier);
     std::optional<FileSystemStorageError> move(WebCore::FileSystemHandleIdentifier, const String& newName);
     Expected<WebCore::FileSystemHandleIdentifier, FileSystemStorageError> getFileHandle(IPC::Connection::UniqueID, String&& name, bool createIfNecessary);
@@ -102,6 +108,8 @@ private:
 
     std::optional<SyncAccessHandleInfo> m_activeSyncAccessHandle;
     HashMap<WebCore::FileSystemWritableFileStreamIdentifier, FileHandleWithPath> m_activeWritableFiles;
+    CheckedUint32 m_transferReferenceCount { 0 };
+    bool m_closeRequested { false };
 };
 
 } // namespace WebKit

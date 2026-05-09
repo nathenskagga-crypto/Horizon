@@ -325,10 +325,8 @@
 #include "WrapForValidIteratorPrototypeInlines.h"
 #include "runtime/VM.h"
 #include <wtf/CryptographicallyRandomNumber.h>
-#include <wtf/FileHandle.h>
 #include <wtf/FixedVector.h>
 #include <wtf/SystemTracing.h>
-#include <wtf/WeakHashSet.h>
 #include <wtf/text/MakeString.h>
 
 #if ENABLE(REMOTE_INSPECTOR)
@@ -2127,10 +2125,6 @@ capitalName ## Constructor* lowerName ## Constructor = featureFlag ? capitalName
     m_linkTimeConstants[static_cast<unsigned>(LinkTimeConstant::stringIndexOfInternal)].initLater([] (const Initializer<JSCell>& init) {
             init.set(JSFunction::create(init.vm, init.owner, 1, "stringIndexOfInternal"_s, builtinStringIndexOfInternal, ImplementationVisibility::Private));
         });
-    m_linkTimeConstants[static_cast<unsigned>(LinkTimeConstant::stringSplitFast)].initLater([] (const Initializer<JSCell>& init) {
-            init.set(JSFunction::create(init.vm, init.owner, 2, "stringSplitFast"_s, stringProtoFuncSplitFast, ImplementationVisibility::Private));
-        });
-
     // Proxy helpers.
     m_linkTimeConstants[static_cast<unsigned>(LinkTimeConstant::handleNegativeProxyHasTrapResult)].initLater([] (const Initializer<JSCell>& init) {
             init.set(JSFunction::create(init.vm, init.owner, 2, "handleNegativeProxyHasTrapResult"_s, globalFuncHandleNegativeProxyHasTrapResult, ImplementationVisibility::Private));
@@ -2274,6 +2268,7 @@ capitalName ## Constructor* lowerName ## Constructor = featureFlag ? capitalName
     installObjectPropertyChangeAdaptiveWatchpoint(setupAdaptiveWatchpoint(this, m_regExpPrototype.get(), vm.propertyNames->unicodeSets), m_regExpPrimordialPropertiesWatchpointSet);
     installObjectPropertyChangeAdaptiveWatchpoint(setupAdaptiveWatchpoint(this, m_regExpPrototype.get(), vm.propertyNames->replaceSymbol), m_regExpPrimordialPropertiesWatchpointSet);
     installObjectPropertyChangeAdaptiveWatchpoint(setupAdaptiveWatchpoint(this, m_regExpPrototype.get(), vm.propertyNames->matchSymbol), m_regExpPrimordialPropertiesWatchpointSet);
+    installObjectPropertyChangeAdaptiveWatchpoint(setupAdaptiveWatchpoint(this, m_regExpPrototype.get(), vm.propertyNames->splitSymbol), m_regExpPrimordialPropertiesWatchpointSet);
     installObjectPropertyChangeAdaptiveWatchpoint(setupAdaptiveWatchpoint(this, jsSetPrototype(), vm.propertyNames->has), m_setPrimordialPropertiesWatchpointSet);
     installObjectPropertyChangeAdaptiveWatchpoint(setupAdaptiveWatchpoint(this, jsSetPrototype(), vm.propertyNames->keys), m_setPrimordialPropertiesWatchpointSet);
 
@@ -2283,6 +2278,8 @@ capitalName ## Constructor* lowerName ## Constructor = featureFlag ? capitalName
     // Detect property absence.
     installObjectAdaptiveStructureWatchpoint(setupAbsenceAdaptiveWatchpoint(this, m_stringPrototype.get(), vm.propertyNames->replaceSymbol, objectPrototype()), m_stringSymbolReplaceWatchpointSet);
     installObjectAdaptiveStructureWatchpoint(setupAbsenceAdaptiveWatchpoint(this, m_objectPrototype.get(), vm.propertyNames->replaceSymbol, nullptr), m_stringSymbolReplaceWatchpointSet);
+    installObjectAdaptiveStructureWatchpoint(setupAbsenceAdaptiveWatchpoint(this, m_stringPrototype.get(), vm.propertyNames->splitSymbol, objectPrototype()), m_stringSymbolSplitWatchpointSet);
+    installObjectAdaptiveStructureWatchpoint(setupAbsenceAdaptiveWatchpoint(this, m_objectPrototype.get(), vm.propertyNames->splitSymbol, nullptr), m_stringSymbolSplitWatchpointSet);
     installObjectAdaptiveStructureWatchpoint(setupAbsenceAdaptiveWatchpoint(this, m_stringPrototype.get(), vm.propertyNames->toPrimitiveSymbol, objectPrototype()), m_stringSymbolToPrimitiveWatchpointSet);
     installObjectAdaptiveStructureWatchpoint(setupAbsenceAdaptiveWatchpoint(this, m_objectPrototype.get(), vm.propertyNames->toPrimitiveSymbol, nullptr), m_stringSymbolToPrimitiveWatchpointSet);
     installObjectAdaptiveStructureWatchpoint(setupAbsenceAdaptiveWatchpoint(this, m_arrayPrototype.get(), vm.propertyNames->toPrimitiveSymbol, objectPrototype()), m_arraySymbolToPrimitiveWatchpointSet);
@@ -2301,6 +2298,20 @@ capitalName ## Constructor* lowerName ## Constructor = featureFlag ? capitalName
     }
     {
         tryInstallSpeciesWatchpoint(this->promisePrototype(), promiseConstructor, m_promisePrototypeConstructorWatchpoint, m_promiseConstructorSpeciesWatchpoint, m_promiseSpeciesWatchpointSet, HasSpeciesProperty::Yes, promiseSpeciesGetterSetter());
+        catchScope.assertNoException();
+    }
+    {
+        // RegExp Species watchpoint: validates that RegExp[Symbol.species] hasn't been
+        // overridden so the C++ split fast path can skip the species-construction step
+        // performed by the JS regExpPrototypeSplit builtin.
+        RegExpConstructor* regExpConstructor = m_regExpConstructor.get();
+        PropertySlot speciesSlot(regExpConstructor, PropertySlot::InternalMethodType::VMInquiry, &vm);
+        bool found = regExpConstructor->getOwnPropertySlot(regExpConstructor, this, vm.propertyNames->speciesSymbol, speciesSlot);
+        speciesSlot.disallowVMEntry.reset();
+        if (found && speciesSlot.isAccessor()) {
+            GetterSetter* speciesGetterSetter = speciesSlot.getterSetter();
+            tryInstallSpeciesWatchpoint(m_regExpPrototype.get(), regExpConstructor, m_regExpPrototypeConstructorWatchpoint, m_regExpConstructorSpeciesWatchpoint, m_regExpSpeciesWatchpointSet, HasSpeciesProperty::Yes, speciesGetterSetter);
+        }
         catchScope.assertNoException();
     }
 

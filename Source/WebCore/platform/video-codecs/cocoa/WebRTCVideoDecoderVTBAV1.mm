@@ -36,8 +36,6 @@
 
 namespace WebCore {
 
-WTF_MAKE_TZONE_ALLOCATED_IMPL(WebRTCVideoDecoderVTBAV1);
-
 static RetainPtr<CMVideoFormatDescriptionRef> computeAV1InputFormat(std::span<const uint8_t> data, int32_t width, int32_t height)
 {
 #if ENABLE(AV1)

@@ -248,7 +248,7 @@ static bool isHasScopeBreakingCombinator(CSSSelector::Relation relation, MatchEl
 struct RuleFeatureSet::RecursiveCollectionContext {
     MatchElement matchElement { MatchElement::Relation::Subject, { } };
     IsNegation isNegation { IsNegation::No };
-    const CSSSelector* outerCompoundSelector { nullptr };
+    Vector<const CSSSelector*> outerCompoundSelectors { };
     const CSSSelector* hasPseudoClass { nullptr };
     bool isNestedInLogicalCombination { false };
     bool crossedScopeBreakingCombinator { false };
@@ -292,12 +292,14 @@ void RuleFeatureSet::recursivelyCollectFeaturesFromSelector(SelectorFeatures& se
         // we crossed a combinator that reaches outside (e.g. descendant inside :is, or sibling
         // inside :is when :has() itself is in sibling/subject position). Otherwise the matched
         // element is always within the scope subtree and the scope selector can bound traversal.
-        auto scopeSource = [&] -> const CSSSelector* {
+        auto scopeSources = [&] -> Vector<const CSSSelector*> {
             if (context.isNestedInLogicalCombination && crossedScopeBreakingCombinator)
-                return nullptr;
-            return context.outerCompoundSelector ? context.outerCompoundSelector : context.hasPseudoClass;
+                return { };
+            auto result = context.outerCompoundSelectors;
+            result.append(context.hasPseudoClass);
+            return result;
         }();
-        selectorFeatures.hasPseudoClasses.append({ selector, matchElement, context.isNegation, scopeSource });
+        selectorFeatures.hasPseudoClasses.append({ selector, matchElement, context.isNegation, WTF::move(scopeSources) });
     };
 
     while (true) {
@@ -332,14 +334,13 @@ void RuleFeatureSet::recursivelyCollectFeaturesFromSelector(SelectorFeatures& se
             for (auto& subSelector : *selectorList) {
                 auto subResult = computeSubSelectorMatchElement(matchElement, *selector, subSelector);
 
-                RecursiveCollectionContext subContext { subResult, subSelectorIsNegation, context.outerCompoundSelector, context.hasPseudoClass, context.isNestedInLogicalCombination, crossedScopeBreakingCombinator };
+                RecursiveCollectionContext subContext { subResult, subSelectorIsNegation, context.outerCompoundSelectors, context.hasPseudoClass, context.isNestedInLogicalCombination, crossedScopeBreakingCombinator };
 
                 // When entering a logical combination (not :has() itself), record the outer compound
                 // so nested :has() can use it for scope selector extraction.
                 // Mark as nested so only sibling boundary entries are emitted, not rightmost.
                 if (selector->match() == CSSSelector::Match::PseudoClass && isLogicalCombinationPseudoClass(selector->pseudoClass()) && selector->pseudoClass() != CSSSelector::PseudoClass::Has) {
-                    if (!subContext.outerCompoundSelector)
-                        subContext.outerCompoundSelector = selector;
+                    subContext.outerCompoundSelectors.append(selector);
                     if (subContext.hasPseudoClass)
                         subContext.isNestedInLogicalCombination = true;
                 }
@@ -515,7 +516,7 @@ void RuleFeatureSet::collectFeatures(CollectionContext& collectionContext, const
     }
 
     for (auto& entry : selectorFeatures.hasPseudoClasses) {
-        auto& [selector, matchElement, isNegation, hasPseudoClass] = entry;
+        auto& [selector, matchElement, isNegation, scopeSources] = entry;
         // The selector argument points to a selector inside :has() selector list instead of :has() itself.
         auto& featureVector = *hasPseudoClassRules.ensure(makePseudoClassInvalidationKey(CSSSelector::PseudoClass::Has, *selector), [] {
             return makeUnique<Vector<RuleFeatureWithInvalidationSelector>>();
@@ -526,7 +527,7 @@ void RuleFeatureSet::collectFeatures(CollectionContext& collectionContext, const
             matchElement,
             isNegation,
             CSSSelectorList::makeCopyingComplexSelector(*selector),
-            hasPseudoClass ? CSSSelectorParser::makeHasScopeSelector(*hasPseudoClass) : CSSSelectorList { }
+            scopeSources.isEmpty() ? CSSSelectorList { } : CSSSelectorParser::makeHasScopeSelector(scopeSources)
         });
 
         setUsesRelation(matchElement.relation);

@@ -28,6 +28,7 @@
 #include <JavaScriptCore/ArrayStorageInlines.h>
 #include <JavaScriptCore/Butterfly.h>
 #include <JavaScriptCore/ButterflyInlinesLight.h>
+#include <JavaScriptCore/GCMemoryOperations.h>
 #include <JavaScriptCore/HeapCellInlines.h>
 #include <JavaScriptCore/JSObject.h>
 #include <JavaScriptCore/Structure.h>
@@ -36,6 +37,11 @@
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 
 namespace JSC {
+
+inline size_t NODELETE nextLength(size_t length)
+{
+    return length + length / 2;
+}
 
 ALWAYS_INLINE unsigned Butterfly::availableContiguousVectorLength(size_t propertyCapacity, unsigned vectorLength)
 {

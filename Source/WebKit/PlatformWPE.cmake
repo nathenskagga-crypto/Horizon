@@ -581,7 +581,7 @@ WEBKIT_BUILD_INSPECTOR_GRESOURCES(
 install(FILES "${CMAKE_BINARY_DIR}/share/inspector.gresource" DESTINATION "${CMAKE_INSTALL_FULL_DATADIR}/wpe-webkit-${WPE_API_VERSION}")
 
 add_library(WPEInjectedBundle MODULE "${WEBKIT_DIR}/WebProcess/InjectedBundle/API/glib/WebKitInjectedBundleMain.cpp")
-ADD_WEBKIT_PREFIX_HEADERS(WPEInjectedBundle WebKitPrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(WPEInjectedBundle WebKitPrefix.h)
 target_link_libraries(WPEInjectedBundle WebKit)
 
 target_include_directories(WPEInjectedBundle PRIVATE $<TARGET_PROPERTY:WebKit,INCLUDE_DIRECTORIES>)

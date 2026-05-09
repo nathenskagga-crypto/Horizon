@@ -30,14 +30,15 @@
 #include "FractionToDouble.h"
 #include "IntlObject.h"
 #include "ParseInt.h"
+#include "Rounding.h"
 #include "TemporalObject.h"
+#include <bit>
 #include <limits>
 #include <wtf/CheckedArithmetic.h>
 #include <wtf/DateMath.h>
 #include <wtf/WallTime.h>
 #include <wtf/text/MakeString.h>
 #include <wtf/text/StringParsingBuffer.h>
-#include <wtf/unicode/CharacterNames.h>
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 
@@ -147,23 +148,23 @@ static std::optional<Duration> parseDuration(StringParsingBuffer<CharacterType>&
         case 'Y':
             if (datePartIndex)
                 return std::nullopt;
-            result.setYears(integer);
+            result.setField(TemporalUnit::Year, integer);
             datePartIndex = 1;
             break;
         case 'M':
             if (datePartIndex >= 2)
                 return std::nullopt;
-            result.setMonths(integer);
+            result.setField(TemporalUnit::Month, integer);
             datePartIndex = 2;
             break;
         case 'W':
             if (datePartIndex >= 3)
                 return std::nullopt;
-            result.setWeeks(integer);
+            result.setField(TemporalUnit::Week, integer);
             datePartIndex = 3;
             break;
         case 'D':
-            result.setDays(integer);
+            result.setField(TemporalUnit::Day, integer);
             datePartIndex = 4;
             break;
         default:
@@ -207,7 +208,7 @@ static std::optional<Duration> parseDuration(StringParsingBuffer<CharacterType>&
         case 'H':
             if (timePartIndex)
                 return std::nullopt;
-            result.setHours(integer);
+            result.setField(TemporalUnit::Hour, integer);
             if (fractionalPart) {
                 handleFraction(result, factor, fractionalPart, TemporalUnit::Hour);
                 timePartIndex = 3;
@@ -217,7 +218,7 @@ static std::optional<Duration> parseDuration(StringParsingBuffer<CharacterType>&
         case 'M':
             if (timePartIndex >= 2)
                 return std::nullopt;
-            result.setMinutes(integer);
+            result.setField(TemporalUnit::Minute, integer);
             if (fractionalPart) {
                 handleFraction(result, factor, fractionalPart, TemporalUnit::Minute);
                 timePartIndex = 3;
@@ -225,7 +226,7 @@ static std::optional<Duration> parseDuration(StringParsingBuffer<CharacterType>&
                 timePartIndex = 2;
             break;
         case 'S':
-            result.setSeconds(integer);
+            result.setField(TemporalUnit::Second, integer);
             if (fractionalPart)
                 handleFraction(result, factor, fractionalPart, TemporalUnit::Second);
             timePartIndex = 3;
@@ -1624,7 +1625,7 @@ CheckedInt128 checkedCastDoubleToInt128(double n)
     static constexpr uint64_t absMask = signMask - uint64_t { 1 };
 
     // Break n into sign, exponent, significand parts.
-    const uint64_t bits = *reinterpret_cast<uint64_t*>(&n);
+    const uint64_t bits = std::bit_cast<uint64_t>(n);
     const uint64_t nAbs = bits & absMask;
     const int sign = bits & signMask ? -1 : 1;
     const int exponent = (nAbs >> significandBits) - exponentBias;
@@ -1651,6 +1652,59 @@ CheckedInt128 checkedCastDoubleToInt128(double n)
 
 namespace ISO8601 {
 
+// IsValidDuration step 8 bound: abs(normalizedNanoseconds) < 2^53 × 10^9 nanoseconds.
+static constexpr Int128 durationNanosecondsLimit = (Int128(1) << 53) * 1000000000LL;
+
+// Sentinel for Duration::setField — stored when checkedCastDoubleToInt128 overflows
+// (input double >= 2^127). Any value >= durationNanosecondsLimit causes
+// isValidDuration() to return false via the totalNanoseconds overflow check.
+static constexpr Int128 subsecondOutOfRangeSentinel = durationNanosecondsLimit;
+
+// Converts a JS Number (double) to the Duration's typed storage.
+// int64_t fields (years–milliseconds): doubleToInt64Saturating avoids UB for out-of-range values.
+// Int128 fields (microseconds, nanoseconds): checkedCastDoubleToInt128 handles values >= 2^127
+// by returning a sentinel >= durationNanosecondsLimit so isValidDuration rejects the Duration.
+void Duration::setField(TemporalUnit u, double v)
+{
+    switch (u) {
+    case TemporalUnit::Year:
+        m_years = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Month:
+        m_months = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Week:
+        m_weeks = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Day:
+        m_days = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Hour:
+        m_hours = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Minute:
+        m_minutes = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Second:
+        m_seconds = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Millisecond:
+        m_milliseconds = doubleToInt64Saturating(v);
+        return;
+    case TemporalUnit::Microsecond: {
+        auto safe = checkedCastDoubleToInt128(v);
+        m_microseconds = safe.hasOverflowed() ? subsecondOutOfRangeSentinel : static_cast<Int128>(safe);
+        return;
+    }
+    case TemporalUnit::Nanosecond: {
+        auto safe = checkedCastDoubleToInt128(v);
+        m_nanoseconds = safe.hasOverflowed() ? subsecondOutOfRangeSentinel : static_cast<Int128>(safe);
+        return;
+    }
+    }
+    ASSERT_NOT_REACHED();
+}
+
 template<TemporalUnit unit>
 std::optional<Int128> Duration::totalNanoseconds() const
 {
@@ -1658,32 +1712,20 @@ std::optional<Int128> Duration::totalNanoseconds() const
 
     CheckedInt128 resultNs { 0 };
 
-    if constexpr (unit <= TemporalUnit::Day) {
-        CheckedInt128 days = checkedCastDoubleToInt128(this->days());
-        resultNs += days * ExactTime::nsPerDay;
-    }
-    if constexpr (unit <= TemporalUnit::Hour) {
-        CheckedInt128 hours = checkedCastDoubleToInt128(this->hours());
-        resultNs += hours * ExactTime::nsPerHour;
-    }
-    if constexpr (unit <= TemporalUnit::Minute) {
-        CheckedInt128 minutes = checkedCastDoubleToInt128(this->minutes());
-        resultNs += minutes * ExactTime::nsPerMinute;
-    }
-    if constexpr (unit <= TemporalUnit::Second) {
-        CheckedInt128 seconds = checkedCastDoubleToInt128(this->seconds());
-        resultNs += seconds * ExactTime::nsPerSecond;
-    }
-    if constexpr (unit <= TemporalUnit::Millisecond) {
-        CheckedInt128 milliseconds = checkedCastDoubleToInt128(this->milliseconds());
-        resultNs += milliseconds * ExactTime::nsPerMillisecond;
-    }
-    if constexpr (unit <= TemporalUnit::Microsecond) {
-        CheckedInt128 microseconds = checkedCastDoubleToInt128(this->microseconds());
-        resultNs += microseconds * ExactTime::nsPerMicrosecond;
-    }
+    if constexpr (unit <= TemporalUnit::Day)
+        resultNs += CheckedInt128(this->days()) * ExactTime::nsPerDay;
+    if constexpr (unit <= TemporalUnit::Hour)
+        resultNs += CheckedInt128(this->hours()) * ExactTime::nsPerHour;
+    if constexpr (unit <= TemporalUnit::Minute)
+        resultNs += CheckedInt128(this->minutes()) * ExactTime::nsPerMinute;
+    if constexpr (unit <= TemporalUnit::Second)
+        resultNs += CheckedInt128(this->seconds()) * ExactTime::nsPerSecond;
+    if constexpr (unit <= TemporalUnit::Millisecond)
+        resultNs += CheckedInt128(this->milliseconds()) * ExactTime::nsPerMillisecond;
+    if constexpr (unit <= TemporalUnit::Microsecond)
+        resultNs += CheckedInt128(this->microseconds()) * ExactTime::nsPerMicrosecond;
     if constexpr (unit <= TemporalUnit::Nanosecond)
-        resultNs += checkedCastDoubleToInt128(this->nanoseconds());
+        resultNs += CheckedInt128(this->nanoseconds());
 
     if (resultNs.hasOverflowed())
         return std::nullopt;
@@ -1699,27 +1741,45 @@ template std::optional<Int128> Duration::totalNanoseconds<TemporalUnit::Microsec
 // https://tc39.es/proposal-temporal/#sec-temporal-isvalidduration
 bool isValidDuration(const Duration& duration)
 {
+    // Check sign consistency: all non-zero fields must have the same sign.
     int sign = 0;
-    for (auto value : duration) {
-        if (!std::isfinite(value) || (value < 0 && sign > 0) || (value > 0 && sign < 0))
-            return false;
-
-        if (!sign && value)
-            sign = value > 0 ? 1 : -1;
-    }
+#define JSC_CHECK_DURATION_FIELD(field) \
+    do { \
+        auto v = duration.field(); \
+        if (v < 0 && sign > 0) \
+            return false; \
+        if (v > 0 && sign < 0) \
+            return false; \
+        if (!sign && v) \
+            sign = v > 0 ? 1 : -1; \
+    } while (false);
+    JSC_CHECK_DURATION_FIELD(years)
+    JSC_CHECK_DURATION_FIELD(months)
+    JSC_CHECK_DURATION_FIELD(weeks)
+    JSC_CHECK_DURATION_FIELD(days)
+    JSC_CHECK_DURATION_FIELD(hours)
+    JSC_CHECK_DURATION_FIELD(minutes)
+    JSC_CHECK_DURATION_FIELD(seconds)
+    JSC_CHECK_DURATION_FIELD(milliseconds)
+    JSC_CHECK_DURATION_FIELD(microseconds)
+    JSC_CHECK_DURATION_FIELD(nanoseconds)
+#undef JSC_CHECK_DURATION_FIELD
 
     // 3. If abs(years) ≥ 2^32, return false.
     // 4. If abs(months) ≥ 2^32, return false.
     // 5. If abs(weeks) ≥ 2^32, return false.
-    constexpr double limit = 1ULL << 32;
-    if (std::abs(duration[TemporalUnit::Year]) >= limit || std::abs(duration[TemporalUnit::Month]) >= limit || std::abs(duration[TemporalUnit::Week]) >= limit)
+    // Use range comparisons to avoid UB from std::abs(INT64_MIN).
+    constexpr int64_t limit = static_cast<int64_t>(1) << 32;
+    if (duration.years() >= limit || duration.years() <= -limit
+        || duration.months() >= limit || duration.months() <= -limit
+        || duration.weeks() >= limit || duration.weeks() <= -limit)
         return false;
 
     // 6. Let normalizedSeconds be days × 86,400 + hours × 3600 + minutes × 60 + seconds + ℝ(𝔽(milliseconds)) × 10^-3 + ℝ(𝔽(microseconds)) × 10^-6 + ℝ(𝔽(nanoseconds)) × 10^-9.
     auto normalizedNanoseconds = duration.totalNanoseconds<TemporalUnit::Day>();
     // 8. If abs(normalizedSeconds) ≥ 2^53, return false.
-    constexpr Int128 nanosecondsLimit = (Int128(1) << 53) * 1000000000;
-    if (!normalizedNanoseconds || absInt128(normalizedNanoseconds.value()) >= nanosecondsLimit)
+    // nullopt from totalNanoseconds means Int128 overflow — far beyond the 2^53 limit.
+    if (!normalizedNanoseconds || normalizedNanoseconds.value() >= durationNanosecondsLimit || normalizedNanoseconds.value() <= -durationNanosecondsLimit)
         return false;
 
     return true;
@@ -1739,17 +1799,17 @@ std::optional<ExactTime> ExactTime::add(Duration duration) const
     // time span for exact time, so if we already know that the duration exceeds
     // that, then we can bail out.
 
-    CheckedInt128 hours = checkedCastDoubleToInt128(duration.hours());
+    CheckedInt128 hours = CheckedInt128(duration.hours());
     resultNs += hours * ExactTime::nsPerHour;
-    CheckedInt128 minutes = checkedCastDoubleToInt128(duration.minutes());
+    CheckedInt128 minutes = CheckedInt128(duration.minutes());
     resultNs += minutes * ExactTime::nsPerMinute;
-    CheckedInt128 seconds = checkedCastDoubleToInt128(duration.seconds());
+    CheckedInt128 seconds = CheckedInt128(duration.seconds());
     resultNs += seconds * ExactTime::nsPerSecond;
-    CheckedInt128 milliseconds = checkedCastDoubleToInt128(duration.milliseconds());
+    CheckedInt128 milliseconds = CheckedInt128(duration.milliseconds());
     resultNs += milliseconds * ExactTime::nsPerMillisecond;
-    CheckedInt128 microseconds = checkedCastDoubleToInt128(duration.microseconds());
+    CheckedInt128 microseconds = CheckedInt128(duration.microseconds());
     resultNs += microseconds * ExactTime::nsPerMicrosecond;
-    resultNs += checkedCastDoubleToInt128(duration.nanoseconds());
+    resultNs += CheckedInt128(duration.nanoseconds());
     if (resultNs.hasOverflowed())
         return std::nullopt;
 
@@ -1764,7 +1824,7 @@ static Int128 roundTemporalInstant(Int128 ns, unsigned increment, TemporalUnit u
 {
     auto unitLength = lengthInNanoseconds(unit);
     auto incrementNs = increment * unitLength;
-    return roundNumberToIncrementAsIfPositive(ns, incrementNs, roundingMode);
+    return TemporalCore::roundNumberToIncrementAsIfPositive(ns, incrementNs, roundingMode);
 }
 
 // https://tc39.es/proposal-temporal/#sec-validatetemporalroundingincrement
@@ -1822,7 +1882,7 @@ static Int128 roundTimeDurationToIncrement(JSGlobalObject* globalObject, Int128 
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
 
-    Int128 rounded = roundNumberToIncrementInt128(d, increment, roundingMode);
+    Int128 rounded = TemporalCore::roundNumberToIncrementInt128(d, increment, roundingMode);
     if (absInt128(rounded) > InternalDuration::maxTimeDuration) {
         throwRangeError(globalObject, scope, "Rounded time duration exceeds maximum"_s);
         return 0;

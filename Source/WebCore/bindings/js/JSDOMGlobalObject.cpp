@@ -56,7 +56,6 @@
 #include "JSWorkletGlobalScope.h"
 #include "JSWritableStream.h"
 #include "LocalDOMWindow.h"
-#include "ProcessIdentifier.h"
 #include "RejectedPromiseTracker.h"
 #include "ScriptController.h"
 #include "ScriptModuleLoader.h"
@@ -778,20 +777,6 @@ JSC::JSGlobalObject* JSDOMGlobalObject::deriveShadowRealmGlobalObject(JSC::JSGlo
         context->addMicrotaskGlobalObject(wrapper);
 
     return wrapper;
-}
-
-String JSDOMGlobalObject::defaultAgentClusterID()
-{
-    return makeString(Process::identifier().toUInt64(), "-default"_s);
-}
-
-String JSDOMGlobalObject::agentClusterID() const
-{
-    if (auto* workerGlobalScope = dynamicDowncast<WorkerGlobalScope>(scriptExecutionContext())) {
-        ASSERT(!workerGlobalScope->agentClusterID().isEmpty());
-        return workerGlobalScope->agentClusterID();
-    }
-    return defaultAgentClusterID();
 }
 
 JSC::JSObject* JSDOMGlobalObject::readableStreamByteStrategySize()

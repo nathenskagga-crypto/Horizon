@@ -39,6 +39,9 @@ extension WebPage {
     /// An edit command that can be used to interact with the web page.
     public enum EditCommand: String {
         case deleteBackward = "DeleteBackward"
+        case toggleBold = "ToggleBold"
+        case toggleItalic = "ToggleItalic"
+        case toggleUnderline = "ToggleUnderline"
     }
 
     /// Suspends execution of the current context until the next presentation update has occurred for this page.

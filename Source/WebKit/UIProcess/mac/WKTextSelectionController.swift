@@ -235,7 +235,7 @@ extension WKTextSelectionController {
 
     @objc(beginRangeSelectionAtPoint:withGranularity:)
     func beginRangeSelection(at point: NSPoint, with granularity: NSTextSelection.Granularity) {
-        guard let page = view._protectedPage().get() else {
+        guard let page = view._protectedPage().get(), let impl = view._impl() else {
             return
         }
 
@@ -244,6 +244,8 @@ extension WKTextSelectionController {
         )
 
         currentRangeSelectionGranularity = granularity
+
+        impl.cancelClick()
 
         Task.immediate {
             await page.selectText(

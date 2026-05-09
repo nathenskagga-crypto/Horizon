@@ -29,7 +29,6 @@
 #include <JavaScriptCore/MarkedBlock.h>
 #include <compare>
 #include <wtf/HashTraits.h>
-#include <wtf/StdIntExtras.h>
 
 namespace JSC {
 

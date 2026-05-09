@@ -101,41 +101,20 @@ WEBKIT_OPTION_END()
 # FIXME: Needs WebCore_Private Swift module. https://bugs.webkit.org/show_bug.cgi?id=312083
 SET_AND_EXPOSE_TO_BUILD(ENABLE_BACK_FORWARD_LIST_SWIFT OFF)
 
-# SDK resolution — bump deployment target to match SDK for SPI header guards.
+include(WebKitXcrun)
 if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
-    set(_sdk_name "iphonesimulator.internal")
-    set(_sdk_name_fallback "iphonesimulator")
+    WEBKIT_RESOLVE_SDK(iphonesimulator.internal iphonesimulator)
     set(WEBKIT_PLATFORM_NAME "iPhoneSimulator")
-else ()
-    set(_sdk_name "iphoneos.internal")
-    set(_sdk_name_fallback "iphoneos")
-    set(WEBKIT_PLATFORM_NAME "iPhoneOS")
-endif ()
-execute_process(COMMAND xcrun --sdk ${_sdk_name} --show-sdk-version
-    OUTPUT_VARIABLE _sdk_version
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE _sdk_ver_result
-    ERROR_QUIET)
-if (NOT _sdk_ver_result EQUAL 0 OR NOT _sdk_version)
-    execute_process(COMMAND xcrun --sdk ${_sdk_name_fallback} --show-sdk-version
-        OUTPUT_VARIABLE _sdk_version
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
-endif ()
-unset(_sdk_name)
-unset(_sdk_name_fallback)
-if (_sdk_version)
-    string(REGEX MATCH "^[0-9]+\\.[0-9]+" _sdk_major_minor "${_sdk_version}")
-    if (_sdk_major_minor AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS _sdk_major_minor))
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "${_sdk_major_minor}" CACHE STRING "Minimum iOS version" FORCE)
-        message(WARNING "Deployment target auto-set to SDK version: ${CMAKE_OSX_DEPLOYMENT_TARGET} (SPI header guards require this)")
-    endif ()
-endif ()
-
-if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
     set(_sdk_prefix "iphonesimulator")
 else ()
+    WEBKIT_RESOLVE_SDK(iphoneos.internal iphoneos)
+    set(WEBKIT_PLATFORM_NAME "iPhoneOS")
     set(_sdk_prefix "iphoneos")
+endif ()
+string(REGEX MATCH "^[0-9]+\\.[0-9]+" _sdk_major_minor "${_sdk_version}")
+if (_sdk_major_minor AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS _sdk_major_minor))
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "${_sdk_major_minor}" CACHE STRING "Minimum iOS version" FORCE)
+    message(WARNING "Deployment target auto-set to SDK version: ${CMAKE_OSX_DEPLOYMENT_TARGET} (SPI header guards require this)")
 endif ()
 
 include(OptionsCocoa)

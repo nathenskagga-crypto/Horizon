@@ -1076,10 +1076,10 @@ void AcceleratedSurface::didRenderFrame()
 
 void AcceleratedSurface::sendFrame()
 {
-    auto [target, damageRects] = m_pendingFrameNotifyTargets.takeLast();
-    if (!target)
+    if (m_pendingFrameNotifyTargets.isEmpty())
         return;
 
+    auto [target, damageRects] = m_pendingFrameNotifyTargets.takeLast();
     target->sendFrame(WTF::move(damageRects));
 }
 

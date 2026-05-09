@@ -1707,6 +1707,15 @@ bool AXIsolatedObject::press()
     return false;
 }
 
+bool AXIsolatedObject::syncPress()
+{
+    return Accessibility::retrieveValueFromMainThreadWithTimeoutAndDefault([context = mainThreadContext()] () -> bool {
+        if (RefPtr axObject = context.axObjectOnMainThread())
+            return axObject->press();
+        return false;
+    }, Accessibility::InteractiveTimeout, false);
+}
+
 void AXIsolatedObject::increment()
 {
     performFunctionOnMainThread([] (auto* axObject) {
@@ -1719,6 +1728,22 @@ void AXIsolatedObject::decrement()
     performFunctionOnMainThread([] (auto* axObject) {
         axObject->decrement();
     });
+}
+
+void AXIsolatedObject::syncIncrement()
+{
+    Accessibility::performFunctionOnMainThreadAndWaitWithTimeout([context = mainThreadContext()] {
+        if (RefPtr axObject = context.axObjectOnMainThread())
+            axObject->increment();
+    }, Accessibility::InteractiveTimeout);
+}
+
+void AXIsolatedObject::syncDecrement()
+{
+    Accessibility::performFunctionOnMainThreadAndWaitWithTimeout([context = mainThreadContext()] {
+        if (RefPtr axObject = context.axObjectOnMainThread())
+            axObject->decrement();
+    }, Accessibility::InteractiveTimeout);
 }
 
 bool AXIsolatedObject::isAccessibilityNodeObject() const
@@ -1762,15 +1787,14 @@ int AXIsolatedObject::insertionPointLineNumber() const
 
 String AXIsolatedObject::identifierAttribute() const
 {
-#if !LOG_DISABLED
-    return stringAttributeValue(AXProperty::IdentifierAttribute);
-#else
+    if (AXIsolatedTree::shouldCacheIdentifierAttribute())
+        return stringAttributeValue(AXProperty::IdentifierAttribute);
+
     return Accessibility::retrieveValueFromMainThreadWithTimeoutAndDefault([context = mainThreadContext()] () -> String {
         if (RefPtr object = context.axObjectOnMainThread())
             return object->identifierAttribute().isolatedCopy();
         return { };
     }, Accessibility::GeneralPropertyTimeout, emptyString());
-#endif
 }
 
 CharacterRange AXIsolatedObject::doAXRangeForLine(unsigned lineIndex) const

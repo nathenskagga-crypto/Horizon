@@ -307,6 +307,8 @@ JSC_DECLARE_JIT_OPERATION(operationStringStartsWith, bool, (JSGlobalObject*, JSS
 JSC_DECLARE_JIT_OPERATION(operationStringStartsWithWithIndex, bool, (JSGlobalObject*, JSString*, JSString*, int32_t));
 JSC_DECLARE_JIT_OPERATION(operationStringEndsWith, bool, (JSGlobalObject*, JSString*, JSString*));
 JSC_DECLARE_JIT_OPERATION(operationStringEndsWithWithEndPosition, bool, (JSGlobalObject*, JSString*, JSString*, int32_t));
+JSC_DECLARE_JIT_OPERATION(operationStringSplit, JSCell*, (JSGlobalObject*, JSString*, JSString*, EncodedJSValue));
+JSC_DECLARE_JIT_OPERATION(operationStringSplitRegExp, EncodedJSValue, (JSGlobalObject*, JSString*, RegExpObject*, EncodedJSValue));
 
 JSC_DECLARE_JIT_OPERATION(operationStringProtoFuncReplaceGeneric, JSCell*, (JSGlobalObject*, EncodedJSValue thisValue, EncodedJSValue searchValue, EncodedJSValue replaceValue));
 JSC_DECLARE_JIT_OPERATION(operationStringProtoFuncReplaceAllGeneric, JSCell*, (JSGlobalObject*, EncodedJSValue thisValue, EncodedJSValue searchValue, EncodedJSValue replaceValue));

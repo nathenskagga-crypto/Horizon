@@ -29,7 +29,6 @@
 #include <JavaScriptCore/DeleteAllCodeEffort.h>
 #include <JavaScriptCore/GCConductor.h>
 #include <JavaScriptCore/GCIncomingRefCountedSet.h>
-#include <JavaScriptCore/GCMemoryOperations.h>
 #include <JavaScriptCore/GCRequest.h>
 #include <JavaScriptCore/HandleSet.h>
 #include <JavaScriptCore/HeapFinalizerCallback.h>
@@ -43,7 +42,7 @@
 #include <JavaScriptCore/MarkedSpace.h>
 #include <JavaScriptCore/MutatorState.h>
 #include <JavaScriptCore/PreciseSubspace.h>
-#include <JavaScriptCore/StructureID.h>
+#include <JavaScriptCore/SubspaceAccess.h>
 #include <JavaScriptCore/Synchronousness.h>
 #include <JavaScriptCore/WeakHandleOwner.h>
 #include <wtf/AutomaticThread.h>

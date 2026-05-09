@@ -945,7 +945,7 @@ void HTMLModelElement::defaultEventHandler(Event& event)
     bool isMouseEvent = type == eventNames().mousedownEvent || type == eventNames().mousemoveEvent || type == eventNames().mouseupEvent;
 
 #if ENABLE(TOUCH_EVENTS) && ENABLE(GPU_PROCESS_MODEL)
-    bool isTouchEvent = type == eventNames().touchstartEvent || type == eventNames().touchmoveEvent || type == eventNames().touchendEvent;
+    bool isTouchEvent = type == eventNames().touchstartEvent || type == eventNames().touchmoveEvent || type == eventNames().touchendEvent || type == eventNames().touchcancelEvent;
 
     if (isTouchEvent) {
         auto& touchEvent = downcast<TouchEvent>(event);

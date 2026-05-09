@@ -26,11 +26,11 @@
 
 #pragma once
 
-#include "ISO8601.h"
-#include "JSObject.h"
-#include "TemporalDuration.h"
-#include "TemporalObject.h"
-#include "VM.h"
+#include <JavaScriptCore/ISO8601.h>
+#include <JavaScriptCore/JSObject.h>
+#include <JavaScriptCore/TemporalDuration.h>
+#include <JavaScriptCore/TemporalObject.h>
+#include <JavaScriptCore/VM.h>
 #include <wtf/Packed.h>
 
 namespace JSC {

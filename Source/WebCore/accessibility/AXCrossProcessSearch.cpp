@@ -38,6 +38,7 @@
 #include <wtf/MonotonicTime.h>
 #include <wtf/RefCounted.h>
 #include <wtf/StdLibExtras.h>
+#include <wtf/Threading.h>
 #include <wtf/threads/BinarySemaphore.h>
 
 #if PLATFORM(COCOA)

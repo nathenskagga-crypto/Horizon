@@ -1216,6 +1216,11 @@ private:
             break;
         }
 
+        case StringSplit: {
+            setPrediction(SpecArray);
+            break;
+        }
+
         case StringLocaleCompare: {
             setPrediction(SpecInt32Only);
             break;

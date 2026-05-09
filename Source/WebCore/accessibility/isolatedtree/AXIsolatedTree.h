@@ -515,7 +515,6 @@ public:
     void setPendingRootNodeID(AXID);
     void NODELETE setPendingRootNodeIDLocked(AXID) WTF_REQUIRES_LOCK(m_changeLogLock);
     void setFocusedNodeID(std::optional<AXID>);
-    void applyPendingRootNodeLocked() WTF_REQUIRES_LOCK(m_changeLogLock);
 
     // Relationships between objects.
     std::optional<ListHashSet<AXID>> relatedObjectIDsFor(const AXIsolatedObject&, AXRelation);
@@ -545,6 +544,17 @@ public:
     // Returns true if any tree has been queued for destruction but not yet cleaned up.
     static bool anyTreeNeedsTearDown() { return s_anyTreeNeedsTearDown.load(std::memory_order_relaxed); }
     static void clearAnyTreeNeedsTearDown() { s_anyTreeNeedsTearDown.store(false, std::memory_order_relaxed); }
+
+    static bool shouldCacheIdentifierAttribute()
+    {
+#if !LOG_DISABLED
+        // Always cache the ID when logging is enabled to avoid
+        // main-thread hits when logging objects.
+        return true;
+#else
+        return AXObjectCache::clientIsInTestMode();
+#endif
+    }
 
     constexpr AXTreeID treeID() const { return m_id; }
     constexpr ProcessID processID() const { return m_processID; }
@@ -579,9 +589,9 @@ private:
     // because it could be being used by the secondary thread to service an AX request.
     void queueForDestruction();
 
-    void applyPendingChangesLocked() WTF_REQUIRES_LOCK(m_changeLogLock);
-    void removeStaleAppends(const Vector<NodeAndParentID>&) WTF_REQUIRES_LOCK(m_changeLogLock);
+    void deleteSubtree(Ref<AXCoreObject>&&, const HashSet<AXID>& protectedFromDeletionIDs);
     void clearTreeContentsLocked() WTF_REQUIRES_LOCK(m_changeLogLock);
+    bool hasPendingChanges() const { return m_hasPendingChanges.load(); }
 
     static std::atomic<bool> s_anyTreeNeedsTearDown;
 
@@ -607,6 +617,63 @@ private:
         NodeChange(const NodeChange&) = delete;
         NodeChange(NodeChange&&) = default;
     };
+
+    struct PendingChanges {
+        Markable<AXID> focusedNodeID;
+        Markable<AXID> rootNodeID;
+        Vector<NodeChange> appends;
+        Vector<AXPropertyChange> propertyChanges;
+        Vector<NodeAndParentID> subtreeRemovals;
+        Vector<std::pair<AXID, Vector<AXID>>> childrenUpdates;
+        HashSet<AXID> protectedFromDeletionIDs;
+        HashMap<AXID, AXID> parentUpdates;
+        std::optional<Vector<AXID>> sortedLiveRegionIDs;
+        std::optional<Vector<AXID>> sortedNonRootWebAreaIDs;
+        std::optional<HashMap<AXID, LineRange>> mostRecentlyPaintedText;
+        std::optional<HashMap<AXID, AXRelations>> relations;
+        std::optional<AXTextMarkerRange> selectedTextMarkerRange;
+#if ENABLE(ACCESSIBILITY_LOCAL_FRAME)
+        std::optional<AXFrameGeometry> frameGeometry;
+        std::optional<IntPoint> frameViewOriginScrollPosition;
+#endif
+    };
+
+    class PendingChangesAccessor {
+        WTF_MAKE_NONCOPYABLE(PendingChangesAccessor);
+    public:
+        PendingChangesAccessor(PendingChanges& data, std::atomic<bool>& flagToSetOnCompletion)
+            : m_data(data), m_flagToSetOnCompletion(flagToSetOnCompletion) { }
+        ~PendingChangesAccessor()
+        {
+            // Don't create a PendingChangesAccessor without using it — the destructor
+            // unconditionally sets m_hasPendingChanges, so unused accessors cause
+            // false-positive dirty flags.
+            AX_ASSERT(m_wasAccessed);
+            m_flagToSetOnCompletion.store(true);
+        }
+        PendingChanges* operator->()
+        {
+#if ASSERT_ENABLED
+            m_wasAccessed = true;
+#endif
+            return &m_data;
+        }
+    private:
+        PendingChanges& m_data;
+        std::atomic<bool>& m_flagToSetOnCompletion;
+#if ASSERT_ENABLED
+        bool m_wasAccessed { false };
+#endif
+    };
+
+    PendingChangesAccessor mutablePendingChanges() WTF_REQUIRES_LOCK(m_changeLogLock)
+    {
+        return { m_pendingChanges, m_hasPendingChanges };
+    }
+
+    PendingChanges takePendingChangesLocked() WTF_REQUIRES_LOCK(m_changeLogLock);
+    void applyPendingChangesFromSnapshot(PendingChanges&&);
+    void removeStaleAppends(const Vector<NodeAndParentID>&, Vector<NodeChange>&);
 
     void updateChildren(AccessibilityObject&, ResolveNodeChanges = ResolveNodeChanges::Yes);
     void updateNode(AccessibilityObject&);
@@ -668,32 +735,17 @@ private:
     RefPtr<AXIsolatedObject> m_rootNode;
 
     // Written to by main thread under lock, accessed and applied by AX thread.
-    Markable<AXID> m_pendingRootNodeID WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    Vector<NodeChange> m_pendingAppends WTF_GUARDED_BY_LOCK(m_changeLogLock); // Nodes to be added to the tree and platform-wrapped.
-    Vector<AXPropertyChange> m_pendingPropertyChanges WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    Vector<NodeAndParentID> m_pendingSubtreeRemovals WTF_GUARDED_BY_LOCK(m_changeLogLock); // Nodes whose subtrees are to be removed from the tree, paired with the parent they were removed from.
-    Vector<std::pair<AXID, Vector<AXID>>> m_pendingChildrenUpdates WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    HashSet<AXID> m_pendingProtectedFromDeletionIDs WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    HashMap<AXID, AXID> m_pendingParentUpdates WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    Markable<AXID> m_pendingFocusedNodeID WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    std::optional<Vector<AXID>> m_pendingSortedLiveRegionIDs WTF_GUARDED_BY_LOCK(m_changeLogLock);
+    PendingChanges m_pendingChanges WTF_GUARDED_BY_LOCK(m_changeLogLock);
 
     // These three are placed here to fit in padding that would otherwise be between m_pendingSortedLiveRegionIDs and m_pendingSortedNonRootWebAreaIDs.
     OptionSet<ActivityState> m_pageActivityState;
     bool m_isEmptyContentTree { false };
     bool m_queuedForDestruction WTF_GUARDED_BY_LOCK(m_changeLogLock) { false };
 
-    std::optional<Vector<AXID>> m_pendingSortedNonRootWebAreaIDs WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    std::optional<HashMap<AXID, LineRange>> m_pendingMostRecentlyPaintedText WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    std::optional<HashMap<AXID, AXRelations>> m_pendingRelations WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    std::optional<AXTextMarkerRange> m_pendingSelectedTextMarkerRange WTF_GUARDED_BY_LOCK(m_changeLogLock);
-#if ENABLE(ACCESSIBILITY_LOCAL_FRAME)
-    std::optional<AXFrameGeometry> m_pendingFrameGeometry WTF_GUARDED_BY_LOCK(m_changeLogLock);
-    std::optional<IntPoint> m_pendingFrameViewOriginScrollPosition WTF_GUARDED_BY_LOCK(m_changeLogLock);
-#endif
     Markable<AXID> m_focusedNodeID;
     std::atomic<double> m_loadingProgress { 0 };
     std::atomic<double> m_processingProgress { 1 };
+    std::atomic<bool> m_hasPendingChanges { false };
 
     // Only accessed on the accessibility thread.
     Vector<AXID> m_sortedLiveRegionIDs;

@@ -26,8 +26,6 @@
 #pragma once
 
 #include "GraphicsLayerContentsDisplayDelegate.h"
-#include <wtf/RefPtr.h>
-#include <wtf/RetainPtr.h>
 
 OBJC_CLASS CALayer;
 

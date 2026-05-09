@@ -89,6 +89,9 @@ platform/graphics/glib/SystemFontDatabaseGLib.cpp
 
 platform/graphics/opentype/OpenTypeVerticalData.cpp
 
+platform/graphics/vulkan/VulkanTypes.cpp
+platform/graphics/vulkan/VulkanUtilities.cpp
+
 platform/graphics/x11/XErrorTrapper.cpp @no-unify
 
 platform/gtk/LocalizedStringsGtk.cpp

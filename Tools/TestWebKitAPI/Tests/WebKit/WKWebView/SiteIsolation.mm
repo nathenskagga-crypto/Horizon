@@ -8743,4 +8743,60 @@ TEST(SiteIsolation, NoRedundantFocusPolicyCallbackAfterBlurAndRefocusInCrossOrig
 }
 #endif
 
+TEST(SiteIsolation, MultiProcessBFCacheSameSiteCaching)
+{
+    HTTPServer server({
+        { "/a1"_s, { "page a1"_s } },
+        { "/a2"_s, { "page a2"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a1"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+    [webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker = true"];
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a2"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+    [webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker = true"];
+
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+    EXPECT_WK_STREQ(@"https://a.com/a1", [webView URL].absoluteString);
+    EXPECT_TRUE([[webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker ? true : false"] boolValue]);
+
+    [webView goForward];
+    [navigationDelegate waitForDidFinishNavigation];
+    EXPECT_WK_STREQ(@"https://a.com/a2", [webView URL].absoluteString);
+    EXPECT_TRUE([[webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker ? true : false"] boolValue]);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheSameSiteWithCrossSiteIframeBlocked)
+{
+    HTTPServer server({
+        { "/a1"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/a2"_s, { "page a2"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a1"]]];
+    [navigationDelegate waitForDidFinishNavigationAndLoadInSubframe];
+    [webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker = true"];
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a2"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+    EXPECT_WK_STREQ(@"https://a.com/a1", [webView URL].absoluteString);
+    // BFCache marker should be gone — page was NOT cached due to cross-site iframe
+    EXPECT_FALSE([[webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker ? true : false"] boolValue]);
+}
+
 }

@@ -362,9 +362,9 @@ void SuspendedPageProxy::suspendSubframeProcesses(BackForwardFrameItemIdentifier
         Ref process = remotePage.siteIsolatedProcess();
         process->addSuspendedPageProxy(suspendedPage);
 
-        RELEASE_LOG(ProcessSwapping, "%p - SuspendedPageProxy::suspendSubframeProcesses: Sending SetSubframesSuspended to pid %i", &suspendedPage, process->processID());
+        RELEASE_LOG(ProcessSwapping, "%p - SuspendedPageProxy::suspendSubframeProcesses: Sending SetIsSuspendedWithFrameItem to pid %i", &suspendedPage, process->processID());
 
-        process->sendWithAsyncReply(Messages::WebPage::SetSubframesSuspended(true, mainFrameItemID), aggregator->chain(), remotePage.identifierInSiteIsolatedProcess());
+        process->sendWithAsyncReply(Messages::WebPage::SetIsSuspendedWithFrameItem(true, mainFrameItemID), aggregator->chain(), remotePage.identifierInSiteIsolatedProcess());
     });
 }
 

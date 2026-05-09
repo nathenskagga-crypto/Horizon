@@ -89,6 +89,10 @@
                 "ENABLE_EXPERIMENTAL_FEATURES": {
                     "type": "BOOL",
                     "value": "OFF"
+                },
+                "CMAKE_MAKE_PROGRAM": {
+                    "type": "FILEPATH",
+                    "value": "${sourceDir}/Tools/Scripts/caffeinate-ninja"
                 }
             },
             "environment": {
@@ -201,6 +205,26 @@
                 "ENABLE_SANITIZERS": {
                     "type": "STRING",
                     "value": "address"
+                },
+                "ENABLE_EXPERIMENTAL_FEATURES": {
+                    "type": "BOOL",
+                    "value": "OFF"
+                }
+            }
+        },
+        {
+            "name": "mac-tsan",
+            "displayName": "macOS TSan (ThreadSanitizer, RelWithDebInfo, ccache)",
+            "inherits": ["mac", "dev"],
+            "binaryDir": "WebKitBuild/cmake-mac/TSan",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": {
+                    "type": "STRING",
+                    "value": "RelWithDebInfo"
+                },
+                "ENABLE_SANITIZERS": {
+                    "type": "STRING",
+                    "value": "thread"
                 },
                 "ENABLE_EXPERIMENTAL_FEATURES": {
                     "type": "BOOL",
@@ -365,6 +389,11 @@
             "name": "mac-asan",
             "displayName": "macOS ASan",
             "configurePreset": "mac-asan"
+        },
+        {
+            "name": "mac-tsan",
+            "displayName": "macOS TSan",
+            "configurePreset": "mac-tsan"
         },
         {
             "name": "gtk-release",

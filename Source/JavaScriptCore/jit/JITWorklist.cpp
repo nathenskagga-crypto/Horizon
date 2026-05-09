@@ -35,7 +35,6 @@
 #include "JITWorklistThread.h"
 #include "SlotVisitorInlines.h"
 #include "VMInlines.h"
-#include <wtf/CompilationThread.h>
 #include <wtf/TZoneMallocInlines.h>
 
 namespace JSC {

@@ -798,10 +798,11 @@ if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
 else ()
     set(_actool_platform "iphoneos")
 endif ()
+WEBKIT_XCRUN(_actool -f actool)
 add_custom_command(
     OUTPUT ${_wk_assets_staging}/Assets.car
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_wk_assets_staging}
-    COMMAND xcrun actool --compile ${_wk_assets_staging}
+    COMMAND ${_actool} --compile ${_wk_assets_staging}
         --platform ${_actool_platform} --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET}
         ${_wk_xcassets}
     DEPENDS ${_wk_xcassets}
@@ -1208,7 +1209,7 @@ with open(sys.argv[2], 'wb') as f:
         add_custom_command(
             OUTPUT ${_sb_output_dir}/${_sb_profile}.sb
             COMMAND grep -o "^[^;]*" ${_sb_profiles_dir}/${_sb_profile}.sb.in |
-                    xcrun clang -E -P -w -include wtf/Platform.h ${_sb_include_flags} - >
+                    ${CMAKE_C_COMPILER} -isysroot ${CMAKE_OSX_SYSROOT} -E -P -w -include wtf/Platform.h ${_sb_include_flags} - >
                     ${_sb_output_dir}/${_sb_profile}.sb
             DEPENDS ${_sb_profiles_dir}/${_sb_profile}.sb.in
             COMMENT "Compiling sandbox profile ${_sb_profile}.sb"

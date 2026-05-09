@@ -57,7 +57,6 @@
 #include "RenderView.h"
 #include "SVGPathElement.h"
 #include "ScrollingThread.h"
-#include "SelectorChecker.h"
 #include "SelectorQuery.h"
 #include "StyleScope.h"
 #include "StyleSheetContentsCache.h"
@@ -112,7 +111,6 @@ static void releaseNoncriticalMemory(MaintainMemoryCache maintainMemoryCache)
     Style::StyleSheetContentsCache::singleton().clear();
     HTMLNameCache::clear();
     ImmutableStyleProperties::clearDeduplicationMap();
-    SelectorChecker::clearCompiledHasArgumentSelectors();
     SVGPathElement::clearCache();
 #if ENABLE(INTERACTION_REGIONS_IN_EVENT_REGION)
     InteractionRegion::clearCache();

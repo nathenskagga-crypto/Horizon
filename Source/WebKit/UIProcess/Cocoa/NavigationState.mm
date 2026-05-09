@@ -432,17 +432,23 @@ static void trySOAuthorization(Ref<API::NavigationAction>&& navigationAction, We
 {
 #if HAVE(APP_SSO)
     if (!navigationAction->shouldPerformSOAuthorization()) {
-        completionHandler(false);
+        callOnMainRunLoop([completionHandler = WTF::move(completionHandler)] mutable {
+            completionHandler(false);
+        });
         return;
     }
     // URLs with a registered WKURLSchemeHandler are handled locally and should not go through SSO.
     if (page.urlSchemeHandlerForScheme(navigationAction->request().url().protocol())) {
-        completionHandler(false);
+        callOnMainRunLoop([completionHandler = WTF::move(completionHandler)] mutable {
+            completionHandler(false);
+        });
         return;
     }
     protect(page.websiteDataStore())->soAuthorizationCoordinator(page).tryAuthorize(WTF::move(navigationAction), page, WTF::move(completionHandler));
 #else
-    completionHandler(false);
+    callOnMainRunLoop([completionHandler = WTF::move(completionHandler)] mutable {
+        completionHandler(false);
+    });
 #endif
 }
 
@@ -498,14 +504,19 @@ static void tryInterceptNavigation(Ref<API::NavigationAction>&& navigationAction
 {
     // URLs with a registered WKURLSchemeHandler are handled locally and should not be intercepted by app links or SSO.
     if (page.urlSchemeHandlerForScheme(navigationAction->request().url().protocol())) {
-        completionHandler(false);
+        callOnMainRunLoop([completionHandler = WTF::move(completionHandler)] mutable {
+            completionHandler(false);
+        });
         return;
     }
 
 #if HAVE(MARKETPLACE_KIT)
     if (isMarketplaceKitURL(navigationAction->request().url())) {
         interceptMarketplaceKitNavigation(WTF::move(navigationAction), page);
-        return completionHandler(true /* interceptedNavigation */);
+        callOnMainRunLoop([completionHandler = WTF::move(completionHandler)] mutable {
+            completionHandler(true /* interceptedNavigation */);
+        });
+        return;
     }
 #endif // HAVE(MARKETPLACE_KIT)
 

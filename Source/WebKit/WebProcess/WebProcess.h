@@ -522,7 +522,8 @@ public:
     const OptionSet<AvailableInputDevices>& availableInputDevices() const LIFETIME_BOUND { return m_availableInputDevices; }
     std::optional<AvailableInputDevices> primaryPointingDevice() const;
     void setAvailableInputDevices(OptionSet<AvailableInputDevices>);
-#endif // PLATFORM(WPE)
+    void initializeVulkanIfNeeded();
+#endif // PLATFORM(GTK) || PLATFORM(WPE)
 
     String mediaKeysStorageDirectory() const { return m_mediaKeysStorageDirectory; }
     FileSystem::Salt mediaKeysStorageSalt() const { return m_mediaKeysStorageSalt; }

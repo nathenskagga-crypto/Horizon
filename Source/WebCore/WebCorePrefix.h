@@ -162,17 +162,64 @@
 #ifdef __cplusplus
 
 #if !PLATFORM(WIN)
+
+#include <JavaScriptCore/ArrayBuffer.h>
+#include <JavaScriptCore/Forward.h>
+#include <JavaScriptCore/JSCConfig.h>
+#include <JavaScriptCore/OptionsList.h>
+#include <JavaScriptCore/Weak.h>
+#include <set>
+#include <wtf/AbstractRefCountedAndCanMakeWeakPtr.h>
+#include <wtf/ArgumentCoder.h>
+#include <wtf/Box.h>
 #include <wtf/CheckedPtr.h>
+#include <wtf/CompletionHandler.h>
+#include <wtf/CrossThreadCopier.h>
+#include <wtf/DataLog.h>
 #include <wtf/FastMalloc.h>
+#include <wtf/FileSystem.h>
+#include <wtf/FixedVector.h>
+#include <wtf/HashCountedSet.h>
 #include <wtf/HashMap.h>
 #include <wtf/HashSet.h>
+#include <wtf/ListHashSet.h>
+#include <wtf/MappedFileData.h>
+#include <wtf/RefCountedAndCanMakeWeakPtr.h>
+#include <wtf/RobinHoodHashMap.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/TZoneMalloc.h>
 #include <wtf/TZoneMallocInlines.h>
 #include <wtf/ThreadSafeWeakHashSet.h>
+#include <wtf/TriState.h>
+#include <wtf/WorkQueue.h>
 #include <wtf/text/AtomString.h>
+#include <wtf/text/AtomStringHash.h>
+#include <wtf/text/ParsingUtilities.h>
 #include <wtf/text/StringHash.h>
 #include <wtf/text/WTFString.h>
+
+#if USE(CF)
+#include <wtf/cf/TypeCastsCF.h>
+#endif
+
+#if PLATFORM(COCOA)
+#include <objc/runtime.h>
+#include <wtf/OSObjectPtr.h>
+#endif
+
+#include "Color.h"
+#include "ContextDestructionObserver.h"
+#include "ExceptionOr.h"
+#include "FloatRect.h"
+#include "IntRect.h"
+#include "LayoutSize.h"
+#include "ProcessQualified.h"
+#include "ScriptExecutionContextIdentifier.h"
+#include "ScriptWrappable.h"
+#include "SecurityContext.h"
+#include "ServiceWorkerIdentifier.h"
+#include "SharedBuffer.h"
+#include "Timer.h"
 #endif
 
 #define new ("if you use new/delete make sure to include config.h at the top of the file"()) 

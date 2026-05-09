@@ -2642,9 +2642,14 @@ RefPtr<Element> containerElementForSearchTexts(const LocalFrame& frame, Vector<S
         return { };
 
     std::optional<SimpleRange> encompassingMatchRange;
-    auto searchRange = makeSimpleRange(makeBoundaryPointBeforeNodeContents(*target), makeBoundaryPointAfterNodeContents(*body));
+    auto targetSearchRange = makeSimpleRange(makeBoundaryPointBeforeNodeContents(*target), makeBoundaryPointAfterNodeContents(*body));
+    auto bodySearchRange = makeRangeSelectingNodeContents(*body);
+    bool canFallBackToFullSearch = target != body;
     for (auto& text : searchTexts) {
-        auto matchRange = searchForText(searchRange, text);
+        auto matchRange = searchForText(targetSearchRange, text);
+        if (!matchRange && canFallBackToFullSearch)
+            matchRange = searchForText(bodySearchRange, text);
+
         if (!matchRange)
             continue;
 

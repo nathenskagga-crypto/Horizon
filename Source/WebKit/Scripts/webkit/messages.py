@@ -429,6 +429,7 @@ def serialized_identifiers():
         'WebCore::BackForwardFrameItemIdentifierID',
         'WebCore::BackForwardItemIdentifierID',
         'WebCore::BackgroundFetchRecordIdentifier',
+        'WebCore::BrowsingContextGroupIdentifier',
         'WebCore::DOMCacheIdentifierID',
         'WebCore::DictationContext',
         'WebCore::NodeIdentifier',

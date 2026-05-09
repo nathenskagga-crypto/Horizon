@@ -73,6 +73,24 @@ FileSystemStorageHandle::FileSystemStorageHandle(FileSystemStorageManager& manag
     ASSERT(!m_path.isEmpty());
 }
 
+void FileSystemStorageHandle::requestClose()
+{
+    if (hasTransferReferences()) {
+        m_closeRequested = true;
+        return;
+    }
+    close();
+}
+
+void FileSystemStorageHandle::removeTransferReference()
+{
+    if (m_transferReferenceCount.hasOverflowed() || !m_transferReferenceCount)
+        return;
+    --m_transferReferenceCount;
+    if (!m_transferReferenceCount && m_closeRequested)
+        close();
+}
+
 void FileSystemStorageHandle::close()
 {
     RefPtr manager = m_manager.get();

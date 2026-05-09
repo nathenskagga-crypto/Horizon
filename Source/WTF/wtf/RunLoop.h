@@ -39,8 +39,7 @@
 #include <wtf/RetainPtr.h>
 #include <wtf/Seconds.h>
 #include <wtf/ThreadSafetyAnalysis.h>
-#include <wtf/ThreadSpecific.h>
-#include <wtf/Threading.h>
+#include <wtf/ThreadingEnums.h>
 #include <wtf/ThreadingPrimitives.h>
 #include <wtf/TypeTraits.h>
 #include <wtf/WeakHashSet.h>
@@ -60,6 +59,8 @@
 #endif
 
 namespace WTF {
+
+template<typename, CanBeGCThread> class ThreadSpecific;
 
 #if USE(GLIB_EVENT_LOOP)
 class ActivityObserver;
@@ -99,7 +100,7 @@ public:
     WTF_EXPORT_PRIVATE static RunLoop& webSingleton();
     WTF_EXPORT_PRIVATE static RunLoop* webIfExists();
 #endif
-    WTF_EXPORT_PRIVATE static Ref<RunLoop> create(ASCIILiteral threadName, ThreadType = ThreadType::Unknown, Thread::QOS = Thread::QOS::UserInitiated);
+    WTF_EXPORT_PRIVATE static Ref<RunLoop> create(ASCIILiteral threadName, ThreadType = ThreadType::Unknown, ThreadQOS = ThreadQOS::UserInitiated);
 
     static bool isMain() { return mainSingleton().isCurrent(); }
     WTF_EXPORT_PRIVATE bool isCurrent() const final;
@@ -146,6 +147,8 @@ public:
 #endif
 
 #if USE(WINDOWS_EVENT_LOOP)
+    using WindowsMessageHandler = Function<bool(MSG&)>;
+    WTF_EXPORT_PRIVATE static void setWindowsMessageHandler(WindowsMessageHandler&&);
     static void registerRunLoopMessageWindowClass();
 #endif
 
@@ -288,7 +291,7 @@ public:
 
 private:
     class Holder;
-    static ThreadSpecific<Holder>& runLoopHolder();
+    static ThreadSpecific<Holder, CanBeGCThread::False>& runLoopHolder();
 
     RunLoop();
 
@@ -319,10 +322,14 @@ private:
 #if USE(WINDOWS_EVENT_LOOP)
     static LRESULT CALLBACK RunLoopWndProc(HWND, UINT, WPARAM, LPARAM);
     LRESULT wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+    void dispatchMessage(MSG&);
+    DWORD msTillNextTimer();
+    void fireTimers();
     HWND m_runLoopMessageWindow;
-    UncheckedKeyHashSet<UINT_PTR> m_liveTimers;
+    Deque<TimerBase*> m_timers;
 
     Lock m_loopLock;
+    WindowsMessageHandler m_windowsMessageHandler;
 #elif USE(COCOA_EVENT_LOOP)
     static void performWork(void*);
     const RetainPtr<CFRunLoopRef> m_runLoop;

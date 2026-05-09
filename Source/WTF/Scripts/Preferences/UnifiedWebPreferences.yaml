@@ -3028,6 +3028,22 @@ FileSystemEnabled:
   disableInLockdownMode: true
   sharedPreferenceForWebProcess: true
 
+FileSystemHandleSerializationEnabled:
+  type: bool
+  status: preview
+  category: dom
+  humanReadableName: "File System Handle Serialization"
+  humanReadableDescription: "Enable FileSystemHandle for postMessage() and structuredClone()"
+  defaultValue:
+    WebKitLegacy:
+      default: false
+    WebKit:
+      default: false
+    WebCore:
+      default: false
+  disableInLockdownMode: true
+  sharedPreferenceForWebProcess: true
+
 FileSystemWritableStreamEnabled:
   type: bool
   status: stable
@@ -3439,6 +3455,21 @@ GridLanesEnabled:
       default: true
     WebCore:
       default: true
+
+HDRAcceleratedApplyGainMapEnabled:
+  type: bool
+  status: testable
+  category: css
+  webcoreOnChange: setNeedsRelayoutAllFrames
+  humanReadableName: "HDR Accelerated Apply GainMap"
+  humanReadableDescription: "Enable HDR Accelerated Apply GainMap"
+  defaultValue:
+    WebKitLegacy:
+      default: false
+    WebKit:
+      default: false
+    WebCore:
+      default: false
 
 HTMLEnhancedSelectEnabled:
    type: bool
@@ -10082,26 +10113,26 @@ WirelessPlaybackTargetAPIEnabled:
       "PLATFORM(VISION)" : false
       default: true
 
-WorkerAsynchronousURLErrorHandlingEnabled:
-  type: bool
-  status: stable
-  category: dom
-  humanReadableName: "Worker asynchronous URL error handling"
-  humanReadableDescription: "Worker asynchronous URL error handling"
-  defaultValue:
-    WebKitLegacy:
-      default: true
-    WebKit:
-      default: true
-    WebCore:
-      default: true
-
 WorkerInSharedWorkerEnabled:
   type: bool
   status: preview
   category: dom
   humanReadableName: "Worker in SharedWorker"
   humanReadableDescription: "Allow creating dedicated workers from shared workers"
+  defaultValue:
+    WebCore:
+      default: false
+    WebKitLegacy:
+      default: false
+    WebKit:
+      default: false
+
+WorkerParseErrorReportingEnabled:
+  type: bool
+  status: preview
+  category: dom
+  humanReadableName: "Worker parse error reporting"
+  humanReadableDescription: "Report worker script parse errors on the Worker object"
   defaultValue:
     WebCore:
       default: false

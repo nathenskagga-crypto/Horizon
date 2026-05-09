@@ -714,7 +714,14 @@ void LocalFrame::setPrinting(bool printing, FloatSize pageSize, FloatSize origin
         return;
 
     Ref frameView = *view();
-    if (shouldUsePrintingLayout())
+    // A zero pageSize.width() means the caller is entering printing state without a known
+    // page geometry (e.g. WebKitLegacy's -[WebHTMLView adjustPageHeightNew:...] path used
+    // when the view participates in a larger enclosing NSPrintOperation). In that case we
+    // must not run pagination layout, since forceLayoutForPagination -> resizePageRectsKeepingRatio
+    // asserts on a zero original width (and in release produces a degenerate layout that
+    // drops text runs). Height may legitimately be zero here (e.g. the render-tree dump path
+    // in RenderTreeAsText passes only a width), so don't treat that as "no geometry".
+    if (shouldUsePrintingLayout() && pageSize.width() > 0)
         frameView->forceLayoutForPagination(pageSize, originalPageSize, maximumShrinkRatio, shouldAdjustViewSize);
     else {
         frameView->forceLayout();

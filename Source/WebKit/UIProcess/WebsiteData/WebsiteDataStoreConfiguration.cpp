@@ -177,6 +177,10 @@ Ref<WebsiteDataStoreConfiguration> WebsiteDataStoreConfiguration::copy() const
     copy->m_webContentRestrictionsConfigurationFile = this->m_webContentRestrictionsConfigurationFile;
 #endif
     copy->m_additionalDomainsWithUserInteractionForTesting = this->m_additionalDomainsWithUserInteractionForTesting;
+    copy->m_timeBasedEvictionEnabled = this->m_timeBasedEvictionEnabled;
+    copy->m_timeBasedEvictionThreshold = this->m_timeBasedEvictionThreshold;
+    copy->m_lastModificationTimeUpdateIntervalOverride = this->m_lastModificationTimeUpdateIntervalOverride;
+    copy->m_defaultTrackingPreventionEnabledOverride = this->m_defaultTrackingPreventionEnabledOverride;
 
     return copy;
 }

@@ -61,13 +61,9 @@
 #include <WebCore/ViewportArguments.h>
 #include <wtf/CompletionHandler.h>
 #include <wtf/Deque.h>
-#include <wtf/FixedVector.h>
-#include <wtf/Forward.h>
 #include <wtf/HashSet.h>
 #include <wtf/Logger.h>
-#include <wtf/ObjectIdentifier.h>
 #include <wtf/Observer.h>
-#include <wtf/Platform.h>
 #include <wtf/RobinHoodHashMap.h>
 #include <wtf/TZoneMalloc.h>
 #include <wtf/UniqueRef.h>
@@ -75,7 +71,6 @@
 #include <wtf/WeakHashMap.h>
 #include <wtf/WeakHashSet.h>
 #include <wtf/WeakListHashSet.h>
-#include <wtf/WeakPtr.h>
 #include <wtf/text/AtomStringHash.h>
 
 #if ENABLE(IOS_TOUCH_EVENTS)
@@ -1437,6 +1432,8 @@ public:
 
     bool isContextThread() const final;
     bool isSecureContext() const final;
+    bool NODELETE crossOriginIsolated() const final;
+    String agentClusterID() const final;
     bool isJSExecutionForbidden() const final { return false; }
 
     void queueTaskToDispatchEventOnWindow(LocalDOMWindow&, TaskSource, Ref<Event>&&);

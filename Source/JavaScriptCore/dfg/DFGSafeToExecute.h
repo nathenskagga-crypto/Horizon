@@ -351,6 +351,7 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case StringLastIndexOf:
     case StringStartsWith:
     case StringEndsWith:
+    case StringSplit:
         return true;
 
     case GlobalIsFinite:

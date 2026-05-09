@@ -11,11 +11,14 @@
 <div id="console"></div>
 <script>
 "use strict";
-description("Tests that active query state is properly reset after context loss: queries can be begun after restore and active query objects are collectible.");
+description("Tests that query context loss and restore behavior");
 
 const wtu = WebGLTestUtils;
 
 var gl;
+var query;
+var lostQuery;
+var newQuery;
 
 function waitForEvent(target, eventName, handler) {
     return new Promise((resolve, reject) => {
@@ -28,8 +31,8 @@ function waitForEvent(target, eventName, handler) {
     });
 }
 
-async function testWebGL1TimerQuery() {
-    debug("Running test: contextType: webgl, queryTarget: TIME_ELAPSED_EXT");
+async function testWebGL1TimerQuery(queryTarget, queryTargetName) {
+    debug(`Running test: contextType: webgl, queryTarget: ${queryTargetName}`);
 
     const canvas = document.createElement("canvas");
     canvas.width = 1;
@@ -52,14 +55,43 @@ async function testWebGL1TimerQuery() {
         return;
     }
 
-    let query = ext.createQueryEXT();
-    ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, query);
-    wtu.glErrorShouldBe(gl, gl.NO_ERROR, "beginQueryEXT should succeed");
+    query = ext.createQueryEXT();
+    shouldBeNonNull("query");
+    if (queryTarget == ext.TIME_ELAPSED_EXT) {
+        ext.beginQueryEXT(queryTarget, query);
+        wtu.glErrorShouldBe(gl, gl.NO_ERROR, `beginQueryEXT(${queryTargetName}) should succeed`);
+    } else {
+        ext.queryCounterEXT(query, queryTarget);
+        wtu.glErrorShouldBe(gl, gl.NO_ERROR, `queryCounterEXT(${queryTargetName}) should succeed`);
+    }
+
+    const weakQuery = new WeakRef(query);
+    query = null;
 
     const contextLostPromise = waitForEvent(canvas, "webglcontextlost", (e) => e.preventDefault());
     WEBGL_lose_context.loseContext();
     await contextLostPromise;
     shouldBeTrue("gl.isContextLost()");
+
+    lostQuery = ext.createQueryEXT();
+    shouldBeNonNull("lostQuery");
+
+    ext = null;
+    if (window.GCController)
+        GCController.collect();
+    else if (window.gc)
+        gc();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (window.GCController)
+        GCController.collect();
+    else if (window.gc)
+        gc();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    if (weakQuery.deref() === undefined)
+        testPassed("Active query was collected after context loss");
+    else
+        testFailed("Active query should have been collected after context loss but is still alive");
 
     const contextRestoredPromise = waitForEvent(canvas, "webglcontextrestored");
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -73,12 +105,17 @@ async function testWebGL1TimerQuery() {
         return;
     }
 
-    const newQuery = ext.createQueryEXT();
-    ext.beginQueryEXT(ext.TIME_ELAPSED_EXT, newQuery);
-    wtu.glErrorShouldBe(gl, gl.NO_ERROR, "beginQueryEXT with new query should succeed after restore");
-
-    ext.endQueryEXT(ext.TIME_ELAPSED_EXT);
-    wtu.glErrorShouldBe(gl, gl.NO_ERROR, "endQueryEXT should succeed");
+    newQuery = ext.createQueryEXT();
+    shouldBeNonNull("newQuery");
+    if (queryTarget == ext.TIME_ELAPSED_EXT) {
+        ext.beginQueryEXT(queryTarget, newQuery);
+        wtu.glErrorShouldBe(gl, gl.NO_ERROR, `beginQueryEXT(${queryTargetName}) with new query should succeed after restore`);
+        ext.endQueryEXT(queryTarget);
+        wtu.glErrorShouldBe(gl, gl.NO_ERROR, `endQueryEXT(${queryTargetName}) should succeed`);
+    } else {
+        ext.queryCounterEXT(newQuery, queryTarget);
+        wtu.glErrorShouldBe(gl, gl.NO_ERROR, `queryCounterEXT(${queryTargetName}) with new query should succeed after restore`);
+    }
 }
 
 async function testWebGL2Query(queryTarget, queryTargetName, requiresExtension) {
@@ -107,14 +144,37 @@ async function testWebGL2Query(queryTarget, queryTargetName, requiresExtension) 
         }
     }
 
-    let query = gl.createQuery();
+    query = gl.createQuery();
+    shouldBeNonNull("query");
     gl.beginQuery(queryTarget, query);
     wtu.glErrorShouldBe(gl, gl.NO_ERROR, `beginQuery(${queryTargetName}) should succeed`);
+
+    const weakQuery = new WeakRef(query);
+    query = null;
 
     const contextLostPromise = waitForEvent(canvas, "webglcontextlost", (e) => e.preventDefault());
     WEBGL_lose_context.loseContext();
     await contextLostPromise;
     shouldBeTrue("gl.isContextLost()");
+
+    lostQuery = gl.createQuery();
+    shouldBeNonNull("lostQuery");
+
+    if (window.GCController)
+        GCController.collect();
+    else if (window.gc)
+        gc();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (window.GCController)
+        GCController.collect();
+    else if (window.gc)
+        gc();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    if (weakQuery.deref() === undefined)
+        testPassed(`Active ${queryTargetName} query was collected after context loss`);
+    else
+        testFailed(`Active ${queryTargetName} query should have been collected after context loss but is still alive`);
 
     const contextRestoredPromise = waitForEvent(canvas, "webglcontextrestored");
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -130,7 +190,8 @@ async function testWebGL2Query(queryTarget, queryTargetName, requiresExtension) 
         }
     }
 
-    const newQuery = gl.createQuery();
+    newQuery = gl.createQuery();
+    shouldBeNonNull("newQuery");
     gl.beginQuery(queryTarget, newQuery);
     wtu.glErrorShouldBe(gl, gl.NO_ERROR, `beginQuery(${queryTargetName}) with new query should succeed after restore`);
 
@@ -138,15 +199,23 @@ async function testWebGL2Query(queryTarget, queryTargetName, requiresExtension) 
     wtu.glErrorShouldBe(gl, gl.NO_ERROR, `endQuery(${queryTargetName}) should succeed`);
 }
 
+var WebGL1QueryTargets = {
+    TIME_ELAPSED_EXT    : 0x88BF,
+    TIMESTAMP_EXT       : 0x8E28,
+};
+
 var WebGL2QueryTargets = {
     ANY_SAMPLES_PASSED                      : 0x8C2F,
+    ANY_SAMPLES_PASSED_CONSERVATIVE         : 0x8D6A,
     TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN   : 0x8C88,
     TIME_ELAPSED_EXT                        : 0x88BF,
 };
 
 async function runTest() {
-    await testWebGL1TimerQuery();
+    await testWebGL1TimerQuery(WebGL1QueryTargets.TIME_ELAPSED_EXT, "TIME_ELAPSED_EXT");
+    await testWebGL1TimerQuery(WebGL1QueryTargets.TIMESTAMP_EXT, "TIMESTAMP_EXT");
     await testWebGL2Query(WebGL2QueryTargets.ANY_SAMPLES_PASSED, "ANY_SAMPLES_PASSED", null);
+    await testWebGL2Query(WebGL2QueryTargets.ANY_SAMPLES_PASSED_CONSERVATIVE, "ANY_SAMPLES_PASSED_CONSERVATIVE", null);
     await testWebGL2Query(WebGL2QueryTargets.TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, "TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN", null);
     await testWebGL2Query(WebGL2QueryTargets.TIME_ELAPSED_EXT, "TIME_ELAPSED_EXT", "EXT_disjoint_timer_query_webgl2");
     finishTest();

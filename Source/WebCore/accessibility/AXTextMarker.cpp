@@ -611,7 +611,13 @@ String AXTextMarkerRange::toString(IncludeListMarkerText includeListMarkerText, 
         RefPtr current = findObjectWithRuns(*start.isolatedObject(), AXDirection::Next, std::nullopt, emitAuxiliaryText);
         while (current && current->objectID() != end.objectID()) {
             result.append(current->textRuns()->toStringView());
-            current = findObjectWithRuns(*current, AXDirection::Next, std::nullopt, emitAuxiliaryText);
+            RefPtr next = findObjectWithRuns(*current, AXDirection::Next, std::nullopt, emitAuxiliaryText);
+            if (next == current) [[unlikely]] {
+                // findObjectWithRuns returned its input. Would loop forever.
+                AX_ASSERT_NOT_REACHED();
+                break;
+            }
+            current = WTF::move(next);
         }
         result.append(end.runs()->substring(0, end.offset()));
         return result.toString();
@@ -905,6 +911,12 @@ unsigned AXTextMarker::offsetFromRoot() const
                 RefPtr nextObject = currentObject->nextInPreOrder();
                 current = nextObject ? AXTextMarker { *nextObject, 0 } : AXTextMarker();
             }
+
+            if (previous == current) [[unlikely]] {
+                // Advancement returned its input. Would loop forever.
+                AX_ASSERT_NOT_REACHED();
+                break;
+            }
         }
         applyNewlineOffset();
 
@@ -926,11 +938,16 @@ AXTextMarker AXTextMarker::nextMarkerFromOffset(unsigned offset, ForceSingleOffs
 
     auto marker = *this;
     while (offset) {
-        if (auto newMarker = marker.findMarker(AXDirection::Next, CoalesceObjectBreaks::No, IgnoreBRs::No, stopAtID, forceSingleOffsetMovement))
-            marker = WTF::move(newMarker);
-        else
+        auto newMarker = marker.findMarker(AXDirection::Next, CoalesceObjectBreaks::No, IgnoreBRs::No, stopAtID, forceSingleOffsetMovement);
+        if (!newMarker)
             break;
-
+        if (newMarker == marker) [[unlikely]] {
+            // findMarker returned its input. Would loop until offset reaches 0,
+            // returning a wildly wrong marker.
+            AX_ASSERT_NOT_REACHED();
+            break;
+        }
+        marker = WTF::move(newMarker);
         --offset;
     }
     return marker;
@@ -958,6 +975,11 @@ AXTextMarker AXTextMarker::findLastBefore(std::optional<AXID> stopAtID) const
         RefPtr newObject = findObjectWithRuns(*lastObjectWithRuns, AXDirection::Next, stopAtID);
         if (!newObject)
             break;
+        if (newObject == lastObjectWithRuns) [[unlikely]] {
+            // findObjectWithRuns returned its input. Would loop forever.
+            AX_ASSERT_NOT_REACHED();
+            break;
+        }
         lastObjectWithRuns = WTF::move(newObject);
     }
 
@@ -1049,7 +1071,13 @@ FloatRect AXTextMarkerRange::viewportRelativeFrame() const
     RefPtr current = start.isolatedObject();
     while (current && current->objectID() != *end.objectID()) {
         result.unite(viewportRelativeFrameFromRuns(*current, /* offset */ 0));
-        current = findObjectWithRuns(*current, AXDirection::Next, /* stopAtID */ *end.objectID());
+        RefPtr next = findObjectWithRuns(*current, AXDirection::Next, /* stopAtID */ *end.objectID());
+        if (next == current) [[unlikely]] {
+            // findObjectWithRuns returned its input. Would loop forever.
+            AX_ASSERT_NOT_REACHED();
+            break;
+        }
+        current = WTF::move(next);
     }
     result.unite(viewportRelativeFrameFromRuns(*end.isolatedObject(), /* start */ 0, /* end */ end.offset()));
 
@@ -1485,7 +1513,13 @@ AXTextMarker AXTextMarker::toTextRunMarker(std::optional<AXID> stopAtID) const
         if (precedingOffset + totalLength >= offset())
             break;
         precedingOffset += totalLength;
-        current = findObjectWithRuns(*current, AXDirection::Next, stopAtID);
+        RefPtr next = findObjectWithRuns(*current, AXDirection::Next, stopAtID);
+        if (next == current) [[unlikely]] {
+            // findObjectWithRuns returned its input. Would loop forever.
+            AX_ASSERT_NOT_REACHED();
+            break;
+        }
+        current = WTF::move(next);
     }
 
     if (!current)

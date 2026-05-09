@@ -467,8 +467,6 @@ struct SelectorFragment {
     Vector<Vector<SelectorFragment>> anyFilters;
     const CSSSelector* pseudoElementSelector = nullptr;
 
-    bool matchesHasScope { false };
-
     // For quirks mode, follow this: http://quirks.spec.whatwg.org/#the-:active-and-:hover-quirk
     // In quirks mode, a compound selector 'selector' that matches the following conditions must not match elements that would not also match the ':any-link' selector.
     //
@@ -513,7 +511,7 @@ struct BacktrackingLevel {
 
 class SelectorCodeGenerator {
 public:
-    SelectorCodeGenerator(const CSSSelector&, SelectorContext, SelectorPurpose = SelectorPurpose::Normal);
+    SelectorCodeGenerator(const CSSSelector&, SelectorContext);
     SelectorCompilationStatus compile(JSC::MacroAssemblerCodeRef<JSC::CSSSelectorPtrTag>&);
 
 private:
@@ -582,7 +580,6 @@ private:
     void generateElementHasPseudoElement(Assembler::JumpList& failureCases, const SelectorFragment&);
     void generateElementIsRoot(Assembler::JumpList& failureCases);
     void generateElementIsScopeRoot(Assembler::JumpList& failureCases);
-    void generateElementMatchesHasScope(Assembler::JumpList& failureCases);
     void generateElementIsTarget(Assembler::JumpList& failureCases);
     void generateElementAndDocumentIsHTML(Assembler::JumpList& failureCases);
 
@@ -633,7 +630,6 @@ private:
     StackAllocator::StackReference m_lastVisitedElement;
     StackAllocator::StackReference m_startElement;
 
-    SelectorPurpose m_purpose;
     const CSSSelector& m_originalSelector;
 };
 
@@ -649,11 +645,11 @@ enum class FragmentsLevel {
 
 enum class PseudoElementMatchingBehavior { CanMatch, NeverMatch };
 
-static FunctionType constructFragments(const CSSSelector& rootSelector, SelectorContext, SelectorFragmentList& selectorFragments, FragmentsLevel, FragmentPositionInRootFragments, bool visitedMatchEnabled, VisitedMode&, PseudoElementMatchingBehavior, SelectorPurpose = SelectorPurpose::Normal);
+static FunctionType constructFragments(const CSSSelector& rootSelector, SelectorContext, SelectorFragmentList& selectorFragments, FragmentsLevel, FragmentPositionInRootFragments, bool visitedMatchEnabled, VisitedMode&, PseudoElementMatchingBehavior);
 
 static void computeBacktrackingInformation(SelectorFragmentList& selectorFragments, unsigned level = 0);
 
-void compileSelector(CompiledSelector& compiledSelector, const CSSSelector& selector, SelectorContext selectorContext, SelectorPurpose purpose)
+void compileSelector(CompiledSelector& compiledSelector, const CSSSelector& selector, SelectorContext selectorContext)
 {
     ASSERT(compiledSelector.status == SelectorCompilationStatus::NotCompiled);
 
@@ -661,8 +657,8 @@ void compileSelector(CompiledSelector& compiledSelector, const CSSSelector& sele
         compiledSelector.status = SelectorCompilationStatus::CannotCompile;
         return;
     }
-
-    SelectorCodeGenerator codeGenerator(selector, selectorContext, purpose);
+    
+    SelectorCodeGenerator codeGenerator(selector, selectorContext);
     compiledSelector.status = codeGenerator.compile(compiledSelector.codeRef);
 
 #if defined(CSS_SELECTOR_JIT_PROFILING) && CSS_SELECTOR_JIT_PROFILING
@@ -1483,13 +1479,12 @@ static inline FunctionType addPseudoClassType(const CSSSelector& selector, Selec
     return FunctionType::CannotCompile;
 }
 
-inline SelectorCodeGenerator::SelectorCodeGenerator(const CSSSelector& rootSelector, SelectorContext selectorContext, SelectorPurpose purpose)
+inline SelectorCodeGenerator::SelectorCodeGenerator(const CSSSelector& rootSelector, SelectorContext selectorContext)
     : m_stackAllocator(m_assembler)
     , m_selectorContext(selectorContext)
     , m_functionType(FunctionType::SimpleSelectorChecker)
     , m_visitedMode(VisitedMode::None)
     , m_descendantBacktrackingStartInUse(false)
-    , m_purpose(purpose)
     , m_originalSelector(rootSelector)
 {
     auto selectorTextUTF8 = m_originalSelector.selectorText().utf8();
@@ -1497,10 +1492,9 @@ inline SelectorCodeGenerator::SelectorCodeGenerator(const CSSSelector& rootSelec
     dataLogFIf(shouldDumpCSSJITDisassembly(), "Compiling \"%.*s\"\n", static_cast<int>(selectorTextSpan.size()), selectorTextSpan.data());
 
     // In QuerySelector context, :visited always has no effect due to security issues.
-    // :has() argument selectors also disable visited matching (see SelectorChecker::matchHasPseudoClass).
-    bool visitedMatchEnabled = selectorContext != SelectorContext::QuerySelector && m_purpose != SelectorPurpose::HasArgument;
+    bool visitedMatchEnabled = selectorContext != SelectorContext::QuerySelector;
 
-    m_functionType = constructFragments(rootSelector, m_selectorContext, m_selectorFragments, FragmentsLevel::Root, FragmentPositionInRootFragments::Rightmost, visitedMatchEnabled, m_visitedMode, PseudoElementMatchingBehavior::CanMatch, m_purpose);
+    m_functionType = constructFragments(rootSelector, m_selectorContext, m_selectorFragments, FragmentsLevel::Root, FragmentPositionInRootFragments::Rightmost, visitedMatchEnabled, m_visitedMode, PseudoElementMatchingBehavior::CanMatch);
     if (m_functionType != FunctionType::CannotCompile && m_functionType != FunctionType::CannotMatchAnything)
         computeBacktrackingInformation(m_selectorFragments);
 }
@@ -1511,7 +1505,7 @@ static bool NODELETE pseudoClassOnlyMatchesLinksInQuirksMode(const CSSSelector& 
     return pseudoClass == CSSSelector::PseudoClass::Hover || pseudoClass == CSSSelector::PseudoClass::Active;
 }
 
-static FunctionType constructFragmentsInternal(const CSSSelector& rootSelector, SelectorContext selectorContext, SelectorFragmentList& selectorFragments, FragmentsLevel fragmentLevel, FragmentPositionInRootFragments positionInRootFragments, bool visitedMatchEnabled, VisitedMode& visitedMode, PseudoElementMatchingBehavior pseudoElementMatchingBehavior, SelectorPurpose purpose = SelectorPurpose::Normal)
+static FunctionType constructFragmentsInternal(const CSSSelector& rootSelector, SelectorContext selectorContext, SelectorFragmentList& selectorFragments, FragmentsLevel fragmentLevel, FragmentPositionInRootFragments positionInRootFragments, bool visitedMatchEnabled, VisitedMode& visitedMode, PseudoElementMatchingBehavior pseudoElementMatchingBehavior)
 {
     FragmentRelation relationToPreviousFragment = FragmentRelation::Rightmost;
     bool isRightmostOrAdjacent = positionInRootFragments != FragmentPositionInRootFragments::Other;
@@ -1645,13 +1639,7 @@ static FunctionType constructFragmentsInternal(const CSSSelector& rootSelector, 
             return FunctionType::CannotMatchAnything;
         case CSSSelector::Match::ForgivingUnknown:
         case CSSSelector::Match::ForgivingUnknownNestContaining:
-            return FunctionType::CannotMatchAnything;
         case CSSSelector::Match::HasScope:
-            if (purpose == SelectorPurpose::HasArgument) {
-                fragment->matchesHasScope = true;
-                functionType = mostRestrictiveFunctionType(functionType, FunctionType::SelectorCheckerWithCheckingContext);
-                break;
-            }
             return FunctionType::CannotMatchAnything;
         }
 
@@ -1699,11 +1687,11 @@ static FunctionType constructFragmentsInternal(const CSSSelector& rootSelector, 
     return functionType;
 }
 
-static FunctionType constructFragments(const CSSSelector& rootSelector, SelectorContext selectorContext, SelectorFragmentList& selectorFragments, FragmentsLevel fragmentLevel, FragmentPositionInRootFragments positionInRootFragments, bool visitedMatchEnabled, VisitedMode& visitedMode, PseudoElementMatchingBehavior pseudoElementMatchingBehavior, SelectorPurpose purpose)
+static FunctionType constructFragments(const CSSSelector& rootSelector, SelectorContext selectorContext, SelectorFragmentList& selectorFragments, FragmentsLevel fragmentLevel, FragmentPositionInRootFragments positionInRootFragments, bool visitedMatchEnabled, VisitedMode& visitedMode, PseudoElementMatchingBehavior pseudoElementMatchingBehavior)
 {
     ASSERT(selectorFragments.isEmpty());
 
-    FunctionType functionType = constructFragmentsInternal(rootSelector, selectorContext, selectorFragments, fragmentLevel, positionInRootFragments, visitedMatchEnabled, visitedMode, pseudoElementMatchingBehavior, purpose);
+    FunctionType functionType = constructFragmentsInternal(rootSelector, selectorContext, selectorFragments, fragmentLevel, positionInRootFragments, visitedMatchEnabled, visitedMode, pseudoElementMatchingBehavior);
     if (functionType != FunctionType::SimpleSelectorChecker && functionType != FunctionType::SelectorCheckerWithCheckingContext)
         selectorFragments.clear();
     return functionType;
@@ -3211,9 +3199,6 @@ void SelectorCodeGenerator::generateElementMatching(Assembler::JumpList& matchin
     if (fragment.pseudoClasses.contains(CSSSelector::PseudoClass::Scope))
         generateElementIsScopeRoot(matchingPostTagNameFailureCases);
 
-    if (fragment.matchesHasScope)
-        generateElementMatchesHasScope(matchingPostTagNameFailureCases);
-
     if (fragment.pseudoClasses.contains(CSSSelector::PseudoClass::Target))
         generateElementIsTarget(matchingPostTagNameFailureCases);
 
@@ -4482,16 +4467,6 @@ void SelectorCodeGenerator::generateElementIsScopeRoot(Assembler::JumpList& fail
 
     scopeIsNotNull.link(&m_assembler);
     failureCases.append(m_assembler.branchPtr(Assembler::NotEqual, scope, elementAddressRegister));
-}
-
-void SelectorCodeGenerator::generateElementMatchesHasScope(Assembler::JumpList& failureCases)
-{
-    LocalRegister checkingContext(m_registerAllocator);
-    loadCheckingContext(checkingContext);
-    m_assembler.store8(Assembler::TrustedImm32(1), Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, matchedInsideScope)));
-
-    m_assembler.loadPtr(Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, hasScope)), checkingContext);
-    failureCases.append(m_assembler.branchPtr(Assembler::NotEqual, checkingContext, elementAddressRegister));
 }
 
 JSC_DEFINE_NOEXCEPT_JIT_OPERATION(operationElementIsTarget, bool, (const Element* element))

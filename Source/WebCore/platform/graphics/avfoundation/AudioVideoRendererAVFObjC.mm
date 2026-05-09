@@ -259,7 +259,7 @@ void AudioVideoRendererAVFObjC::enqueueSample(TrackIdentifier trackId, Ref<Media
         }
         m_keyframeNeeded = false;
         if (RefPtr videoRenderer = m_videoRenderer; videoRenderer && isEnabledVideoTrackId(trackId)) {
-            videoRenderer->enqueueSample(sample, minimumUpcomingTime.value_or(sample->presentationTime()));
+            videoRenderer->enqueueSample(sample, minimumUpcomingTime);
             if (!m_hasEverSubmittedVideoSample) {
                 m_hasEverSubmittedVideoSample = true;
                 m_previousRendererConfiguration.isRenderingCompressedVideo = !isUsingDecompressionSession();

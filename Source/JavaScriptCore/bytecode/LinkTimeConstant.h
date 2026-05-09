@@ -122,7 +122,6 @@ class JSGlobalObject;
     v(regExpPrototypeSymbolReplace, nullptr) \
     v(stringIncludesInternal, nullptr) \
     v(stringIndexOfInternal, nullptr) \
-    v(stringSplitFast, nullptr) \
     v(stringSubstring, nullptr) \
     v(handleNegativeProxyHasTrapResult, nullptr) \
     v(handlePositiveProxySetTrapResult, nullptr) \

@@ -269,6 +269,7 @@
 #include <WebCore/JSNode.h>
 #include <WebCore/KeyboardEvent.h>
 #include <WebCore/LegacySchemeRegistry.h>
+#include <WebCore/LocalDOMWindow.h>
 #include <WebCore/LocalFrameInlines.h>
 #include <WebCore/LocalFrameView.h>
 #include <WebCore/LocalizedStrings.h>
@@ -789,6 +790,7 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
 
     PageConfiguration pageConfiguration(
         pageID,
+        parameters.browsingContextGroupIdentifier,
         WebProcess::singleton().sessionID(),
         makeUniqueRef<WebEditorClient>(*this),
         WebSocketProvider::create(parameters.webPageProxyIdentifier),
@@ -1027,7 +1029,9 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
         for (auto& childParameters : remotePageParameters->frameTreeParameters.children)
             constructFrameTree(m_mainFrame.get(), childParameters);
 
-        page->setMainFrameURLAndOrigin(remotePageParameters->initialMainDocumentURL, nullptr);
+        // Use the origin from FrameTreeSyncData so Page::mainFrameOrigin() reflects the inherited origin.
+        RefPtr<SecurityOrigin> mainFrameOrigin = dynamicDowncast<RemoteFrame>(page->mainFrame()) ? protect(page->mainFrame())->frameDocumentSecurityOrigin() : nullptr;
+        page->setMainFrameURLAndOrigin(remotePageParameters->initialMainDocumentURL, WTF::move(mainFrameOrigin));
 
         if (auto websitePolicies = remotePageParameters->websitePoliciesData) {
             if (auto* remoteMainFrameClient = m_mainFrame->remoteFrameClient())
@@ -1359,6 +1363,34 @@ void WebPage::allFrameTreeSyncDataChangedInAnotherProcess(FrameIdentifier frameI
     RefPtr coreFrame = frame->coreFrame();
     if (coreFrame)
         coreFrame->updateFrameTreeSyncData(WTF::move(data));
+}
+
+void WebPage::updateUserActivationTimestamps(const Vector<FrameIdentifier>& frameIDs, MonotonicTime activationTime)
+{
+    for (auto frameID : frameIDs) {
+        RefPtr webFrame = WebProcess::singleton().webFrame(frameID);
+        if (!webFrame || webFrame->page() != this)
+            continue;
+        RefPtr localFrame = webFrame->coreLocalFrame();
+        if (!localFrame)
+            continue;
+        if (RefPtr window = localFrame->window())
+            window->setLastActivationTimestamp(activationTime);
+    }
+}
+
+void WebPage::consumeUserActivations(const Vector<FrameIdentifier>& frameIDs)
+{
+    for (auto frameID : frameIDs) {
+        RefPtr webFrame = WebProcess::singleton().webFrame(frameID);
+        if (!webFrame || webFrame->page() != this)
+            continue;
+        RefPtr localFrame = webFrame->coreLocalFrame();
+        if (!localFrame)
+            continue;
+        if (RefPtr window = localFrame->window())
+            window->consumeLastActivationIfNecessary();
+    }
 }
 
 #if ENABLE(GPU_PROCESS)
@@ -1925,14 +1957,21 @@ Ref<API::Array> WebPage::trackedRepaintRects()
 
 PluginView* WebPage::focusedPluginViewForFrame(LocalFrame& frame)
 {
-    auto* pluginDocument = dynamicDowncast<PluginDocument>(frame.document());
-    if (!pluginDocument)
+    if (auto* pluginDocument = dynamicDowncast<PluginDocument>(frame.document())) {
+        if (pluginDocument->focusedElement() != pluginDocument->pluginElement())
+            return nullptr;
+        return pluginViewForFrame(&frame);
+    }
+
+    RefPtr document = frame.document();
+    if (!document)
         return nullptr;
 
-    if (pluginDocument->focusedElement() != pluginDocument->pluginElement())
+    RefPtr pluginElement = dynamicDowncast<HTMLPlugInElement>(document->focusedElement());
+    if (!pluginElement)
         return nullptr;
 
-    return pluginViewForFrame(&frame);
+    return dynamicDowncast<PluginView>(pluginElement->pluginWidget());
 }
 
 PluginView* WebPage::pluginViewForFrame(LocalFrame* frame)
@@ -2522,7 +2561,8 @@ void WebPage::goToBackForwardItem(GoToBackForwardItemParameters&& parameters)
             return;
         }
         protect(corePage())->goToItem(*targetLocalFrame, *item, parameters.backForwardType, parameters.shouldTreatAsContinuingLoad);
-    }
+    } else
+        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "goToBackForwardItem: No target local frame found for navigationID=%" PRIu64 ", backForwardItemID=%s — navigation silently dropped", parameters.navigationID.toUInt64(), parameters.frameState->itemID->toString().utf8().data());
 }
 
 // GoToBackForwardItemWaitingForProcessLaunch should never be sent to the WebProcess. It must always be converted to a GoToBackForwardItem message.
@@ -4769,6 +4809,15 @@ void WebPage::runJavaScriptInFrameInScriptWorld(RunJavaScriptParameters&& parame
             WEBPAGE_RELEASE_LOG(Process, "runJavaScriptInFrameInScriptWorld: Request to run JavaScript succeeded");
         completionHandler(WTF::move(result));
     });
+}
+
+void WebPage::clearContentWorld(ContentWorldIdentifier worldIdentifier, CompletionHandler<void()>&& completionHandler)
+{
+    if (RefPtr world = m_userContentController->worldForIdentifier(worldIdentifier); world && world->coreWorld().allowNodeSerialization()) {
+        WEBPAGE_RELEASE_LOG(Loading, "clearContentWorld: id=%" PUBLIC_LOG_STRING " name=%" PUBLIC_LOG_STRING, worldIdentifier.loggingString().ascii().data(), world->name().utf8().data());
+        world->clearWrappers();
+    }
+    completionHandler();
 }
 
 void WebPage::getContentsAsString(ContentAsStringIncludesChildFrames includeChildFrames, CompletionHandler<void(const String&)>&& callback)
@@ -8621,7 +8670,7 @@ void WebPage::setIsSuspended(bool suspended, CompletionHandler<void(std::optiona
     suspendForProcessSwap(WTF::move(completionHandler));
 }
 
-void WebPage::setSubframesSuspended(bool suspended, BackForwardFrameItemIdentifier identifier, CompletionHandler<void(bool)>&& completionHandler)
+void WebPage::setIsSuspendedWithFrameItem(bool suspended, BackForwardFrameItemIdentifier identifier, CompletionHandler<void(bool)>&& completionHandler)
 {
     if (m_isSuspended == suspended)
         return completionHandler(true);
@@ -8638,16 +8687,16 @@ void WebPage::setSubframesSuspended(bool suspended, BackForwardFrameItemIdentifi
 
     RefPtr page = corePage();
     if (!page) {
-        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setSubframesSuspended: No corePage");
+        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setIsSuspendedWithFrameItem: No corePage");
         return completionHandler(false);
     }
 
     if (!BackForwardCache::singleton().addIfCacheable(identifier, *page)) {
-        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setSubframesSuspended: addIfCacheable failed");
+        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setIsSuspendedWithFrameItem: addIfCacheable failed");
         return completionHandler(false);
     }
 
-    WEBPAGE_RELEASE_LOG(ProcessSwapping, "setSubframesSuspended: Successfully cached page");
+    WEBPAGE_RELEASE_LOG(ProcessSwapping, "setIsSuspendedWithFrameItem: Successfully cached page");
     completionHandler(true);
 }
 

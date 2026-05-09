@@ -29,18 +29,15 @@
 #include <JavaScriptCore/PageCount.h>
 
 #include <atomic>
-#include <set>
 
 #include <wtf/CagedPtr.h>
-#include <wtf/Expected.h>
-#include <wtf/Function.h>
+#include <wtf/Lock.h>
 #include <wtf/RAMSize.h>
-#include <wtf/RefCounted.h>
-#include <wtf/RefPtr.h>
 #include <wtf/StdSet.h>
 #include <wtf/TZoneMalloc.h>
+#include <wtf/ThreadSafeRefCounted.h>
+#include <wtf/ThreadSafeWeakHashSet.h>
 #include <wtf/Vector.h>
-#include <wtf/WeakPtr.h>
 
 namespace WTF {
 class PrintStream;

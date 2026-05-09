@@ -3080,6 +3080,14 @@ bool Internals::hasGrammarMarker(int from, int length)
     return hasMarkerFor(DocumentMarkerType::Grammar, from, length);
 }
 
+unsigned Internals::appliedGrammarTextEffectCount() const
+{
+    RefPtr document = contextDocument();
+    if (!document)
+        return 0;
+    return document->markers().appliedGrammarTextEffectCount();
+}
+
 bool Internals::isAlternativeTextUIActive() const
 {
     RefPtr document = contextDocument();
@@ -4964,6 +4972,20 @@ bool Internals::isSelectPopupVisible(HTMLSelectElement& element)
     return element.popupIsVisible();
 #else
     return false;
+#endif
+}
+
+RefPtr<DOMPointReadOnly> Internals::lastSelectPopupLocation(const HTMLSelectElement& element)
+{
+#if !PLATFORM(IOS_FAMILY)
+    auto location = element.lastPopupLocationForTesting();
+    if (!location)
+        return nullptr;
+
+    return DOMPointReadOnly::create(location->x(), location->y(), 0, 0);
+#else
+    UNUSED_PARAM(element);
+    return nullptr;
 #endif
 }
 

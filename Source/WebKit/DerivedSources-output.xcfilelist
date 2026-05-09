@@ -42,7 +42,14 @@ $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GPUProcessMessages.h
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GPUProcessProxyMessageReceiver.cpp
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GPUProcessProxyMessages.h
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializers.h
-$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializers.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersCommon.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersGPUProcess.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersModelProcess.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersNetworkProcess.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersPlatform.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersShared.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersUIProcess.mm
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedSerializersWebProcess.mm
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedWebKitSecureCoding.h
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/GeneratedWebKitSecureCoding.mm
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/IPC/IPCConnectionTesterMessageReceiver.cpp

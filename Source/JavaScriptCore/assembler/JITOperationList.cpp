@@ -35,7 +35,6 @@
 #include "WebAssemblyBuiltin.h"
 
 #if HAVE(DLADDR)
-#include <cxxabi.h>
 #include <dlfcn.h>
 #endif
 

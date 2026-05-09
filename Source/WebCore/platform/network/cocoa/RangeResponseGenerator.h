@@ -26,7 +26,6 @@
 #pragma once
 
 #include <wtf/Forward.h>
-#include <wtf/HashMap.h>
 #include <wtf/ThreadSafeWeakPtr.h>
 #include <wtf/URLHash.h>
 

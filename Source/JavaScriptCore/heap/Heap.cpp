@@ -106,6 +106,7 @@
 #include <wtf/MemoryFootprint.h>
 #include <wtf/RAMSize.h>
 #include <wtf/Scope.h>
+#include <wtf/SetForScope.h>
 #include <wtf/SimpleStats.h>
 #include <wtf/SystemTracing.h>
 #include <wtf/TZoneMallocInlines.h>
@@ -3160,6 +3161,8 @@ void Heap::addCoreConstraints()
             if (!subspace)
                 return;
             ASSERT(worldIsStopped());
+            // ConservativeRoots gathering requires an up-to-date precise allocations snapshot.
+            m_objectSpace.prepareForConservativeScan();
             // FIXME: Add a second CellState for PinballCompletion so we can skip
             // pinballs whose conservative roots have already been gathered this cycle.
             ConservativeRoots conservativeRoots(*this);

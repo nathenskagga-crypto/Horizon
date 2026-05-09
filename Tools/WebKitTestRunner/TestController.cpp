@@ -945,7 +945,6 @@ void TestController::initialize(int argc, const char* argv[])
     WebCoreTestSupport::installMockGamepadProvider();
 #endif
 
-    m_preferences = adoptWK(WKPreferencesCreate());
     m_eventSenderProxy = makeUnique<EventSenderProxy>(this);
 }
 
@@ -1602,6 +1601,7 @@ bool TestController::resetStateToConsistentValues(const TestOptions& options, Re
     WKPageDispatchActivityStateUpdateForTesting(m_mainWebView->page());
 
     m_didReceiveServerRedirectForProvisionalNavigation = false;
+    m_lastProvisionalNavigationFailureURL = nullptr;
     m_serverTrustEvaluationCallbackCallsCount = 0;
     m_shouldDismissJavaScriptAlertsAsynchronously = false;
 
@@ -3752,10 +3752,12 @@ void TestController::didFinishNavigation(WKPageRef page, WKNavigationRef navigat
 
 void TestController::didFailProvisionalNavigation(WKPageRef page, WKErrorRef error)
 {
+    auto failingURL = adoptWK(WKErrorCopyFailingURL(error));
+    m_lastProvisionalNavigationFailureURL = failingURL;
+
     if (m_usingServerMode)
         return;
 
-    auto failingURL = adoptWK(WKErrorCopyFailingURL(error));
     if (!m_mainResourceURL || !failingURL || !WKURLIsEqual(failingURL.get(), m_mainResourceURL.get()))
         return;
 
@@ -3765,6 +3767,13 @@ void TestController::didFailProvisionalNavigation(WKPageRef page, WKErrorRef err
     int errorCode = WKErrorGetErrorCode(error);
     auto errorMessage = makeString("Failed: "_s, errorDescription, " (errorDomain="_s, errorDomain, ", code="_s, errorCode, ") for URL "_s, failingURLString);
     printf("%s\n", errorMessage.utf8().data());
+}
+
+WKRetainPtr<WKStringRef> TestController::lastProvisionalNavigationFailureURL() const
+{
+    if (!m_lastProvisionalNavigationFailureURL)
+        return adoptWK(WKStringCreateWithUTF8CString(""));
+    return adoptWK(WKURLCopyString(m_lastProvisionalNavigationFailureURL.get()));
 }
 
 void TestController::didReceiveAuthenticationChallenge(WKPageRef page, WKAuthenticationChallengeRef authenticationChallenge)
@@ -4619,14 +4628,6 @@ static void genericVoidCallback(void* userData)
     context->testController.notifyDone();
 }
 
-void TestController::clearServiceWorkerRegistrations()
-{
-    GenericVoidContext context(*this);
-
-    WKWebsiteDataStoreRemoveAllServiceWorkerRegistrations(websiteDataStore(), &context, genericVoidCallback);
-    runUntil(context.done, noTimeout);
-}
-
 struct ClearDOMCacheCallbackContext {
     explicit ClearDOMCacheCallbackContext(TestController& controller)
         : testController(controller)
@@ -4684,20 +4685,6 @@ static void StorageVoidCallback(void* userData)
     auto* context = static_cast<StorageVoidCallbackContext*>(userData);
     context->done = true;
     context->testController.notifyDone();
-}
-
-void TestController::clearIndexedDatabases()
-{
-    StorageVoidCallbackContext context(*this);
-    WKWebsiteDataStoreRemoveAllIndexedDatabases(websiteDataStore(), &context, StorageVoidCallback);
-    runUntil(context.done, noTimeout);
-}
-
-void TestController::clearLocalStorage()
-{
-    StorageVoidCallbackContext context(*this);
-    WKWebsiteDataStoreRemoveLocalStorage(websiteDataStore(), &context, StorageVoidCallback);
-    runUntil(context.done, noTimeout);
 }
 
 void TestController::syncLocalStorage()

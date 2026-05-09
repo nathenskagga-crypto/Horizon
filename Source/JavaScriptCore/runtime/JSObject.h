@@ -25,9 +25,7 @@
 #include <JavaScriptCore/ArrayConventions.h>
 #include <JavaScriptCore/ArrayStorage.h>
 #include <JavaScriptCore/Butterfly.h>
-#include <JavaScriptCore/CPU.h>
 #include <JavaScriptCore/CagedBarrierPtr.h>
-#include <JavaScriptCore/CallFrame.h>
 #include <JavaScriptCore/ClassInfo.h>
 #include <JavaScriptCore/CustomGetterSetter.h>
 #include <JavaScriptCore/DOMAttributeGetterSetter.h>
@@ -35,6 +33,7 @@
 #include <JavaScriptCore/Heap.h>
 #include <JavaScriptCore/IndexingHeaderInlines.h>
 #include <JavaScriptCore/Intrinsic.h>
+#include <JavaScriptCore/JSCJSValueCell.h>
 #include <JavaScriptCore/JSCast.h>
 #include <JavaScriptCore/MathCommon.h>
 #include <JavaScriptCore/PropertySlot.h>

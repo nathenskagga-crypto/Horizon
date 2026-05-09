@@ -1073,6 +1073,7 @@ public:
     virtual void setSelectedRows(AccessibilityChildrenVector&&) = 0;
 
     virtual bool press() = 0;
+    virtual bool syncPress() = 0;
     bool performDefaultAction() { return press(); }
     virtual bool performDismissAction() { return false; }
     virtual void performDismissActionIgnoringResult() = 0;
@@ -1088,6 +1089,8 @@ public:
 
     virtual void increment() = 0;
     virtual void decrement() = 0;
+    virtual void syncIncrement() = 0;
+    virtual void syncDecrement() = 0;
 
     // When ENABLE(INCLUDE_IGNORED_IN_CORE_AX_TREE) is true, this returns ignored children.
     // When it is not, it returns unignored children. After ENABLE(INCLUDE_IGNORED_IN_CORE_AX_TREE)
@@ -1809,8 +1812,11 @@ constexpr Seconds BoundingBoxTimeout = 25_ms;
 constexpr Seconds GeneralPropertyTimeout = 25_ms;
 constexpr Seconds VisibilityCheckTimeout = 50_ms;
 constexpr Seconds SpellCheckTimeout = 100_ms;
+constexpr Seconds LineRectsAndTextTimeout = 100_ms;
+constexpr Seconds TextMarkerForBoundsTimeout = 100_ms;
 constexpr Seconds InteractiveTimeout = 250_ms;
 constexpr Seconds ImageDataTimeout = 250_ms;
+constexpr Seconds PluginTimeout = 500_ms;
 
 template<typename U>
 inline DidTimeout performFunctionOnMainThreadAndWaitWithTimeout(U&& lambda, Seconds timeout)

@@ -29,7 +29,6 @@
 #pragma once
 
 #include <JavaScriptCore/EncodedValueDescriptor.h>
-#include <wtf/Assertions.h>
 #include <wtf/TZoneMalloc.h>
 #include <wtf/VectorTraits.h>
 

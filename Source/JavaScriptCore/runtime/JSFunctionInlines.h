@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <JavaScriptCore/ExceptionHelpers.h>
 #include <JavaScriptCore/ExecutableBaseInlines.h>
 #include <JavaScriptCore/FunctionExecutable.h>
 #include <JavaScriptCore/JSBoundFunction.h>

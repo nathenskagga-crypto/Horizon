@@ -38,6 +38,7 @@
 #include "WebPageGroupData.h"
 #include "WebPageProxyIdentifier.h"
 #include "WebPreferencesStore.h"
+#include <WebCore/BrowsingContextGroupIdentifier.h>
 #include "WebURLSchemeHandlerIdentifier.h"
 #include "WebsitePoliciesData.h"
 #include <WebCore/ActivityState.h>
@@ -121,6 +122,7 @@ struct WebPageCreationParameters {
     DrawingAreaIdentifier drawingAreaIdentifier;
     WebPageProxyIdentifier webPageProxyIdentifier;
     WebPageGroupData pageGroupData;
+    std::optional<WebCore::BrowsingContextGroupIdentifier> browsingContextGroupIdentifier;
 
     bool isEditable { false };
 

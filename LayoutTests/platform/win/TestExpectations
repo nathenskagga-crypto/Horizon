@@ -394,6 +394,7 @@ webgl/2.0.y/conformance/offscreencanvas/context-lost-restored.html [ Skip ]
 webgl/2.0.y/conformance/offscreencanvas/context-lost.html [ Skip ]
 webgl/offscreen-webgl-errors-to-console.html [ Skip ]
 webgl/webgl-worker.html [ Skip ]
+webgl/webgl2-init-missing-fragment-output-components.html [ Skip ]
 
 # Accelerated canvas isn't supported yet
 fast/canvas/canvas-will-read-frequently.html [ Skip ]
@@ -4635,14 +4636,6 @@ webkit.org/b/298727 css3/text-decoration/text-decoration-line-spelling-error-3.h
 webkit.org/b/298727 css3/text-decoration/text-decoration-line-grammar-error-1.html [ Skip ]
 webkit.org/b/298727 css3/text-decoration/text-decoration-line-grammar-error-2.html [ Skip ]
 webkit.org/b/298727 css3/text-decoration/text-decoration-line-grammar-error-3.html [ Skip ]
-
-imported/w3c/web-platform-tests/css/css-anchor-position/transform-010.html [ Failure ]
-imported/w3c/web-platform-tests/css/css-anchor-position/transform-011.html [ Failure ]
-imported/w3c/web-platform-tests/css/css-anchor-position/transform-012.html [ Failure ]
-imported/w3c/web-platform-tests/css/css-anchor-position/transform-013.html [ Failure ]
-imported/w3c/web-platform-tests/css/css-anchor-position/transform-014.html [ Failure ]
-imported/w3c/web-platform-tests/css/css-anchor-position/transform-015.html [ Failure ]
-imported/w3c/web-platform-tests/css/css-anchor-position/transform-016.html [ Failure ]
 
 imported/w3c/web-platform-tests/css/CSS2/visudet/height-applies-to-010a.xht [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/CSS2/visudet/inline-block-baseline-001.xht [ ImageOnlyFailure ]

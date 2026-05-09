@@ -183,20 +183,31 @@ class Manager(object):
                 return self._port.path_to_api_test_binaries().keys()
         return binaries or self._port.path_to_api_test_binaries().keys()
 
-    def _update_worker_count(self):
+    _SPECIFIC_TEST_ARG_RE = re.compile(r'\S+\..+')
+
+    @classmethod
+    def _args_specify_individual_tests(cls, args):
+        return bool(args) and all(cls._SPECIFIC_TEST_ARG_RE.match(arg) for arg in args)
+
+    def _update_worker_count(self, args):
         child_processes_option_value = int(self._options.child_processes or 0)
-        specified_child_processes = (
+        if not child_processes_option_value and self._args_specify_individual_tests(args):
+            # When the user names specific tests (e.g. Foo.Bar), avoid booting
+            # one simulator per CPU just to run a handful of tests.
+            _log.info('All arguments name specific tests; defaulting to --child-processes=1')
+            self._options.child_processes = 1
+            return
+        self._options.child_processes = (
             child_processes_option_value
             or self._port.default_child_processes()
         )
-        self._options.child_processes = specified_child_processes
 
-    def _set_up_run(self, device_type=None):
+    def _set_up_run(self, args, device_type=None):
         self._stream.write_update("Starting helper ...")
         if not self._port.start_helper():
             return False
 
-        self._update_worker_count()
+        self._update_worker_count(args)
         self._port.reset_preferences()
 
         # Set up devices for the test run
@@ -245,7 +256,7 @@ class Manager(object):
             _log.error('Build check failed')
             return Manager.FAILED_BUILD_CHECK
 
-        if not self._set_up_run():
+        if not self._set_up_run(args):
             return Manager.FAILED_BUILD_CHECK
 
         configuration_for_upload = self._port.configuration_for_upload(self._port.target_host(0))

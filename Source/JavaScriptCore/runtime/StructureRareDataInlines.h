@@ -32,6 +32,7 @@
 #include <JavaScriptCore/StructureChain.h>
 #include <JavaScriptCore/StructureRareData.h>
 #include <JavaScriptCore/VM.h>
+#include <wtf/Bag.h>
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 

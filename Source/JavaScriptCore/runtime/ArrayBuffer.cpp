@@ -36,7 +36,6 @@
 #include <wtf/MathExtras.h>
 #include <wtf/OSAllocator.h>
 #include <wtf/PageBlock.h>
-#include <wtf/SafeStrerror.h>
 
 #if ENABLE(WEBASSEMBLY)
 #include "WasmMemory.h"

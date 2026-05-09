@@ -343,6 +343,9 @@ editing/spelling/text-replacement-first-word-second-line.html [ Skip ]
 
 # Grammar correction panel is Mac-only (USE(AUTOCORRECTION_PANEL))
 editing/spelling/grammar-correction-shown-clicking-middle-of-word.html [ Skip ]
+editing/spelling/grammar-correction-shown-clicking-multiword-phrase.html [ Skip ]
+editing/spelling/grammar-arrow-upstream-into-multiword-phrase.html [ Skip ]
+editing/spelling/grammar-arrow-downstream-into-multiword-phrase.html [ Skip ]
 
 # UIKit draws selection on iOS
 fast/selectors/input-with-selection-pseudo-element.html [ WontFix ]
@@ -3184,6 +3187,7 @@ fast/block/basic/quirk-mode-percent-height.html [ Failure ]
 # Datalist
 webkit.org/b/186714 fast/forms/datalist/datalist-textinput-keydown.html [ Skip ]
 webkit.org/b/190613 fast/forms/datalist/update-range-with-datalist.html [ Skip ]
+webkit.org/b/312010 fast/forms/datalist/datalist-textinput-type-custom-value.html [ Skip ]
 
 # Audio session does not have a "none" category on iOS [ Skip ]
 webkit.org/b/188285 platform/mac/media/audio-session-category-video-paused.html [ Skip ]
@@ -7645,7 +7649,7 @@ imported/w3c/web-platform-tests/mathml/presentation-markup/mrow/inferred-mrow-st
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/embellished-op-4-1.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/embellished-op-4-2.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/embellished-op-4-3.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/mathml/relations/html5-tree/tabindex-002.tentative.html [ Skip ]
+imported/w3c/web-platform-tests/mathml/relations/html5-tree/tabindex-002.html [ Skip ]
 imported/w3c/web-platform-tests/mathml/relations/html5-tree/maction-click.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/relations/css-styling/mozilla-393760-1.xml [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/subsup-legacy-scriptshift-attributes-001.tentative.html [ ImageOnlyFailure ]
@@ -7853,8 +7857,6 @@ imported/w3c/web-platform-tests/css/css-grid/grid-lanes/intrinsic-sizing/grid-la
 imported/w3c/web-platform-tests/scroll-animations/css/scroll-timeline-responsiveness-from-endpoint.html [ Pass Failure ]
 
 webkit.org/b/284419 imported/w3c/web-platform-tests/html/rendering/the-details-element/details-pseudo-elements-006.html [ Failure ]
-
-webkit.org/b/284653 http/tests/site-isolation/compositing/iframes/resize-from-zero-size.html [ Pass Failure ]
 
 webkit.org/b/284761 imported/w3c/web-platform-tests/screen-orientation/orientation-reading.html [ Skip ]
 
@@ -8499,6 +8501,9 @@ webrtc/getUserMedia-webaudio-autoplay.html [ Pass Failure ]
 fast/forms/ios/scroll-to-reveal-focused-select.html [ Pass ]
 fast/events/ios/should-be-able-to-dismiss-form-accessory-after-tapping-outside-iframe-with-focused-field.html [ Pass ]
 
+# This tests the system picker triggered by HTMLSelectElement::showPopup(), which iOS doesn't use.
+fast/css/css-anchor-position/anchor-positioned-select-picker.html [ Skip ]
+
 # from fast/ tests that are flaky: adding timeout
 webkit.org/b/304027 fast/block/basic/001.html [ Pass Failure Timeout ]
 
@@ -8508,7 +8513,7 @@ webkit.org/b/304298 accessibility/text-stitching-inside-links.html [ Failure ]
 
 webkit.org/b/304427 fast/html/HTMLPluginElement-renderer-destroyed-crash.html [ Skip ]
 
-webkit.org/b/313562 imported/w3c/web-platform-tests/navigation-api/navigate-event/signal-abort-window-stop-in-onnavigate.html [ Pass Crash Timeout ]
+webkit.org/b/313562 imported/w3c/web-platform-tests/navigation-api/navigate-event/signal-abort-replaceState-crash.html [ Pass Crash Timeout ]
 
 webkit.org/b/304851 imported/w3c/web-platform-tests/workers/worker-performance.worker.html [ Pass Failure ]
 
@@ -8561,8 +8566,6 @@ webkit.org/b/299830 imported/w3c/web-platform-tests/storage-access-api/hasStorag
 
 webkit.org/b/313089 fast/backgrounds/background-repeat-long-scroll.html [ ImageOnlyFailure Pass ]
 
-webkit.org/b/307582 compositing/overflow/rtl-scrollbar-layer-positioning.html [ Failure ]
-
 webkit.org/b/307889 http/tests/multipart/multipart-async-image.html [ Pass Failure ]
 
 imported/w3c/web-platform-tests/css/css-highlight-api/highlight-text-across-elements.html [ ImageOnlyFailure ]
@@ -8614,8 +8617,6 @@ media/video-size.html [ Pass Failure ]
 svg/custom/ellipse-radius-auto-dynamic.svg [ Skip ]
 svg/custom/rect-radius-auto-dynamic.svg [ Skip ]
 
-webkit.org/b/311222 [ Release ] imported/w3c/web-platform-tests/navigation-api/navigate-event/signal-abort-window-stop-after-intercept.html [ Skip ]
-
 # WebAuthn authenticator setup races against abort under stress mode; can timeout or produce wrong rejection
 webkit.org/b/312120 imported/w3c/web-platform-tests/credential-management/credentialscontainer-get-basics.https.html [ Pass Failure Timeout ]
 
@@ -8635,3 +8636,5 @@ imported/w3c/web-platform-tests/html/semantics/popovers/popover-shadowhost-focus
 webgl/webgl2-provoking-vertex-primitive-restart-uint16-nocrash.html [ Skip ]
 
 webkit.org/b/314022 [ Release ] fast/scrolling/ios/iframe-scroll-into-view.html [ Pass ImageOnlyFailure ]
+
+webkit.org/b/314216 imported/w3c/web-platform-tests/css/css-position/fixed-z-index-blend.html [ Pass ImageOnlyFailure ]

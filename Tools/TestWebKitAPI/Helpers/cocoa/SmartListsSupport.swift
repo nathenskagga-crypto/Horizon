@@ -104,9 +104,16 @@ extension SmartListsSupport {
         try await page.callJavaScript("document.body.focus()")
 
         for character in configuration.input {
-            if character == "⌫" {
+            switch character {
+            case "⌫":
                 await page.executeEditCommand(.deleteBackward)
-            } else {
+            case "𝐁":
+                await page.executeEditCommand(.toggleBold)
+            case "𝐼":
+                await page.executeEditCommand(.toggleItalic)
+            case "𝐔":
+                await page.executeEditCommand(.toggleUnderline)
+            default:
                 await page.insertText("\(character)")
             }
         }

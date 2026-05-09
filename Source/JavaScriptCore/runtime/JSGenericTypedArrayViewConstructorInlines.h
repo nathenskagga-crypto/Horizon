@@ -113,6 +113,7 @@ inline JSObject* constructGenericTypedArrayViewFromIterator(JSGlobalObject* glob
 }
 
 constinit const ASCIILiteral typedArrayErrorMessageBufferIsAlreadyDetached = "Buffer is already detached"_s;
+constinit const ASCIILiteral typedArrayErrorMessageByteOffsetExceedSourceBufferByteLength = "byteOffset exceeds source ArrayBuffer byteLength"_s;
 
 template<typename ViewClass>
 inline JSObject* constructGenericTypedArrayViewWithArrayBuffer(JSGlobalObject* globalObject, Structure* structure, JSArrayBuffer* jsBuffer, size_t offset, std::optional<size_t> lengthOpt)
@@ -133,7 +134,7 @@ inline JSObject* constructGenericTypedArrayViewWithArrayBuffer(JSGlobalObject* g
         size_t byteLength = buffer->byteLength();
         if (buffer->isResizableOrGrowableShared()) {
             if (offset > byteLength) [[unlikely]] {
-                throwRangeError(globalObject, scope, "byteOffset exceeds source ArrayBuffer byteLength"_s);
+                throwRangeError(globalObject, scope, typedArrayErrorMessageByteOffsetExceedSourceBufferByteLength);
                 return nullptr;
             }
         } else {
@@ -332,6 +333,30 @@ static EncodedJSValue constructDataViewImpl(JSGlobalObject* globalObject, CallFr
     if (!arrayBuffer) [[unlikely]]
         return throwVMTypeError(globalObject, scope, "Expected ArrayBuffer for the first argument."_s);
 
+    RefPtr<ArrayBuffer> buffer = arrayBuffer->impl();
+
+    size_t offset = 0;
+    if (argCount > 1) {
+        offset = callFrame->uncheckedArgument(1).toIndex(globalObject, "byteOffset"_s);
+        RETURN_IF_EXCEPTION(scope, { });
+    }
+
+    if (buffer->isDetached()) [[unlikely]]
+        return throwVMTypeError(globalObject, scope, typedArrayErrorMessageBufferIsAlreadyDetached);
+
+    size_t bufferByteLength = buffer->byteLength();
+    if (offset > bufferByteLength) [[unlikely]]
+        return throwVMRangeError(globalObject, scope, typedArrayErrorMessageByteOffsetExceedSourceBufferByteLength);
+
+    std::optional<size_t> length { };
+    if (argCount > 2) {
+        // If the length value is present but undefined, treat it as missing.
+        if (JSValue lengthValue = callFrame->uncheckedArgument(2); !lengthValue.isUndefined()) [[likely]] {
+            length = lengthValue.toIndex(globalObject, "byteLength"_s);
+            RETURN_IF_EXCEPTION(scope, { });
+        }
+    }
+
     JSObject* newTarget = asObject(callFrame->newTarget());
     Structure* structure = nullptr;
     if (arrayBuffer->isResizableOrGrowableShared()) {
@@ -339,35 +364,6 @@ static EncodedJSValue constructDataViewImpl(JSGlobalObject* globalObject, CallFr
         RETURN_IF_EXCEPTION(scope, { });
     } else {
         structure = JSC_GET_DERIVED_STRUCTURE(vm, typedArrayStructureWithTypedArrayType<JSDataView::TypedArrayStorageType>, newTarget, callFrame->jsCallee());
-        RETURN_IF_EXCEPTION(scope, { });
-    }
-
-    if (argCount == 1)
-        RELEASE_AND_RETURN(scope, JSValue::encode(constructGenericTypedArrayViewWithArrayBuffer<JSDataView>(globalObject, structure, arrayBuffer, 0, std::nullopt)));
-
-    ASSERT(argCount > 1);
-
-    RefPtr<ArrayBuffer> buffer = arrayBuffer->impl();
-
-    size_t offset = callFrame->uncheckedArgument(1).toIndex(globalObject, "byteOffset"_s);
-    RETURN_IF_EXCEPTION(scope, { });
-
-    if (buffer->isDetached()) [[unlikely]]
-        return throwVMTypeError(globalObject, scope, typedArrayErrorMessageBufferIsAlreadyDetached);
-
-    size_t bufferByteLength = buffer->byteLength();
-    if (offset > bufferByteLength) [[unlikely]]
-        return throwVMRangeError(globalObject, scope, "byteOffset exceeds source ArrayBuffer byteLength"_s);
-
-    if (argCount == 2)
-        RELEASE_AND_RETURN(scope, JSValue::encode(constructGenericTypedArrayViewWithArrayBuffer<JSDataView>(globalObject, structure, arrayBuffer, offset, std::nullopt)));
-
-    ASSERT(argCount > 2);
-
-    // If the length value is present but undefined, treat it as missing.
-    std::optional<size_t> length { };
-    if (JSValue lengthValue = callFrame->uncheckedArgument(2); !lengthValue.isUndefined()) [[likely]] {
-        length = lengthValue.toIndex(globalObject, "byteLength"_s);
         RETURN_IF_EXCEPTION(scope, { });
     }
 

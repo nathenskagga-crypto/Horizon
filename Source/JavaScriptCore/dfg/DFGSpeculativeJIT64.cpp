@@ -31,6 +31,7 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 #if ENABLE(DFG_JIT)
 
 #include "AtomicsObject.h"
+#include "BaselineJITRegisters.h"
 #include "CallFrameShuffler.h"
 #include "ClonedArguments.h"
 #include "DFGAbstractInterpreterInlines.h"
@@ -3779,6 +3780,11 @@ void SpeculativeJIT::compile(Node* node)
 
     case StringIndexOf: {
         compileStringIndexOf(node);
+        break;
+    }
+
+    case StringSplit: {
+        compileStringSplit(node);
         break;
     }
 

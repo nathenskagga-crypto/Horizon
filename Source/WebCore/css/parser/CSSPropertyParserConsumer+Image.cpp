@@ -990,15 +990,16 @@ static RefPtr<CSSValue> consumeCrossFade(CSSParserTokenRange& args, CSS::Propert
     if (!toImageValueOrNone || !consumeCommaIncludingWhitespace(args))
         return nullptr;
 
-    auto value = consumePercentageDividedBy100OrNumber(args, state);
-    if (!value)
+    auto numberOrPercentage = MetaConsumer<CSS::Number<CSS::ClosedUnitRangeClampBoth>, CSS::Percentage<CSS::ClosedPercentageRangeClampBoth>>::consume(args, state);
+    if (!numberOrPercentage)
         return nullptr;
 
-    if (value->isNumber()) {
-        if (auto numberValue = value->resolveAsNumberIfNotCalculated(); numberValue && (*numberValue < 0 || *numberValue > 1))
-            value = CSSPrimitiveValue::create(clampTo<double>(*numberValue, 0, 1));
-    }
-    return CSSCrossfadeValue::create(fromImageValueOrNone.releaseNonNull(), toImageValueOrNone.releaseNonNull(), value.releaseNonNull(), functionId == CSSValueWebkitCrossFade);
+    return CSSCrossfadeValue::create(
+        fromImageValueOrNone.releaseNonNull(),
+        toImageValueOrNone.releaseNonNull(),
+        WTF::move(*numberOrPercentage),
+        functionId == CSSValueWebkitCrossFade
+    );
 }
 
 // MARK: <-webkit-canvas()>

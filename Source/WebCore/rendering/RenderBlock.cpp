@@ -479,6 +479,16 @@ void RenderBlock::endAndCommitUpdateScrollInfoAfterLayoutTransaction()
             block->clearLayoutOverflow();
         if (block->hasNonVisibleOverflow())
             RelayoutScopeForScrollbarChange relayoutScope { *block, InOverflowRelayout::No };
+
+        // The scrollbar relayout above may have re-dirtied out-of-flow descendants of ancestor containing blocks
+        // (e.g. via prepareFlexItemForPositionedLayout). Process them now since those containing blocks have
+        // already completed their own layoutOutOfFlowBoxes pass.
+        for (CheckedPtr ancestor = block->parent(); ancestor && ancestor != this; ancestor = ancestor->parent()) {
+            CheckedPtr renderBlock = dynamicDowncast<RenderBlock>(*ancestor);
+            if (!renderBlock || !renderBlock->outOfFlowChildNeedsLayout())
+                continue;
+            renderBlock->layoutOutOfFlowBoxes(RelayoutChildren::No);
+        }
     }
 }
 
@@ -916,11 +926,12 @@ void RenderBlock::layoutOutOfFlowBoxes(RelayoutChildren relayoutChildren, bool f
     auto* outOfFlowDescendants = outOfFlowBoxes();
     if (!outOfFlowDescendants)
         return;
-    
+
     // Do not cache outOfFlowDescendants->end() in a local variable, since |outOfFlowDescendants| can be mutated
     // as it is walked. We always need to fetch the new end() value dynamically.
     for (auto& descendant : *outOfFlowDescendants)
         layoutOutOfFlowBox(descendant, relayoutChildren, fixedPositionObjectsOnly);
+    setOutOfFlowChildNeedsLayoutBit(false);
 }
 
 void RenderBlock::markOutOfFlowBoxesForLayout()
@@ -2366,7 +2377,7 @@ void RenderBlock::computeChildPreferredLogicalWidths(RenderBox& childBox, Layout
             maxPreferredLogicalWidth = aspectRatioSize;
             return;
         }
-        auto logicalHeightWithoutLayout = childBox.computeLogicalHeightWithoutLayout();
+        auto logicalHeightWithoutLayout = childBox.computeLogicalHeightForIntrinsicWidthContribution();
         minPreferredLogicalWidth = logicalHeightWithoutLayout;
         maxPreferredLogicalWidth = logicalHeightWithoutLayout;
         return;

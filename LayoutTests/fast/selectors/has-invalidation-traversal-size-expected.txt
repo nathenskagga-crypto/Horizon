@@ -34,4 +34,12 @@
   Traversal count: 17
 (Ancestor, SiblingDescendant) .c18:has(~ .other18 .trigger18) .target
   Traversal count: 17
+:is(.other:has(.trigger)) with merged scope .c19.other
+  Traversal count: 7
+:is(div:has(.trigger)) with type in inner compound - scope stays .c20
+  Traversal count: 7
+.c21 div:is(.other:has(.trigger)) with type in outer compound
+  Traversal count: 7
+.c22:has(.trigger22) .target with no .c22 ancestor - skip invalidation
+  Traversal count: 0
 

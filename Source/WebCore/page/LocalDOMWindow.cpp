@@ -1573,13 +1573,17 @@ bool LocalDOMWindow::consumeTransientActivation()
     if (!hasTransientActivation())
         return false;
 
-    for (auto* frame = this->frame() ? &this->frame()->tree().top() : nullptr; frame; frame = frame->tree().traverseNext()) {
+    RefPtr thisFrame = this->frame();
+    for (auto* frame = thisFrame ? &thisFrame->tree().top() : nullptr; frame; frame = frame->tree().traverseNext()) {
         auto* localFrame = dynamicDowncast<LocalFrame>(frame);
         if (!localFrame)
             continue;
         if (auto* window = localFrame->window())
             window->consumeLastActivationIfNecessary();
     }
+
+    if (thisFrame && thisFrame->settings().siteIsolationEnabled())
+        thisFrame->loader().client().didConsumeUserActivation();
 
     return true;
 }
@@ -1643,7 +1647,7 @@ void LocalDOMWindow::notifyActivated(MonotonicTime activationTime)
         return;
 
     RefPtr<Frame> descendant = frame;
-    while ((descendant = descendant->tree().traverseNext(frame))) {
+    while ((descendant = descendant->tree().traverseNext(frame.get()))) {
         RefPtr localDescendant = dynamicDowncast<LocalFrame>(descendant.get());
         if (!localDescendant)
             continue;
@@ -1657,6 +1661,9 @@ void LocalDOMWindow::notifyActivated(MonotonicTime activationTime)
 
         descendantWindow->setLastActivationTimestamp(activationTime);
     }
+
+    if (frame->settings().siteIsolationEnabled())
+        frame->loader().client().didNotifyUserActivation(activationTime);
 }
 
 StyleMedia& LocalDOMWindow::styleMedia()
@@ -2002,8 +2009,8 @@ bool LocalDOMWindow::isSecureContext() const
 
 bool LocalDOMWindow::crossOriginIsolated() const
 {
-    ASSERT(ScriptExecutionContext::crossOriginMode() == CrossOriginMode::Shared || !document() || !document()->mainFrameDocument() || document()->mainFrameDocument()->crossOriginOpenerPolicy().value == CrossOriginOpenerPolicyValue::SameOriginPlusCOEP);
-    return ScriptExecutionContext::crossOriginMode() == CrossOriginMode::Isolated;
+    auto* document = this->document();
+    return document && document->crossOriginIsolated();
 }
 
 static void didAddStorageEventListener(LocalDOMWindow& window)

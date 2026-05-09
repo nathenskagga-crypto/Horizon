@@ -26,12 +26,10 @@
 #pragma once
 
 #include <JavaScriptCore/CPU.h>
-#include <JavaScriptCore/JITOperationValidation.h>
 #include <JavaScriptCore/OperationResult.h>
 #include <climits>
 #include <cmath>
 #include <optional>
-#include <wtf/MathExtras.h>
 
 namespace JSC {
 

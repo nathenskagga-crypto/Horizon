@@ -112,6 +112,7 @@ public:
     bool NODELETE mainAxisIsFlexItemInlineAxis(const RenderBox&) const;
     ItemPosition alignmentForFlexItem(const RenderBox&) const;
     Style::FlexBasis flexBasisForFlexItem(const RenderBox&) const;
+    bool hasDefiniteCrossSizeForFlexItem(const RenderBox& flexItem) const;
 
 protected:
     void computeIntrinsicLogicalWidths(LayoutUnit& minLogicalWidth, LayoutUnit& maxLogicalWidth) const override;
@@ -202,7 +203,6 @@ private:
 
     bool crossAxisIsLogicalWidth() const;
     void clearFlexItemOverridingSizes();
-    bool hasDefiniteCrossSizeForFlexItem(const RenderBox& flexItem) const;
     LayoutUnit computeCrossSizeForFlexItemUsingContainerCrossSize(const RenderBox& flexItem) const;
     void computeChildIntrinsicLogicalWidths(RenderBox&, LayoutUnit& minLogicalWidth, LayoutUnit& maxLogicalWidth) const override;
     template<typename SizeType> LayoutUnit computeMainSizeFromAspectRatioUsing(const RenderBox& flexItem, const SizeType& crossSizeLength) const;

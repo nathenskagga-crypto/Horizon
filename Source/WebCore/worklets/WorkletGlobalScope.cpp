@@ -58,6 +58,7 @@ WorkletGlobalScope::WorkletGlobalScope(WorkerOrWorkletThread& thread, Ref<JSC::V
     , m_url(parameters.windowURL)
     , m_jsRuntimeFlags(parameters.jsRuntimeFlags)
     , m_settingsValues(parameters.settingsValues)
+    , m_agentClusterID(parameters.agentClusterID)
 {
     ++gNumberOfWorkletGlobalScopes;
 
@@ -74,6 +75,7 @@ WorkletGlobalScope::WorkletGlobalScope(Document& document, Ref<JSC::VM>&& vm, Sc
     , m_jsRuntimeFlags(document.settings().javaScriptRuntimeFlags())
     , m_code(WTF::move(code))
     , m_settingsValues(document.settingsValues().isolatedCopy())
+    , m_agentClusterID(document.agentClusterID())
 {
     ++gNumberOfWorkletGlobalScopes;
 

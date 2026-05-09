@@ -37,6 +37,7 @@
 #include <JavaScriptCore/Width.h>
 #include <JavaScriptCore/WriteBarrier.h>
 #include <wtf/CheckedArithmetic.h>
+#include <wtf/EmbeddedFixedVector.h>
 #include <wtf/FixedVector.h>
 #include <wtf/HashMap.h>
 #include <wtf/HashSet.h>
@@ -56,6 +57,8 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 
 namespace JSC {
 
+class LLIntOffsetsExtractor;
+
 namespace Wasm {
 
 class JSToWasmICCallee;
@@ -63,6 +66,11 @@ class RTT;
 class RTTGroup;
 class SectionParser;
 class TypeSectionState;
+struct CallInformation;
+
+// Shared aINT/uINT bytecode, canonicalized per signature. Aliased so
+// offlineasm can reference it without template syntax.
+using IPIntSharedBytecode = EmbeddedFixedVector<uint8_t>;
 
 #define CREATE_ENUM_VALUE(name, id, ...) name = id,
 enum class ExtSIMDOpType : uint32_t {
@@ -724,6 +732,7 @@ class alignas(16) RTT final : public ThreadSafeRefCounted<RTT>, private Trailing
     WTF_MAKE_NONMOVABLE(RTT);
     using TrailingArrayType = TrailingArray<RTT, RefPtr<const RTT>>;
     friend TrailingArrayType;
+    friend class JSC::LLIntOffsetsExtractor;
 public:
     static_assert(sizeof(const RTT*) == sizeof(RefPtr<const RTT>));
     static constexpr unsigned inlinedDisplaySize = 6;
@@ -858,6 +867,19 @@ public:
     CodePtr<JSEntryPtrTag> jsToWasmICEntrypoint() const;
 #endif
 
+    // Function-kind only. Lazy-install under m_ipintBytecodeLock; buffer is
+    // immutable once published.
+    void ensureArgumINTBytecode(const CallInformation&) const;
+    void ensureUINTBytecode(const CallInformation&) const;
+
+    // Unified mINT call bytecode: [arg bytecode][Call][CallReturnMetadata][result bytecode][End].
+    // MC walks through this buffer during the entire call -- arg dispatch leaves MC at
+    // CallReturnMetadata start (callee-preserves MC), ret dispatch continues from there.
+    void ensureCallBytecode() const;
+
+    // Unified mINT tail-call bytecode: [arg bytecode][TailCall]. Tail calls don't return.
+    void ensureTailCallBytecode() const;
+
     // Walk every ref-bearing TypeSlot in this RTT's payload, dispatching to
     // the per-payload visitor based on m_kind. Used by both
     // rewriteInternalRefs (sets each slot's anchor inline as it rewrites)
@@ -938,6 +960,10 @@ public:
 
     static constexpr ptrdiff_t offsetOfKind() { return OBJECT_OFFSETOF(RTT, m_kind); }
     static constexpr ptrdiff_t offsetOfDisplaySizeExcludingThis() { return OBJECT_OFFSETOF(RTT, m_displaySizeExcludingThis); }
+    static constexpr ptrdiff_t offsetOfArgumINTBytecode() { return OBJECT_OFFSETOF(RTT, m_argumINTBytecode); }
+    static constexpr ptrdiff_t offsetOfUINTBytecode() { return OBJECT_OFFSETOF(RTT, m_uINTBytecode); }
+    static constexpr ptrdiff_t offsetOfCallBytecode() { return OBJECT_OFFSETOF(RTT, m_callBytecode); }
+    static constexpr ptrdiff_t offsetOfTailCallBytecode() { return OBJECT_OFFSETOF(RTT, m_tailCallBytecode); }
     using TrailingArrayType::offsetOfData;
 
 private:
@@ -990,6 +1016,11 @@ private:
     mutable RefPtr<JSToWasmICCallee> m_jsToWasmICCallee;
     mutable Lock m_jitCodeLock;
 #endif
+    mutable Lock m_ipintBytecodeLock;
+    mutable std::unique_ptr<const IPIntSharedBytecode> m_argumINTBytecode;
+    mutable std::unique_ptr<const IPIntSharedBytecode> m_uINTBytecode;
+    mutable std::unique_ptr<const IPIntSharedBytecode> m_callBytecode;
+    mutable std::unique_ptr<const IPIntSharedBytecode> m_tailCallBytecode;
     Variant<RTTFunctionPayload, RTTStructPayload, RTTArrayPayload> m_payload;
 };
 

@@ -2867,7 +2867,7 @@ void Editor::advanceToNextMisspelling(bool startBeforeSelection)
         document->selection().revealSelection();
         
         client()->updateSpellingUIWithGrammarString(ungrammaticalPhrase.phrase, ungrammaticalPhrase.detail);
-        addMarker(badGrammarRange, DocumentMarkerType::Grammar, ungrammaticalPhrase.detail.userDescription);
+        addMarker(badGrammarRange, DocumentMarkerType::Grammar, DocumentMarker::GrammarData { ungrammaticalPhrase.detail.userDescription, ungrammaticalPhrase.detail.uuid });
     } else if (!misspelledWord.word.isEmpty()) {
         // We found a misspelling, but not any earlier bad grammar. Select the misspelling, update the spelling panel, and store
         // a marker so we draw the red squiggle later.
@@ -3407,7 +3407,7 @@ void Editor::markAndReplaceFor(const SpellCheckRequest& request, const Vector<Te
                 ASSERT(detail.range.length > 0);
                 if (paragraph.checkingRangeCovers({ resultLocation + detail.range.location, detail.range.length })) {
                     auto badGrammarRange = paragraph.subrange({ resultLocation + detail.range.location, detail.range.length });
-                    addMarker(badGrammarRange, DocumentMarkerType::Grammar, detail.userDescription);
+                    addMarker(badGrammarRange, DocumentMarkerType::Grammar, DocumentMarker::GrammarData { detail.userDescription, detail.uuid });
                     previousGrammarRanges.append(CharacterRange(resultLocation + detail.range.location, detail.range.length));
                 }
             }

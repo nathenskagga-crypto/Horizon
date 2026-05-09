@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006, 2007, 2008, 2009, 2011, 2012 Apple Inc. All rights reserved.
+ * Copyright (C) 2006-2026 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,6 @@
 #include "BackForwardController.h"
 #include "Chrome.h"
 #include "ChromeClient.h"
-#include "CookieStorage.h"
 #include "DOMTimer.h"
 #include "Database.h"
 #include "DocumentResourceLoader.h"
@@ -46,6 +45,7 @@
 #include "RenderWidget.h"
 #include "Settings.h"
 #include "StorageMap.h"
+#include "SystemFontDatabase.h"
 #include <limits>
 #include <wtf/RuntimeApplicationChecks.h>
 #include <wtf/StdLibExtras.h>
@@ -64,6 +64,7 @@ static void invalidateAfterGenericFamilyChange(Page* page)
     // No need to invalidate FontCascadeCaches in worker threads, since workers
     // do not respond to changes in Settings values.
     FontCascadeCache::forCurrentThread().invalidate();
+    SystemFontDatabase::singleton().invalidate();
 
     if (page)
         page->setNeedsRecalcStyleInAllFrames();

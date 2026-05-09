@@ -27,6 +27,7 @@
 #include "WebFileSystemStorageConnection.h"
 
 #include "NetworkStorageManagerMessages.h"
+#include <WebCore/ClientOrigin.h>
 #include <WebCore/ExceptionOr.h>
 #include <WebCore/FileSystemDirectoryHandle.h>
 #include <WebCore/FileSystemFileHandle.h>
@@ -210,6 +211,32 @@ void WebFileSystemStorageConnection::getHandle(WebCore::FileSystemHandleIdentifi
         auto [identifier, isDirectory] = *result.value();
         completionHandler(WebCore::FileSystemHandleCloseScope::create(identifier, isDirectory, *this));
     });
+}
+
+void WebFileSystemStorageConnection::cloneHandle(WebCore::ClientOrigin&& origin, WebCore::FileSystemHandleIdentifier identifier, CloneHandleCallback&& completionHandler)
+{
+    RefPtr connection = m_connection;
+    if (!connection)
+        return completionHandler(WebCore::Exception { WebCore::ExceptionCode::UnknownError, "Connection is lost"_s });
+
+    connection->sendWithAsyncReply(Messages::NetworkStorageManager::CloneHandle(origin, identifier), [completionHandler = WTF::move(completionHandler)](auto result) mutable {
+        if (!result)
+            return completionHandler(WebCore::Exception { WebCore::ExceptionCode::UnknownError, "Failed to clone handle"_s });
+
+        completionHandler(WTF::move(result.value()));
+    });
+}
+
+void WebFileSystemStorageConnection::addTransferReference(WebCore::FileSystemHandleIdentifier identifier)
+{
+    if (RefPtr connection = m_connection)
+        connection->send(Messages::NetworkStorageManager::AddTransferReference(identifier), 0);
+}
+
+void WebFileSystemStorageConnection::removeTransferReference(WebCore::FileSystemHandleIdentifier identifier)
+{
+    if (RefPtr connection = m_connection)
+        connection->send(Messages::NetworkStorageManager::RemoveTransferReference(identifier), 0);
 }
 
 void WebFileSystemStorageConnection::move(WebCore::FileSystemHandleIdentifier identifier, WebCore::FileSystemHandleIdentifier destinationIdentifier, const String& newName, VoidCallback&& completionHandler)

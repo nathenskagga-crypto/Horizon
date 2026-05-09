@@ -1490,6 +1490,9 @@ class RunAndUploadPerfTests(shell.Test):
 
     def run(self):
         additionalArguments = self.getProperty("additionalArguments")
+        platform = self.getProperty('platform')
+        if platform in ['gtk', 'wpe']:
+            self.command += ['--display-server=wayland']
         if additionalArguments:
             self.command += additionalArguments
         return super().run()

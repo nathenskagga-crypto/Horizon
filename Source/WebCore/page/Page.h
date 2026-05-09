@@ -20,11 +20,11 @@
 
 #pragma once
 
-#include <JavaScriptCore/Debugger.h>
 #include <WebCore/ActivityState.h>
 #include <WebCore/AnimationFrameRate.h>
 #include <WebCore/BackForwardFrameItemIdentifier.h>
 #include <WebCore/BoxExtents.h>
+#include <WebCore/BrowsingContextGroupIdentifier.h>
 #include <WebCore/Color.h>
 #include <WebCore/DocumentEnums.h>
 #include <WebCore/FindOptions.h>
@@ -46,18 +46,12 @@
 #include <WebCore/Supplementable.h>
 #include <WebCore/Timer.h>
 #include <WebCore/UserInterfaceLayoutDirection.h>
-#include <memory>
 #include <pal/SessionID.h>
-#include <wtf/Assertions.h>
 #include <wtf/CheckedPtr.h>
-#include <wtf/Forward.h>
 #include <wtf/Function.h>
 #include <wtf/HashSet.h>
 #include <wtf/Noncopyable.h>
-#include <wtf/OptionSet.h>
-#include <wtf/Platform.h>
 #include <wtf/ProcessID.h>
-#include <wtf/Ref.h>
 #include <wtf/RefCountedAndCanMakeWeakPtr.h>
 #include <wtf/RobinHoodHashSet.h>
 #include <wtf/TZoneMalloc.h>
@@ -65,7 +59,6 @@
 #include <wtf/UniqueRef.h>
 #include <wtf/WeakHashMap.h>
 #include <wtf/WeakHashSet.h>
-#include <wtf/WeakPtr.h>
 #include <wtf/text/WTFString.h>
 
 #if ENABLE(APPLICATION_MANIFEST)
@@ -81,6 +74,7 @@
 #endif
 
 namespace JSC {
+class Debugger;
 class JSGlobalObject;
 }
 
@@ -397,6 +391,8 @@ public:
 
     // Utility pages (e.g. SVG image pages) don't have an identifier currently.
     std::optional<PageIdentifier> identifier() const { return m_identifier; }
+
+    std::optional<BrowsingContextGroupIdentifier> browsingContextGroupIdentifier() const { return m_browsingContextGroupIdentifier; }
 
     void willEnterBackForwardCache();
 
@@ -1479,6 +1475,7 @@ private:
     const UniqueRef<Internals> m_internals;
 
     std::optional<PageIdentifier> m_identifier;
+    std::optional<BrowsingContextGroupIdentifier> m_browsingContextGroupIdentifier;
     const UniqueRef<Chrome> m_chrome;
     const UniqueRef<DragCaretController> m_dragCaretController;
 

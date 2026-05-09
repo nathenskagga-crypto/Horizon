@@ -25,8 +25,8 @@
 
 #pragma once
 
-#include <JavaScriptCore/CallFrame.h>
 #include <JavaScriptCore/Identifier.h>
+#include <JavaScriptCore/JSString.h>
 #include <JavaScriptCore/Symbol.h>
 #include <JavaScriptCore/VM.h>
 

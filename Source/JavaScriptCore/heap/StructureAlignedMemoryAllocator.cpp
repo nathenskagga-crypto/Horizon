@@ -41,11 +41,7 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 #include <bmalloc/bmalloc_heap_config.h>
 #include <bmalloc/bmalloc_heap_inlines.h>
 #include <bmalloc/bmalloc_heap_ref.h>
-#include <bmalloc/pas_page_sharing_pool.h>
 #include <bmalloc/pas_primitive_heap_ref.h>
-#include <bmalloc/pas_probabilistic_guard_malloc_allocator.h>
-#include <bmalloc/pas_scavenger.h>
-#include <bmalloc/pas_thread_local_cache.h>
 #elif USE(MIMALLOC)
 #include <bmalloc/mimalloc.h>
 #endif
@@ -53,10 +49,6 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
 #endif
 
 #include <wtf/OSAllocator.h>
-
-#if OS(UNIX) && ASSERT_ENABLED
-#include <sys/mman.h>
-#endif
 
 namespace JSC {
 

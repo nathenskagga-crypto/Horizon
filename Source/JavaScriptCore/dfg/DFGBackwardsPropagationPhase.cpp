@@ -368,6 +368,13 @@ private:
             break;
         }
 
+        case StringSplit: {
+            node->child1()->mergeFlags(NodeBytecodeUsesAsValue);
+            node->child2()->mergeFlags(NodeBytecodeUsesAsValue);
+            node->child3()->mergeFlags(NodeBytecodeUsesAsValue);
+            break;
+        }
+
         case StringSlice:
         case StringSubstring: {
             node->child1()->mergeFlags(NodeBytecodeUsesAsValue);

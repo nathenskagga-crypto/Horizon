@@ -21,11 +21,11 @@
 
 #pragma once
 
-#include <JavaScriptCore/ConcurrentJSLock.h>
 #include <JavaScriptCore/MatchResult.h>
 #include <JavaScriptCore/RegExpKey.h>
 #include <JavaScriptCore/Structure.h>
 #include <JavaScriptCore/Yarr.h>
+#include <JavaScriptCore/YarrErrorCode.h>
 #include <wtf/Forward.h>
 #include <wtf/text/WTFString.h>
 

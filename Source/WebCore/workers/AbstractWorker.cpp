@@ -70,11 +70,11 @@ ExceptionOr<URL> AbstractWorker::resolveURL(const String& url)
     return scriptURL;
 }
 
-std::optional<Exception> AbstractWorker::validateURL(ScriptExecutionContext& context, const URL& scriptURL)
+bool AbstractWorker::validateURL(ScriptExecutionContext& context, const URL& scriptURL)
 {
     // Per the specification, any same-origin URL (including blob: URLs) can be used. data: URLs can also be used, but they create a worker with an opaque origin.
     if (!protect(context.securityOrigin())->canRequest(scriptURL, OriginAccessPatternsForWebProcess::singleton()) && !scriptURL.protocolIsData())
-        return Exception { ExceptionCode::SecurityError };
+        return false;
 
     ASSERT(context.contentSecurityPolicy());
 
@@ -83,9 +83,9 @@ std::optional<Exception> AbstractWorker::validateURL(ScriptExecutionContext& con
         sourcePosition = document->currentParserSourcePosition();
 
     if (!protect(context.contentSecurityPolicy())->allowWorkerFromSource(scriptURL, WTF::move(sourcePosition)))
-        return Exception { ExceptionCode::SecurityError };
+        return false;
 
-    return { };
+    return true;
 }
 
 } // namespace WebCore

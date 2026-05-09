@@ -3,7 +3,7 @@ include(WebKitVersion)
 # Enable Objective-C / Objective-C++ so .m/.mm sources use the OBJC/OBJCXX
 # compile rules and $<COMPILE_LANGUAGE:OBJC/OBJCXX> generator expressions
 # match. Without this CMake compiles .mm as CXX, CMAKE_OBJCXX_FLAGS are
-# ignored, and ADD_WEBKIT_PREFIX_HEADERS produces no OBJCXX precompiled
+# ignored, and WEBKIT_ADD_PREFIX_HEADER produces no OBJCXX precompiled
 # header for .mm sources.
 enable_language(OBJC OBJCXX)
 
@@ -133,13 +133,13 @@ WEBKIT_OPTION_END()
 # -----------------------------------------------------------------------------
 # Toolchain / SDK resolution
 # -----------------------------------------------------------------------------
+include(WebKitXcrun)
+WEBKIT_RESOLVE_SDK(macosx)
+
 # Resolve the real clang once and pin it for the lifetime of this build tree.
 # This is a build speed optimization, and also a defense against tearing between
 # resolved toolchain and resolved SDK path / version.
-execute_process(COMMAND xcrun -f clang
-    OUTPUT_VARIABLE _clang
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET)
+WEBKIT_XCRUN(_clang -f clang)
 if (EXISTS "${_clang}")
     set(CMAKE_C_COMPILER "${_clang}")
     set(CMAKE_CXX_COMPILER "${_clang}++")
@@ -149,24 +149,15 @@ endif ()
 
 # Ask xcrun directly; CMake's default sysroot discovery can lag Xcode versions.
 if (NOT CMAKE_OSX_SYSROOT)
-    execute_process(COMMAND xcrun --show-sdk-path
-        OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
+    WEBKIT_XCRUN(CMAKE_OSX_SYSROOT --show-sdk-path)
 endif ()
 
 # Deployment target must match SDK version -- PlatformHave.h SPI guards depend on
 # __MAC_OS_X_VERSION_MIN_REQUIRED. Auto-bump if the preset floor is below the SDK.
-execute_process(COMMAND xcrun --show-sdk-version
-    OUTPUT_VARIABLE _sdk_version
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET)
-if (_sdk_version)
-    string(REGEX MATCH "^[0-9]+\\.[0-9]+" _sdk_major_minor "${_sdk_version}")
-    if (_sdk_major_minor AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS _sdk_major_minor))
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "${_sdk_major_minor}" CACHE STRING "Minimum macOS version" FORCE)
-        message(WARNING "Deployment target auto-set to SDK version: ${CMAKE_OSX_DEPLOYMENT_TARGET} (SPI header guards require this)")
-    endif ()
+string(REGEX MATCH "^[0-9]+\\.[0-9]+" _sdk_major_minor "${_sdk_version}")
+if (_sdk_major_minor AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS _sdk_major_minor))
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "${_sdk_major_minor}" CACHE STRING "Minimum macOS version" FORCE)
+    message(WARNING "Deployment target auto-set to SDK version: ${CMAKE_OSX_DEPLOYMENT_TARGET} (SPI header guards require this)")
 endif ()
 
 set(_sdk_prefix "macosx")

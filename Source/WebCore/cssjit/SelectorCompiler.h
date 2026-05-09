@@ -47,12 +47,7 @@ enum class SelectorContext {
     QuerySelector
 };
 
-enum class SelectorPurpose {
-    Normal,
-    HasArgument
-};
-
-void compileSelector(CompiledSelector&, const CSSSelector&, SelectorContext, SelectorPurpose = SelectorPurpose::Normal);
+void compileSelector(CompiledSelector&, const CSSSelector&, SelectorContext);
 
 inline unsigned ruleCollectorSimpleSelectorChecker(CompiledSelector& compiledSelector, const Element* element, unsigned* value)
 {

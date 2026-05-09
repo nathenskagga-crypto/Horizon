@@ -27,8 +27,10 @@
 
 #include <WebCore/ActiveDOMObject.h>
 #include <WebCore/FileSystemHandleIdentifier.h>
+#include <WebCore/FileSystemHandleKind.h>
 #include <WebCore/FileSystemStorageConnection.h>
 #include <WebCore/IDLTypes.h>
+#include <wtf/CompletionHandler.h>
 #include <wtf/RefCounted.h>
 #include <wtf/TZoneMalloc.h>
 
@@ -44,18 +46,19 @@ public:
 
     virtual ~FileSystemHandle();
 
-    enum class Kind : uint8_t {
-        File,
-        Directory
-    };
+    using Kind = FileSystemHandleKind;
     Kind kind() const { return m_kind; }
     const String& name() const LIFETIME_BOUND { return m_name; }
     FileSystemHandleIdentifier identifier() const { return m_identifier; }
     bool isClosed() const { return m_isClosed; }
+    bool isBorrowed() const { return m_isBorrowed; }
     void close();
 
-    void isSameEntry(FileSystemHandle&, DOMPromiseDeferred<IDLBoolean>&&) const;
+    void isSameEntry(FileSystemHandle&, DOMPromiseDeferred<IDLBoolean>&&);
     void move(FileSystemHandle&, const String& newName, DOMPromiseDeferred<void>&&);
+
+    void markAsBorrowed();
+    void ensureIdentifier(CompletionHandler<void(bool)>&&);
 
     size_t connectionHandleCount() const { return m_connection->handleCount(); }
 
@@ -66,12 +69,15 @@ protected:
 private:
     // ActiveDOMObject.
     void stop() final;
+    void resolveEnsureIdentifierCallbacks(bool);
 
     Kind m_kind { Kind::File };
     String m_name;
     FileSystemHandleIdentifier m_identifier;
     const Ref<FileSystemStorageConnection> m_connection;
     bool m_isClosed { false };
+    bool m_isBorrowed { false };
+    Vector<CompletionHandler<void(bool)>> m_ensureIdentifierCallbacks;
 };
 
 } // namespace WebCore

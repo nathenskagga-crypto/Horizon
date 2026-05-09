@@ -96,6 +96,7 @@ public:
 
     bool shouldPreventOrientationMediaQueryFromEvaluatingToLandscape() const;
     bool NODELETE shouldFlipScreenDimensions() const;
+    bool shouldAvoidProgrammaticScrollClamping() const;
 
     WEBCORE_EXPORT bool shouldDispatchSyntheticMouseEventsWhenModifyingSelection() const;
     WEBCORE_EXPORT bool NODELETE shouldSuppressAutocorrectionAndAutocapitalizationInHiddenEditableAreas() const;
@@ -338,6 +339,8 @@ public:
 
     bool shouldLimitHLSPlaybackRate() const;
     bool shouldSuppressHLSSubtitles() const;
+
+    bool shouldSuppressMediaSessionPauseActionOnInterruption() const;
 
     void determineRelevantQuirks();
 

@@ -28,6 +28,10 @@ imported/w3c/web-platform-tests/css/CSS2/linebox/vertical-align-baseline-009.xht
 imported/w3c/web-platform-tests/css/css-anchor-position/anchor-scroll-to-sticky-003.html [ Pass ]
 imported/w3c/web-platform-tests/css/css-anchor-position/anchor-scroll-to-sticky-004.html [ Pass ]
 
+imported/w3c/web-platform-tests/webvtt/rendering/cues-with-video/processing-model/selectors/cue_function/color_rgba.html [ Pass ]
+imported/w3c/web-platform-tests/webvtt/rendering/cues-with-video/processing-model/selectors/cue_function/lang_object/lang_attribute.html [ Pass ]
+imported/w3c/web-platform-tests/webvtt/rendering/cues-with-video/processing-model/selectors/cue_function/root_selector.html [ Pass ]
+
 imported/w3c/web-platform-tests/css/compositing/mix-blend-mode/mix-blend-mode-stacking-context-002.html [ Pass ]
 
 webkit.org/b/289926 imported/w3c/web-platform-tests/css/css-position/position-absolute-under-non-containing-stacking-context.html [ Pass ]
@@ -309,6 +313,9 @@ webkit.org/b/130464 fast/canvas/canvas-path-addPath.html
 Bug(GTK) editing/spelling/grammar.html [ Skip ]
 Bug(GTK) editing/spelling/grammar-and-spelling-error-styling.html [ Skip ]
 Bug(GTK) editing/spelling/grammar-correction-shown-clicking-middle-of-word.html [ Skip ]
+Bug(GTK) editing/spelling/grammar-correction-shown-clicking-multiword-phrase.html [ Skip ]
+Bug(GTK) editing/spelling/grammar-arrow-upstream-into-multiword-phrase.html [ Skip ]
+Bug(GTK) editing/spelling/grammar-arrow-downstream-into-multiword-phrase.html [ Skip ]
 Bug(GTK) editing/spelling/grammar-edit-word.html [ Skip ]
 Bug(GTK) editing/spelling/grammar-markers.html [ Skip ]
 Bug(GTK) editing/spelling/grammar-markers-hidpi.html [ Skip ]
@@ -1060,7 +1067,7 @@ webkit.org/b/177294 platform/gtk/fonts/fontconfig-aliasing-settings.html [ Failu
 
 webkit.org/b/144690 fast/writing-mode/english-bt-text-with-spelling-marker.html [ ImageOnlyFailure ]
 
-webkit.org/b/182763 accessibility/gtk/aria-activedescendant-changed-notification.html [ Failure ]
+webkit.org/b/314266 webkit.org/b/182763 accessibility/gtk/aria-activedescendant-changed-notification.html [ Failure Crash ]
 
 webkit.org/b/183902 fast/dom/frame-loading-via-document-write.html [ Failure ]
 
@@ -1227,7 +1234,6 @@ webgl/2.0.y/conformance2/textures/image_bitmap_from_video [ Skip ]
 webgl/2.0.y/conformance2/textures/misc/tex-image-with-bad-args-from-dom-elements.html [ Skip ]
 
 # Flaky tests on Aug-2023
-webkit.org/b/261024 imported/w3c/web-platform-tests/html/browsers/browsing-the-web/navigating-across-documents/javascript-url-return-value-handling-dynamic.html [ Failure Pass ]
 webkit.org/b/261024 imported/w3c/web-platform-tests/media-source/mediasource-play.html [ Failure Pass ]
 webkit.org/b/261024 inspector/canvas/recording-webgl-full.html [ Failure ]
 

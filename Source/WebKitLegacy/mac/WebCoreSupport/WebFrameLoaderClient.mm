@@ -31,6 +31,7 @@
 #import "BackForwardList.h"
 #import "DOMElementInternal.h"
 #import "DOMHTMLFormElementInternal.h"
+#import <WebCore/ResourceHandle.h>
 #import "WebBackForwardList.h"
 #import "WebBasePluginPackage.h"
 #import "WebCachedFramePlatformData.h"

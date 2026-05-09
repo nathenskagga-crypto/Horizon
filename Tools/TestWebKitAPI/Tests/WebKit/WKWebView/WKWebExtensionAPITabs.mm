@@ -2556,7 +2556,8 @@ TEST(WKWebExtensionAPITabs, PortPostMessageWithoutUserGesture)
     [manager run];
 }
 
-TEST(WKWebExtensionAPITabs, PortPostMessageGestureFromContentScriptIsNotPropagated)
+// FIXME when webkit.org/b/314126 is resolved.
+TEST(WKWebExtensionAPITabs, DISABLED_PortPostMessageGestureFromContentScriptIsNotPropagated)
 {
     // Gestures from content scripts are intentionally not propagated to extension pages,
     // even when the content script sends a port message inside a user gesture.

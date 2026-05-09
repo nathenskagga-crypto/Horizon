@@ -240,6 +240,8 @@ public:
     bool didReceiveServerRedirectForProvisionalNavigation() const;
     void clearDidReceiveServerRedirectForProvisionalNavigation();
 
+    JSRetainPtr<JSStringRef> lastProvisionalNavigationFailureURL() const;
+
     bool shouldWaitUntilDone() const;
 
     // Downloads

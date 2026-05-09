@@ -5498,6 +5498,16 @@ static void convertAndAddHighlight(Vector<Ref<WebCore::SharedMemory>>& buffers, 
     [self _evaluateJavaScript:functionBody asAsyncFunction:YES withSourceURL:nil withArguments:arguments forceUserGesture:withUserGesture inFrame:frame inWorld:contentWorld completionHandler:completionHandler];
 }
 
+- (void)_clearContentWorld:(WKContentWorld *)contentWorld completionHandler:(void (^)(void))completionHandler
+{
+    THROW_IF_SUSPENDED;
+    auto handler = makeBlockPtr(completionHandler);
+    _page->clearContentWorld(protect(*contentWorld->_contentWorld), [handler = WTF::move(handler)] {
+        if (handler)
+            handler();
+    });
+}
+
 - (BOOL)_allMediaPresentationsClosed
 {
 #if ENABLE(FULLSCREEN_API)

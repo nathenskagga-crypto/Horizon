@@ -39,6 +39,7 @@
 #include <wtf/HashMap.h>
 #include <wtf/LoggerHelper.h>
 #include <wtf/MediaTime.h>
+#include <wtf/MonotonicTime.h>
 #include <wtf/NativePromise.h>
 #include <wtf/ThreadSafeRefCounted.h>
 #include <wtf/ThreadSafeWeakPtr.h>

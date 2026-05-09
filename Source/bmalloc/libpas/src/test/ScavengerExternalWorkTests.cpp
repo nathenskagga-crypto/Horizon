@@ -27,6 +27,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <pthread.h>
 #include <thread>
 
 #include "pas_scavenger.h"
@@ -38,6 +39,26 @@ extern "C" inline bool incrementCounter(void* counter)
     auto* atomic_counter = reinterpret_cast<std::atomic<int>*>(counter);
     (*atomic_counter)++;
     return false;
+}
+
+extern "C" inline bool noopForeignWorkCallback(void*)
+{
+    return false;
+}
+
+inline void testForeignWorkCallbackInstallReleasesLockOnSaturation()
+{
+    // Saturate the descriptor table by installing until one fails. The last
+    // (failing) install exercises the saturated path that previously returned
+    // without releasing foreign_work.lock, leaving the mutex permanently held.
+    while (pas_scavenger_try_install_foreign_work_callback(noopForeignWorkCallback, 1, nullptr)) { }
+
+    // pthread_mutex_trylock would return EBUSY if the mutex were still held.
+    // Avoid calling try_install_foreign_work_callback again here, since under
+    // the unfixed code that call would block forever on the leaked lock.
+    int rc = pthread_mutex_trylock(&pas_scavenger_data_instance->foreign_work.lock);
+    CHECK_EQUAL(rc, 0);
+    pthread_mutex_unlock(&pas_scavenger_data_instance->foreign_work.lock);
 }
 
 inline void testCallbacksAreCalledWhenExpected(int scavenger_on_ms, int scavenger_off_ms)
@@ -69,4 +90,5 @@ inline void testCallbacksAreCalledWhenExpected(int scavenger_on_ms, int scavenge
 void addScavengerExternalWorkTests()
 {
     ADD_TEST(testCallbacksAreCalledWhenExpected(50, 50));
+    ADD_TEST(testForeignWorkCallbackInstallReleasesLockOnSaturation());
 }

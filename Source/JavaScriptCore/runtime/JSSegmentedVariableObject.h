@@ -28,9 +28,7 @@
 
 #pragma once
 
-#include <JavaScriptCore/ConcurrentJSLock.h>
 #include <JavaScriptCore/JSSymbolTableObject.h>
-#include <JavaScriptCore/SymbolTable.h>
 #include <wtf/SegmentedVector.h>
 
 namespace JSC {

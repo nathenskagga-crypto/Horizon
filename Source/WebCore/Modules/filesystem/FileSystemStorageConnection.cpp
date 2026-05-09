@@ -26,8 +26,13 @@
 #include "config.h"
 #include "FileSystemStorageConnection.h"
 
+#include "ClientOrigin.h"
+#include "Document.h"
+#include "DocumentPage.h"
 #include "Exception.h"
 #include "FileSystemWritableFileStream.h"
+#include "StorageConnection.h"
+#include "WorkerGlobalScope.h"
 
 namespace WebCore {
 
@@ -48,6 +53,51 @@ void FileSystemStorageConnection::registerFileSystemWritable(FileSystemWritableF
 void FileSystemStorageConnection::unregisterFileSystemWritable(FileSystemWritableFileStreamIdentifier identifier)
 {
     m_writables.remove(identifier);
+}
+
+FileSystemHandleTransferToken::FileSystemHandleTransferToken(FileSystemHandleIdentifier identifier, Ref<FileSystemStorageConnection>&& connection)
+    : m_identifier(identifier)
+    , m_connection(WTF::move(connection))
+{
+}
+
+FileSystemHandleTransferToken::~FileSystemHandleTransferToken()
+{
+    if (RefPtr connection = m_connection; connection && m_identifier)
+        connection->removeTransferReference(*m_identifier);
+}
+
+FileSystemHandleTransferToken& FileSystemHandleTransferToken::operator=(FileSystemHandleTransferToken&& other)
+{
+    if (this != &other) {
+        if (RefPtr connection = m_connection; connection && m_identifier)
+            connection->removeTransferReference(*m_identifier);
+        m_identifier = std::exchange(other.m_identifier, std::nullopt);
+        m_connection = WTF::move(other.m_connection);
+    }
+    return *this;
+}
+
+RefPtr<FileSystemStorageConnection> fileSystemStorageConnectionForContext(ScriptExecutionContext& context)
+{
+    if (auto* workerScope = dynamicDowncast<WorkerGlobalScope>(context))
+        return workerScope->fileSystemStorageConnection();
+
+    if (auto* document = dynamicDowncast<Document>(context)) {
+        if (RefPtr storageConnection = document->storageConnection())
+            return storageConnection->fileSystemStorageConnection();
+    }
+
+    return nullptr;
+}
+
+ClientOrigin clientOriginForContext(ScriptExecutionContext& context)
+{
+    if (auto* workerScope = dynamicDowncast<WorkerGlobalScope>(context))
+        return workerScope->clientOrigin();
+    if (auto* document = dynamicDowncast<Document>(context))
+        return { document->topOrigin().data(), document->securityOrigin().data() };
+    return { };
 }
 
 } // namespace WebCore

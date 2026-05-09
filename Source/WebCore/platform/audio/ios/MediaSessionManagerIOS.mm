@@ -39,7 +39,6 @@
 #import <wtf/RetainPtr.h>
 #import <wtf/RuntimeApplicationChecks.h>
 #import <wtf/TZoneMalloc.h>
-#import <wtf/TZoneMallocInlines.h>
 
 namespace WebCore {
 

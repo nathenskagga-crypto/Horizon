@@ -72,7 +72,6 @@
 #include <bmalloc/BPlatform.h>
 #include <unicode/uversion.h>
 #include <wtf/ApproximateTime.h>
-#include <wtf/Atomics.h>
 #include <wtf/CPUTime.h>
 #include <wtf/DataLog.h>
 #include <wtf/Language.h>

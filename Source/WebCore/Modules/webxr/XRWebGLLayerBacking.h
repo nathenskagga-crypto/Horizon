@@ -30,12 +30,14 @@
 #include "GraphicsTypesGL.h"
 #include "IntSize.h"
 #include "XRLayerBacking.h"
+#include <optional>
 #include <wtf/TZoneMalloc.h>
 
 namespace PlatformXR {
 struct FrameData;
 class Device;
 struct Layer;
+enum class CompositionLayerType : uint8_t;
 }
 
 namespace WebCore {
@@ -43,7 +45,10 @@ namespace WebCore {
 class WebGLOpaqueTexture;
 class WebGLRenderingContextBase;
 class WebXROpaqueFramebuffer;
+class WebXRSession;
 class WebXRWebGLSwapchain;
+struct XRLayerInit;
+struct XRProjectionLayerInit;
 
 class XRWebGLLayerBacking : public XRLayerBacking {
     WTF_MAKE_TZONE_ALLOCATED(XRWebGLLayerBacking);
@@ -71,6 +76,17 @@ public:
 protected:
     XRWebGLLayerBacking(PlatformXR::LayerHandle, std::unique_ptr<WebXRWebGLSwapchain>&& colorSwapchain, std::unique_ptr<WebXRWebGLSwapchain>&& depthSwapchain);
 
+    struct XRLayerSwapchains {
+        PlatformXR::LayerHandle handle;
+        std::unique_ptr<WebXRWebGLSwapchain> colorSwapchain;
+        std::unique_ptr<WebXRWebGLSwapchain> depthSwapchain;
+    };
+
+    static ExceptionOr<XRLayerSwapchains> createCompositionLayerSwapchains(WebXRSession&, WebGLRenderingContextBase&, PlatformXR::CompositionLayerType, const XRLayerInit&);
+    static ExceptionOr<XRLayerSwapchains> createProjectionLayerSwapchains(WebXRSession&, WebGLRenderingContextBase&, const XRProjectionLayerInit&);
+
+private:
+    static ExceptionOr<XRLayerSwapchains> createColorAndDepthSwapchains(WebGLRenderingContextBase&, PlatformXR::LayerHandle, GCGLenum colorFormat, std::optional<GCGLenum> depthFormat, IntSize, bool clearOnAccess, size_t numImages);
     static std::unique_ptr<WebXRWebGLSwapchain> createDepthSwapchain(WebGLRenderingContextBase&, GCGLenum depthFormat, IntSize, bool clearOnAccess, size_t imageCount);
 
     std::unique_ptr<WebXRWebGLSwapchain> m_colorSwapchain;

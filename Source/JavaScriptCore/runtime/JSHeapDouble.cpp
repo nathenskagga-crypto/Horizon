@@ -31,7 +31,6 @@
 #include "JSObjectInlines.h"
 
 #include <JavaScriptCore/VMManager.h>
-#include <mutex>
 
 namespace JSC {
 

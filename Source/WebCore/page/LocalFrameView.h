@@ -36,13 +36,9 @@
 #include <WebCore/PaintPhase.h>
 #include <WebCore/RenderPtr.h>
 #include <WebCore/SimpleRange.h>
-#include <memory>
-#include <wtf/Forward.h>
 #include <wtf/Function.h>
 #include <wtf/HashSet.h>
 #include <wtf/ListHashSet.h>
-#include <wtf/OptionSet.h>
-#include <wtf/Platform.h>
 #include <wtf/TZoneMalloc.h>
 #include <wtf/WeakHashSet.h>
 #include <wtf/WeakRef.h>

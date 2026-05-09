@@ -38,7 +38,6 @@
 #include "DFGNodeType.h"
 #include "DFGPhase.h"
 #include "FunctionAllowlist.h"
-#include <wtf/IndexMap.h>
 
 namespace JSC {
 namespace DFG {

@@ -39,15 +39,9 @@
 #include <wtf/Lock.h>
 #include <wtf/Platform.h>
 #include <wtf/PrintStream.h>
-#include <wtf/RAMSize.h>
-#include <wtf/SafeStrerror.h>
-#include <wtf/StdSet.h>
 #include <wtf/TZoneMallocInlines.h>
-#include <wtf/Vector.h>
 
 #include <cstring>
-#include <limits>
-#include <mutex>
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 

@@ -153,6 +153,17 @@ if (ENABLE_GAMEPAD)
     )
 endif ()
 
+if (USE_VULKAN)
+    list(APPEND WebCore_PRIVATE_LIBRARIES volk::volk)
+    list(APPEND WebCore_PRIVATE_INCLUDE_DIRECTORIES
+        "${WEBCORE_DIR}/platform/graphics/vulkan"
+    )
+    list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
+        platform/graphics/vulkan/VulkanTypes.h
+        platform/graphics/vulkan/VulkanUtilities.h
+    )
+endif ()
+
 # This sets the maximum amount of memory that BitmapTexturePool can hold before being more
 # aggressive trying to release the unused textures.
 # Use a big value as the default size limit (80MB, enough for ten 1920x1080 layers).

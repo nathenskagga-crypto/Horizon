@@ -50,6 +50,8 @@ enum class ShouldComputePreferred : bool { ComputeActual, ComputePreferred };
 
 enum class StretchingMode { Normal, Explicit };
 
+enum class IsComputingIntrinsicSize : bool { No, Yes };
+
 class RenderBox : public RenderBoxModelObject {
     WTF_MAKE_TZONE_ALLOCATED(RenderBox);
     WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(RenderBox);
@@ -85,7 +87,7 @@ public:
 
     enum class AllowIntrinsic : bool { No, Yes };
     LayoutUnit constrainLogicalWidthByMinMax(LayoutUnit, LayoutUnit, const RenderBlock&, AllowIntrinsic = AllowIntrinsic::Yes) const;
-    LayoutUnit constrainLogicalHeightByMinMax(LayoutUnit logicalHeight, std::optional<LayoutUnit> intrinsicContentHeight) const;
+    LayoutUnit constrainLogicalHeightByMinMax(LayoutUnit logicalHeight, std::optional<LayoutUnit> intrinsicContentHeight, IsComputingIntrinsicSize = IsComputingIntrinsicSize::No) const;
     LayoutUnit constrainContentBoxLogicalHeightByMinMax(LayoutUnit logicalHeight, std::optional<LayoutUnit> intrinsicContentHeight) const;
 
     inline void setLogicalLeft(LayoutUnit);
@@ -383,7 +385,7 @@ public:
     // calculations have a way to deal with children that have orthogonal writing modes.
     // When there is no explicit height, this function assumes a content height of
     // zero (and returns just border + padding).
-    LayoutUnit computeLogicalHeightWithoutLayout() const;
+    LayoutUnit computeLogicalHeightForIntrinsicWidthContribution() const;
 
     enum class RenderBoxFragmentInfoFlags : bool { CacheRenderBoxFragmentInfo, DoNotCacheRenderBoxFragmentInfo };
     RenderBoxFragmentInfo* NODELETE renderBoxFragmentInfo(RenderFragmentContainer*, RenderBoxFragmentInfoFlags = RenderBoxFragmentInfoFlags::CacheRenderBoxFragmentInfo) const;

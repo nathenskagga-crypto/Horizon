@@ -183,7 +183,6 @@ namespace JSC {
     macro(regExpSplitFast) \
     macro(stringIncludesInternal) \
     macro(stringIndexOfInternal) \
-    macro(stringSplitFast) \
     macro(stringSubstring) \
     macro(handleNegativeProxyHasTrapResult) \
     macro(handlePositiveProxySetTrapResult) \

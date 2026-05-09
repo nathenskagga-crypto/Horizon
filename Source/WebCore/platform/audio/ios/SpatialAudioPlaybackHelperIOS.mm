@@ -37,7 +37,6 @@
 #import <wtf/CheckedPtr.h>
 #import <wtf/NeverDestroyed.h>
 #import <wtf/TZoneMalloc.h>
-#import <wtf/TZoneMallocInlines.h>
 #import <wtf/WeakPtr.h>
 
 #import <pal/cocoa/AVFoundationSoftLink.h>

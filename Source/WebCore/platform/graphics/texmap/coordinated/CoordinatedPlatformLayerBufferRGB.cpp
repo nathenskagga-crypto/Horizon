@@ -35,6 +35,7 @@
 #if USE(SKIA)
 WTF_IGNORE_WARNINGS_IN_THIRD_PARTY_CODE_BEGIN
 #include <skia/core/SkColorFilter.h>
+#include <skia/core/SkColorSpace.h>
 #include <skia/core/SkImage.h>
 #include <skia/gpu/ganesh/GrBackendSurface.h>
 #include <skia/gpu/ganesh/SkImageGanesh.h>

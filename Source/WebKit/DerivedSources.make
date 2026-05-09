@@ -987,11 +987,18 @@ WEBCORE_SERIALIZATION_DESCRIPTION_FILES = \
 
 WEBCORE_SERIALIZATION_DESCRIPTION_FILES_FULLPATH := $(foreach I,$(WEBCORE_SERIALIZATION_DESCRIPTION_FILES),$(WebCorePrivateHeaders)/$I)
 
-all : IPC/GeneratedSerializers.h IPC/GeneratedSerializers.mm IPC/GeneratedWebKitSecureCoding.h IPC/GeneratedWebKitSecureCoding.mm IPC/SerializedTypeInfo.mm IPC/WebKitPlatformGeneratedSerializers.mm
+all : IPC/GeneratedSerializers.h IPC/GeneratedSerializersShared.mm IPC/GeneratedSerializersWebProcess.mm IPC/GeneratedSerializersGPUProcess.mm IPC/GeneratedSerializersNetworkProcess.mm IPC/GeneratedSerializersPlatform.mm IPC/GeneratedSerializersModelProcess.mm IPC/GeneratedSerializersUIProcess.mm IPC/GeneratedSerializersCommon.mm IPC/GeneratedWebKitSecureCoding.h IPC/GeneratedWebKitSecureCoding.mm IPC/SerializedTypeInfo.mm IPC/WebKitPlatformGeneratedSerializers.mm
 
 GENERATED_SERIALIZERS_OUTPUT_FILES = \
     IPC/GeneratedSerializers.h \
-    IPC/GeneratedSerializers.mm \
+    IPC/GeneratedSerializersShared.mm \
+    IPC/GeneratedSerializersWebProcess.mm \
+    IPC/GeneratedSerializersGPUProcess.mm \
+    IPC/GeneratedSerializersNetworkProcess.mm \
+    IPC/GeneratedSerializersPlatform.mm \
+    IPC/GeneratedSerializersModelProcess.mm \
+    IPC/GeneratedSerializersUIProcess.mm \
+    IPC/GeneratedSerializersCommon.mm \
     IPC/GeneratedWebKitSecureCoding.h \
     IPC/GeneratedWebKitSecureCoding.mm \
     IPC/SerializedTypeInfo.mm \
@@ -1001,7 +1008,7 @@ GENERATED_SERIALIZERS_OUTPUT_FILES = \
 GENERATED_SERIALIZERS_OUTPUT_PATTERNS = $(call to-pattern, $(GENERATED_SERIALIZERS_OUTPUT_FILES))
 
 $(GENERATED_SERIALIZERS_OUTPUT_PATTERNS) : $(WebKit2)/Scripts/generate-serializers.py $(SERIALIZATION_DESCRIPTION_FILES) $(WebKit2)/DerivedSources.make $(WEBCORE_SERIALIZATION_DESCRIPTION_FILES_FULLPATH) $(WebKit2)/Scripts/webkit/opaque_ipc_types.py $(WebKit2)/Scripts/webkit/opaque_ipc_types.tracking.in
-	$(PYTHON) $(WebKit2)/Scripts/generate-serializers.py mm --output-dir=IPC $(filter %.serialization.in,$^)
+	$(PYTHON) $(WebKit2)/Scripts/generate-serializers.py mm --split-by-directory --output-dir=IPC $(filter %.serialization.in,$^)
 
 EXTENSIONS_DIR = $(WebKit2)/WebProcess/Extensions
 EXTENSIONS_SCRIPTS_DIR = $(EXTENSIONS_DIR)/Bindings/Scripts

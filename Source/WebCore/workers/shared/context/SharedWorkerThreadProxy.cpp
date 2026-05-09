@@ -33,6 +33,7 @@
 #include "ErrorEvent.h"
 #include "EventLoop.h"
 #include "EventNames.h"
+#include "FileSystemStorageConnection.h"
 #include "FrameLoader.h"
 #include "IDBConnectionProxy.h"
 #include "LoaderStrategy.h"
@@ -48,6 +49,7 @@
 #include "SharedWorkerGlobalScope.h"
 #include "SharedWorkerThread.h"
 #include "SocketProvider.h"
+#include "StorageConnection.h"
 #include "WebRTCProvider.h"
 #include "WorkerClient.h"
 #include "WorkerFetchResult.h"
@@ -156,6 +158,9 @@ void SharedWorkerThreadProxy::postExceptionToWorkerObject(const String& errorMes
     if (!m_workerThread->isInStaticScriptEvaluation())
         return;
 
+    if (protect(m_workerThread->WorkerOrWorkletThread::globalScope())->settingsValues().workerParseErrorReportingEnabled)
+        return;
+
     callOnMainThread([sharedWorkerIdentifier = m_workerThread->identifier(), errorMessage = errorMessage.isolatedCopy(), lineNumber, columnNumber, sourceURL = sourceURL.isolatedCopy()] {
         bool isErrorEvent = true;
         if (RefPtr connection = SharedWorkerContextManager::singleton().connection())
@@ -245,6 +250,14 @@ void SharedWorkerThreadProxy::setAppBadge(std::optional<uint64_t> badge)
     callOnMainRunLoop([badge = WTF::move(badge), this, protectedThis = Ref { *this }] {
         m_page->badgeClient().setAppBadge(nullptr, m_clientOrigin.clientOrigin, badge);
     });
+}
+
+RefPtr<FileSystemStorageConnection> SharedWorkerThreadProxy::createFileSystemStorageConnection()
+{
+    ASSERT(isMainThread());
+    if (RefPtr storageConnection = m_document->storageConnection())
+        return storageConnection->fileSystemStorageConnection();
+    return nullptr;
 }
 
 } // namespace WebCore

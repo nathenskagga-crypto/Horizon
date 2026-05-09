@@ -40,6 +40,7 @@
 #include "ErrorEvent.h"
 #include "EventNames.h"
 #include "FetchRequestCredentials.h"
+#include "FileSystemStorageConnection.h"
 #include "IDBConnectionProxy.h"
 #include "JSDOMGlobalObject.h"
 #include "LoaderStrategy.h"
@@ -50,6 +51,7 @@
 #include "ScriptExecutionContext.h"
 #include "Settings.h"
 #include "SocketProvider.h"
+#include "StorageConnection.h"
 #include "UserGestureIndicator.h"
 #include "WebRTCProvider.h"
 #include "Worker.h"
@@ -159,11 +161,7 @@ void WorkerMessagingProxy::startWorkerGlobalScope(const URL& scriptURL, PAL::Ses
 
     bool isOnline = parentWorkerGlobalScope ? parentWorkerGlobalScope->isOnline() : platformStrategies()->loaderStrategy()->isOnLine();
 
-    String agentClusterID;
-    if (parentWorkerGlobalScope)
-        agentClusterID = parentWorkerGlobalScope->agentClusterID();
-    else
-        agentClusterID = JSDOMGlobalObject::defaultAgentClusterID();
+    auto agentClusterID = scriptExecutionContext->agentClusterID();
 
     m_scriptURL = scriptURL;
 
@@ -521,6 +519,23 @@ void WorkerMessagingProxy::setAppBadge(std::optional<uint64_t> badge)
 
         document->page()->badgeClient().setAppBadge(nullptr, SecurityOriginData::fromURL(m_scriptURL), badge);
     });
+}
+
+RefPtr<FileSystemStorageConnection> WorkerMessagingProxy::createFileSystemStorageConnection()
+{
+    ASSERT(isMainThread());
+    if (!m_scriptExecutionContext)
+        return nullptr;
+
+    RefPtr document = dynamicDowncast<Document>(*m_scriptExecutionContext);
+    if (!document)
+        document = Document::allDocumentsMap().get(m_loaderContextIdentifier);
+
+    if (!document)
+        return nullptr;
+    if (RefPtr storageConnection = document->storageConnection())
+        return storageConnection->fileSystemStorageConnection();
+    return nullptr;
 }
 
 } // namespace WebCore

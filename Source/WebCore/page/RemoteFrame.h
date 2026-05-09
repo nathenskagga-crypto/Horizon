@@ -25,15 +25,12 @@
 
 #pragma once
 
+#include <WebCore/AXObjectTypes.h>
 #include <WebCore/Frame.h>
 #include <WebCore/LayerHostingContextIdentifier.h>
 #include <wtf/RefPtr.h>
 #include <wtf/TypeCasts.h>
 #include <wtf/UniqueRef.h>
-
-#if ENABLE(ACCESSIBILITY_LOCAL_FRAME)
-#include <WebCore/AXObjectCache.h>
-#endif
 
 namespace WebCore {
 
@@ -43,6 +40,7 @@ class RemoteFrameClient;
 class RemoteFrameView;
 class WeakPtrImplWithEventTargetData;
 class ResourceTiming;
+
 
 enum class AdvancedPrivacyProtections : uint16_t;
 enum class AutoplayPolicy : uint8_t;

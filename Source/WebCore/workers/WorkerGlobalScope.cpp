@@ -38,6 +38,7 @@
 #include "Crypto.h"
 #include "CryptoKeyData.h"
 #include "DOMTimer.h"
+#include "Document.h"
 #include "FontCustomPlatformData.h"
 #include "FontFaceSet.h"
 #include "FrameConsoleClient.h"
@@ -74,6 +75,7 @@
 #include "WorkerNavigator.h"
 #include "WorkerOrWorkletGlobalScope.h"
 #include "WorkerReportingProxy.h"
+#include "WorkerSTWParticipation.h"
 #include "WorkerSWClientConnection.h"
 #include "WorkerScriptLoader.h"
 #include "WorkerStorageConnection.h"
@@ -310,6 +312,17 @@ WorkerFileSystemStorageConnection& WorkerGlobalScope::getFileSystemStorageConnec
 
 WorkerFileSystemStorageConnection* WorkerGlobalScope::fileSystemStorageConnection()
 {
+    if (!m_fileSystemStorageConnection) {
+        RefPtr<FileSystemStorageConnection> mainThreadConnection;
+        callOnMainThreadAndWait([workerThread = Ref { thread() }, &mainThreadConnection]() mutable {
+            if (workerThread->runLoop().terminated())
+                return;
+            if (CheckedPtr workerLoaderProxy = workerThread->workerLoaderProxy())
+                mainThreadConnection = workerLoaderProxy->createFileSystemStorageConnection();
+        });
+        if (mainThreadConnection)
+            m_fileSystemStorageConnection = WorkerFileSystemStorageConnection::create(*this, mainThreadConnection.releaseNonNull());
+    }
     return m_fileSystemStorageConnection.get();
 }
 
@@ -534,7 +547,7 @@ std::optional<Vector<uint8_t>> WorkerGlobalScope::serializeAndWrapCryptoKey(Cryp
         wrappedKey = context.serializeAndWrapCryptoKey(WTF::move(keyData));
         semaphore.signal();
     });
-    semaphore.wait();
+    waitWithSTWParticipation(semaphore, vm());
     return wrappedKey;
 }
 
@@ -551,7 +564,7 @@ std::optional<Vector<uint8_t>> WorkerGlobalScope::unwrapCryptoKey(const Vector<u
         key = context.unwrapCryptoKey(wrappedKey);
         semaphore.signal();
     });
-    semaphore.wait();
+    waitWithSTWParticipation(semaphore, vm());
     return key;
 }
 
@@ -729,7 +742,7 @@ void WorkerGlobalScope::clearDecodedScriptData()
 
 bool WorkerGlobalScope::crossOriginIsolated() const
 {
-    return ScriptExecutionContext::crossOriginMode() == CrossOriginMode::Isolated;
+    return crossOriginEmbedderPolicy().value == CrossOriginEmbedderPolicyValue::RequireCORP;
 }
 
 void WorkerGlobalScope::updateSourceProviderBuffers(const ScriptBuffer& mainScript, const HashMap<URL, ScriptBuffer>& importedScripts)

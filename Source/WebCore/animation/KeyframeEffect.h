@@ -246,6 +246,7 @@ private:
     void computeHasAcceleratedPropertyOverriddenByCascadeProperty();
     void computeHasReferenceFilter();
     void computeHasSizeDependentTransform();
+    void computeAnimationIsAcceleratedAndAffectsAnchorGeometry();
     void analyzeAcceleratedProperties();
     void updateIsAssociatedWithProgressBasedTimeline();
     bool isRunningAccountingForSuspension() const;
@@ -335,6 +336,11 @@ private:
     bool m_animatesSizeAndSizeDependentTransform : 1 { false };
     bool m_isAssociatedWithProgressBasedTimeline : 1 { false };
     bool m_needsComputedKeyframeOffsetsUpdate : 1 { false };
+
+    // True when this animation is accelerated and may affect the geometry of anchors,
+    // for anchor positioning purpose. An example is animating scale/rotation/translate
+    // of an anchor or its layout containers.
+    bool m_animationIsAcceleratedAndAffectsAnchorGeometry : 1 { false };
 };
 
 } // namespace WebCore

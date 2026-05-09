@@ -2694,6 +2694,16 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
         setNonCellTypeForNode(node, SpecBoolean);
         break;
 
+    case StringSplit:
+        clobberWorld();
+        if (node->child2().useKind() == RegExpObjectUse) {
+            // The RegExp variant may invoke a per-instance @@split override that
+            // can return any JS value, so fall back to top.
+            makeHeapTopForNode(node);
+        } else
+            setTypeForNode(node, SpecArray);
+        break;
+
     case StringFromCharCode: {
         if (node->child1().useKind() == Int32Use || node->child1().useKind() == KnownInt32Use) {
             if (node->child1()->isInt32Constant() && node->child1()->asUInt32() <= maxSingleCharacterString) {

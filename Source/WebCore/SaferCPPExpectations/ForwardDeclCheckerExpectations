@@ -48,6 +48,7 @@ layout/formattingContexts/inline/InlineFormattingContext.h
 layout/formattingContexts/inline/InlineItemsBuilder.cpp
 layout/formattingContexts/inline/InlineLine.h
 [ iOS ] page/cocoa/ContentChangeObserver.h
+page/Page.h
 page/scrolling/ScrollingStateNode.h
 [ Mac ] page/scrolling/ScrollingStateScrollingNode.cpp
 platform/PODRedBlackTree.h

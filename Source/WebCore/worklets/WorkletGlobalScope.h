@@ -80,6 +80,8 @@ public:
 
     bool isSecureContext() const final { return false; }
 
+    String agentClusterID() const final { return m_agentClusterID; }
+
     JSC::RuntimeFlags jsRuntimeFlags() const { return m_jsRuntimeFlags; }
 
     void prepareForDestruction() override;
@@ -124,6 +126,7 @@ private:
     const RefPtr<WorkerMessagePortChannelProvider> m_messagePortChannelProvider;
 
     SettingsValues m_settingsValues;
+    String m_agentClusterID;
 };
 
 } // namespace WebCore

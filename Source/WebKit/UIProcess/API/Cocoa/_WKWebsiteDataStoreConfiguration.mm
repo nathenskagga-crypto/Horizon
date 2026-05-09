@@ -502,6 +502,43 @@ static WebKit::UnifiedOriginStorageLevel NODELETE toUnifiedOriginStorageLevel(_W
     _configuration->setPerOriginStorageQuota(quota);
 }
 
+- (BOOL)timeBasedEvictionEnabled
+{
+    return _configuration->timeBasedEvictionEnabled();
+}
+
+- (void)setTimeBasedEvictionEnabled:(BOOL)enabled
+{
+    _configuration->setTimeBasedEvictionEnabled(enabled);
+}
+
+- (NSTimeInterval)timeBasedEvictionThreshold
+{
+    return _configuration->timeBasedEvictionThreshold().seconds();
+}
+
+- (void)setTimeBasedEvictionThreshold:(NSTimeInterval)seconds
+{
+    _configuration->setTimeBasedEvictionThreshold(Seconds(seconds));
+}
+
+- (NSNumber *)lastModificationTimeUpdateIntervalOverride
+{
+    auto interval = _configuration->lastModificationTimeUpdateIntervalOverride();
+    if (!interval)
+        return nil;
+
+    return [NSNumber numberWithDouble:interval->seconds()];
+}
+
+- (void)setLastModificationTimeUpdateIntervalOverride:(NSNumber *)seconds
+{
+    if (seconds)
+        _configuration->setLastModificationTimeUpdateIntervalOverride(Seconds([seconds doubleValue]));
+    else
+        _configuration->setLastModificationTimeUpdateIntervalOverride(std::nullopt);
+}
+
 - (NSNumber *)originQuotaRatio
 {
     auto ratio = _configuration->originQuotaRatio();

@@ -59,16 +59,44 @@ Ref<MathMLOperatorElement> MathMLOperatorElement::create(const QualifiedName& ta
 MathMLOperatorElement::OperatorChar MathMLOperatorElement::parseOperatorChar(const String& string)
 {
     OperatorChar operatorChar;
-    StringView view = string;
-    // FIXME: This operator dictionary does not accept multiple characters (https://webkit.org/b/124828).
-    if (auto codePoint = view.trim(isASCIIWhitespaceWithoutFF<char16_t>).convertToSingleCodePoint()) {
-        auto character = codePoint.value();
-        // The minus sign renders better than the hyphen sign used in some MathML formulas.
-        if (character == hyphenMinus)
-            character = minusSign;
+    String trimmed = string.trim(isASCIIWhitespaceWithoutFF<UChar>);
+    if (trimmed.isEmpty())
+        return operatorChar;
+
+    auto setOperatorChar = [&](char32_t character) {
         operatorChar.character = character;
         operatorChar.isVertical = isVertical(operatorChar.character);
+    };
+
+    // https://w3c.github.io/mathml-core/#dfn-algorithm-to-determine-the-category-of-an-operator
+    // Only operators with UTF-16 length 1 or 2 are recognized.
+    unsigned length = trimmed.length();
+    if (length == 1) {
+        char32_t character = trimmed[0];
+        // The minus sign renders better than the hyphen sign used in some MathML formulas.
+        // This is not in MathML Core, see https://github.com/w3c/mathml-core/issues/70
+        if (character == hyphenMinus)
+            character = minusSign;
+        setOperatorChar(character);
+        return operatorChar;
     }
+
+    if (length == 2) {
+        // A surrogate pair encoding a single code point (e.g. U+1EEF0, U+1EEF1).
+        if (auto codePoint = StringView(trimmed).convertToSingleCodePoint()) {
+            setOperatorChar(codePoint.value());
+            return operatorChar;
+        }
+        // Base character followed by U+0338 COMBINING LONG SOLIDUS OVERLAY
+        // or U+20D2 COMBINING LONG VERTICAL LINE OVERLAY. The base character
+        // is used for dictionary lookup and must not be substituted.
+        constexpr UChar combiningLongSolidusOverlay = 0x0338;
+        constexpr UChar combiningLongVerticalLineOverlay = 0x20D2;
+        UChar second = trimmed[1];
+        if (second == combiningLongSolidusOverlay || second == combiningLongVerticalLineOverlay)
+            setOperatorChar(trimmed[0]);
+    }
+
     return operatorChar;
 }
 

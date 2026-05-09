@@ -42,14 +42,10 @@ TransparencyLayerContextSwitcher::TransparencyLayerContextSwitcher(GraphicsConte
         m_filterStyles = m_filter->createFilterStyles(destinationContext, sourceImageRect);
 }
 
-void TransparencyLayerContextSwitcher::beginClipAndDrawSourceImage(GraphicsContext& destinationContext, const FloatRect&, const FloatRect& clipRect, NOESCAPE const Function<void(GraphicsContext&)>& applyAdditionalDestinationClip)
+void TransparencyLayerContextSwitcher::beginClipAndDrawSourceImage(GraphicsContext& destinationContext, const FloatRect&, const FloatRect& clipRect)
 {
-    bool isFirst = true;
     for (auto& filterStyle : m_filterStyles) {
         destinationContext.save();
-        if (isFirst && applyAdditionalDestinationClip)
-            applyAdditionalDestinationClip(destinationContext);
-        isFirst = false;
         destinationContext.clip(intersection(filterStyle.imageRect, clipRect));
         destinationContext.setStyle(filterStyle.style);
         destinationContext.beginTransparencyLayer(1);

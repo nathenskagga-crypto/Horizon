@@ -98,6 +98,10 @@ inline constexpr auto NonnegativeUnzoomed = Range { 0, Range::infinity, RangeCla
 inline constexpr auto Positive = Range { 1, Range::infinity };
 inline constexpr auto PositiveUnzoomed = Range { 1, Range::infinity, RangeClampOptions::Default, RangeZoomOptions::Unzoomed };
 
+// Constant value for `[-∞,-1]`.
+inline constexpr auto Negative = Range { -Range::infinity, -1 };
+inline constexpr auto NegativeUnzoomed = Range { -Range::infinity, -1, RangeClampOptions::Default, RangeZoomOptions::Unzoomed };
+
 // Constant value for `[0,1]`.
 inline constexpr auto ClosedUnitRange = Range { 0, 1 };
 inline constexpr auto ClosedUnitRangeUnzoomed = Range { 0, 1, RangeClampOptions::Default, RangeZoomOptions::Unzoomed };
@@ -117,6 +121,10 @@ inline constexpr auto ClosedPercentageRangeUnzoomed = Range { 0, 100, RangeClamp
 // Constant value for `[0,100(clamp upper)]`.
 inline constexpr auto ClosedPercentageRangeClampUpper = Range { 0, 100, RangeClampOptions::ClampUpper };
 inline constexpr auto ClosedPercentageRangeClampUpperUnzoomed = Range { 0, 100, RangeClampOptions::ClampUpper, RangeZoomOptions::Unzoomed };
+
+// Constant value for `[0,100(clamp both)]`.
+inline constexpr auto ClosedPercentageRangeClampBoth = Range { 0, 100, RangeClampOptions::ClampBoth };
+inline constexpr auto ClosedPercentageRangeClampBothUnzoomed = Range { 0, 100, RangeClampOptions::ClampBoth, RangeZoomOptions::Unzoomed };
 
 // Clamps a floating point value to within `range`.
 template<Range range, std::floating_point T, typename U> constexpr T clampToRange(U value)

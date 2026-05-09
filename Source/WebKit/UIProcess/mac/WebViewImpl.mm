@@ -2678,6 +2678,7 @@ void WebViewImpl::endDeferringViewInWindowChanges()
         flushPendingObscuredContentInsetChanges();
         m_page->activityStateDidChange(WebCore::ActivityState::IsInWindow);
         m_viewInWindowChangeWasDeferred = false;
+        m_page->webViewDidMoveToWindow();
     }
 }
 
@@ -2694,6 +2695,7 @@ void WebViewImpl::endDeferringViewInWindowChangesSync()
         flushPendingObscuredContentInsetChanges();
         m_page->activityStateDidChange(WebCore::ActivityState::IsInWindow);
         m_viewInWindowChangeWasDeferred = false;
+        m_page->webViewDidMoveToWindow();
     }
 }
 
@@ -4589,7 +4591,11 @@ bool WebViewImpl::performDragOperation(id<NSDraggingInfo> draggingInfo)
     SandboxExtension::Handle sandboxExtensionHandle;
     Vector<SandboxExtension::Handle> sandboxExtensionForUpload;
 
-    if (![types containsObject:PasteboardTypes::WebArchivePboardType] && [types containsObject:WebCore::legacyFilesPromisePasteboardTypeSingleton()])
+    // https://bugs.webkit.org/show_bug.cgi?id=307601
+    bool hasWebArchive = [types containsObject:PasteboardTypes::WebArchivePboardType];
+    bool hasFilePromises = [types containsObject:WebCore::legacyFilesPromisePasteboardTypeSingleton()];
+    bool isDragFromSelf = dragData->flags().contains(WebCore::DragApplicationFlags::IsSource);
+    if (hasFilePromises && !(hasWebArchive && isDragFromSelf))
         return handleLegacyFilesPromisePasteboard(draggingInfo, WTF::move(dragData), page(), m_view.get());
 
     if ([types containsObject:WebCore::legacyFilenamesPasteboardTypeSingleton()])
@@ -7240,7 +7246,7 @@ void WebViewImpl::handleClickForDataDetectionResult(const WebCore::DataDetectorE
 #if ENABLE(REVEAL)
     m_revealItemPresenter = adoptNS([[WKRevealItemPresenter alloc] initWithWebViewImpl:*this item:adoptNS([PAL::allocRVItemInstance() initWithDDResult:info.result.get()]).get() frame:info.elementBounds menuLocation:clickLocation]);
     [m_revealItemPresenter setShouldUseDefaultHighlight:NO];
-    [m_revealItemPresenter showContextMenu];
+    [protect(m_revealItemPresenter) showContextMenu];
 #else
     UNUSED_PARAM(info);
     UNUSED_PARAM(clickLocation);
@@ -7645,6 +7651,11 @@ void WebViewImpl::addTextSelectionManager()
 bool WebViewImpl::isTextSelectedAtPoint(NSPoint point)
 {
     return [m_textSelectionController isTextSelectedAtPoint:point];
+}
+
+void WebViewImpl::cancelClick()
+{
+    [m_appKitGestureController cancelClick];
 }
 #endif // HAVE(APPKIT_GESTURES_SUPPORT)
 

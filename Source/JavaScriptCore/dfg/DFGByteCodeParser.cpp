@@ -3191,6 +3191,29 @@ auto ByteCodeParser::handleIntrinsicCall(Node* callee, Operand resultOperand, Ca
             return CallOptimizationResult::Inlined;
         }
 
+        case StringPrototypeSplitIntrinsic: {
+            if (argumentCountIncludingThis < 2)
+                return CallOptimizationResult::DidNothing;
+
+            if (m_inlineStackTop->m_exitProfile.hasExitSite(m_currentIndex, BadType))
+                return CallOptimizationResult::DidNothing;
+
+            if (m_inlineStackTop->m_exitProfile.hasExitSite(m_currentIndex, BadConstantValue))
+                return CallOptimizationResult::DidNothing;
+
+            if (!m_graph.isWatchingStringSymbolSplitWatchpoint(currentCodeOrigin()))
+                return CallOptimizationResult::DidNothing;
+
+            Node* separator = get(virtualRegisterForArgumentIncludingThis(1, registerOffset));
+
+            insertChecks();
+            Node* thisValue = get(virtualRegisterForArgumentIncludingThis(0, registerOffset));
+            Node* limit = argumentCountIncludingThis >= 3 ? get(virtualRegisterForArgumentIncludingThis(2, registerOffset)) : jsConstant(jsUndefined());
+            Node* result = addToGraph(StringSplit, thisValue, separator, limit);
+            setResult(result);
+            return CallOptimizationResult::Inlined;
+        }
+
         case StringPrototypeStartsWithIntrinsic:
         case StringPrototypeEndsWithIntrinsic: {
             if (argumentCountIncludingThis < 2)

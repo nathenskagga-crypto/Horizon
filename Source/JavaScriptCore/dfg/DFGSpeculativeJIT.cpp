@@ -7726,15 +7726,16 @@ void SpeculativeJIT::compileStringEquality(
     
     trueCase.append(branchTest32(Zero, lengthGPR));
     
-    slowCase.append(branchTest32(
-        Zero,
-        Address(leftTempGPR, StringImpl::flagsOffset()),
-        TrustedImm32(StringImpl::flagIs8Bit())));
-    slowCase.append(branchTest32(
-        Zero,
-        Address(rightTempGPR, StringImpl::flagsOffset()),
-        TrustedImm32(StringImpl::flagIs8Bit())));
-    
+    // leftTemp2GPR/rightTemp2GPR may alias leftGPR/rightGPR (Reuse), so we must not clobber
+    // them before the last slowCase branch is emitted.
+    Jump leftIs8Bit = branchTest32(NonZero, Address(leftTempGPR, StringImpl::flagsOffset()), TrustedImm32(StringImpl::flagIs8Bit()));
+    slowCase.append(branchTest32(NonZero, Address(rightTempGPR, StringImpl::flagsOffset()), TrustedImm32(StringImpl::flagIs8Bit())));
+    lshift32(TrustedImm32(1), lengthGPR);
+    Jump widthDone = jump();
+    leftIs8Bit.link(this);
+    slowCase.append(branchTest32(Zero, Address(rightTempGPR, StringImpl::flagsOffset()), TrustedImm32(StringImpl::flagIs8Bit())));
+    widthDone.link(this);
+
     loadPtr(Address(leftTempGPR, StringImpl::dataOffset()), leftTempGPR);
     loadPtr(Address(rightTempGPR, StringImpl::dataOffset()), rightTempGPR);
 
@@ -17698,6 +17699,48 @@ void SpeculativeJIT::compileStringIndexOf(Node* node)
         callOperation(operationStringIndexOf, resultGPR, LinkableConstant::globalObject(*this, node), baseGPR, argumentGPR);
 
     strictInt32Result(resultGPR, node);
+}
+
+void SpeculativeJIT::compileStringSplit(Node* node)
+{
+    if (node->child2().useKind() == RegExpObjectUse) {
+        SpeculateCellOperand base(this, node->child1());
+        SpeculateCellOperand separator(this, node->child2());
+        JSValueOperand limit(this, node->child3());
+
+        GPRReg baseGPR = base.gpr();
+        GPRReg separatorGPR = separator.gpr();
+        JSValueRegs limitRegs = limit.jsValueRegs();
+
+        speculateString(node->child1(), baseGPR);
+        speculateRegExpObject(node->child2(), separatorGPR);
+
+        flushRegisters();
+        JSValueRegsFlushedCallResult result(this);
+        JSValueRegs resultRegs = result.regs();
+        callOperation(operationStringSplitRegExp, resultRegs, LinkableConstant::globalObject(*this, node), baseGPR, separatorGPR, limitRegs);
+        exceptionCheck();
+        jsValueResult(resultRegs, node);
+        return;
+    }
+
+    SpeculateCellOperand base(this, node->child1());
+    SpeculateCellOperand separator(this, node->child2());
+    JSValueOperand limit(this, node->child3());
+
+    GPRReg baseGPR = base.gpr();
+    GPRReg separatorGPR = separator.gpr();
+    JSValueRegs limitRegs = limit.jsValueRegs();
+
+    speculateString(node->child1(), baseGPR);
+    speculateString(node->child2(), separatorGPR);
+
+    flushRegisters();
+    GPRFlushedCallResult result(this);
+    GPRReg resultGPR = result.gpr();
+    callOperation(operationStringSplit, resultGPR, LinkableConstant::globalObject(*this, node), baseGPR, separatorGPR, limitRegs);
+    exceptionCheck();
+    cellResult(resultGPR, node);
 }
 
 void SpeculativeJIT::compileStringLastIndexOf(Node* node)

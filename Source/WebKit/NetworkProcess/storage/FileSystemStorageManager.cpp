@@ -112,6 +112,28 @@ Expected<WebCore::FileSystemHandleIdentifier, FileSystemStorageError> FileSystem
     return newHandleIdentifier;
 }
 
+Expected<std::pair<WebCore::FileSystemHandleIdentifier, String>, FileSystemStorageError> FileSystemStorageManager::cloneHandle(IPC::Connection::UniqueID connection, WebCore::FileSystemHandleIdentifier identifier)
+{
+    ASSERT(!RunLoop::isMain());
+
+    auto it = m_handles.find(identifier);
+    if (it == m_handles.end())
+        return makeUnexpected(FileSystemStorageError::Unknown);
+
+    Ref handle = it->value;
+    ASSERT(handle->type() != FileSystemStorageHandle::Type::Any);
+    auto name = FileSystem::pathFileName(handle->path());
+    auto result = createHandle(connection, handle->type(), String { handle->path() }, WTF::move(name), false);
+    if (!result)
+        return makeUnexpected(result.error());
+
+    auto newIt = m_handles.find(result.value());
+    if (newIt == m_handles.end())
+        return makeUnexpected(FileSystemStorageError::Unknown);
+
+    return std::pair { result.value(), FileSystem::pathFileName(newIt->value->path()) };
+}
+
 const String& FileSystemStorageManager::getPath(WebCore::FileSystemHandleIdentifier identifier)
 {
     auto handle = m_handles.find(identifier);
@@ -145,6 +167,14 @@ void FileSystemStorageManager::connectionClosed(IPC::Connection::UniqueID connec
     if (connectionHandles == m_handlesByConnection.end())
         return;
 
+    // FIXME: Cross-process handle transfer (e.g., postMessage to a Service Worker) is not yet
+    // fully supported. The sender's FileSystemHandleTransferToken is destroyed after the IPC send,
+    // which calls removeTransferReference. If the receiver hasn't yet deserialized (and called
+    // addTransferReference via markAsBorrowed), the transfer reference count drops to zero and the
+    // handle can be closed. Using requestClose() here would help for the case where the connection
+    // closes while transfer references are held, but doesn't close the race window between the
+    // sender's token destruction and the receiver's deserialization. A full fix likely requires the
+    // network process to independently track in-flight transfers.
     auto identifiers = connectionHandles->value;
     for (auto identifier : identifiers) {
         if (RefPtr handle = m_handles.get(identifier))

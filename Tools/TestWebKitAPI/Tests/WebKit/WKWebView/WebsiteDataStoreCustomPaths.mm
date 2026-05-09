@@ -1891,30 +1891,34 @@ TEST(WKWebsiteDataStore, DeleteEmptyServiceWorkerDirectory)
     websiteDataStoreConfiguration.get().generalStorageDirectory = generalStorageDirectory.get();
     RetainPtr websiteDataStore = adoptNS([[WKWebsiteDataStore alloc] _initWithConfiguration:websiteDataStoreConfiguration.get()]);
 
-    // Navigate to the origin whose empty database is on disk. This triggers the lazy per-origin
-    // import, which opens the database, finds it empty, and deletes the files. The navigation
-    // itself may fail (no internet) but the import is triggered regardless.
+    // Start a navigation to the origin whose empty database is on disk. This triggers the lazy
+    // per-origin import on the network process, which opens the database, finds it empty, and
+    // deletes the files. We don't wait for the navigation to finish — webkit.org is a real URL
+    // and the load would hang in offline test environments.
     RetainPtr configuration = adoptNS([[WKWebViewConfiguration alloc] init]);
     [configuration setWebsiteDataStore:websiteDataStore.get()];
     RetainPtr webView = adoptNS([[WKWebView alloc] initWithFrame:NSMakeRect(0, 0, 800, 600) configuration:configuration.get()]);
-    RetainPtr navigationDelegate = adoptNS([[TestNavigationDelegate alloc] init]);
-    [navigationDelegate setDidFinishNavigation:^(WKWebView *, WKNavigation *) { done = true; }];
-    [navigationDelegate setDidFailProvisionalNavigation:^(WKWebView *, WKNavigation *, NSError *) { done = true; }];
-    [webView setNavigationDelegate:navigationDelegate.get()];
-    done = false;
     [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://webkit.org/"]]];
-    TestWebKitAPI::Util::run(&done);
 
-    // Verify record does not exist with empty database.
+    // Poll until the per-origin import has deleted the empty database and the record count
+    // drops to 0. The import runs asynchronously on the network process' work queue.
     __block RetainPtr<NSArray<WKWebsiteDataRecord *>> records;
     RetainPtr dataTypes = [NSSet setWithObjects:WKWebsiteDataTypeServiceWorkerRegistrations, nil];
-    done = false;
-    [websiteDataStore fetchDataRecordsOfTypes:dataTypes.get() completionHandler:^(NSArray<WKWebsiteDataRecord *> * dataRecords) {
-        records = dataRecords;
-        done = true;
-    }];
-    TestWebKitAPI::Util::run(&done);
-    EXPECT_EQ([records count], 0u);
+    bool reachedZero = false;
+    for (size_t tries = 0; tries < 100; ++tries) {
+        done = false;
+        [websiteDataStore fetchDataRecordsOfTypes:dataTypes.get() completionHandler:^(NSArray<WKWebsiteDataRecord *> * dataRecords) {
+            records = dataRecords;
+            done = true;
+        }];
+        TestWebKitAPI::Util::run(&done);
+        if ([records count] == 0u) {
+            reachedZero = true;
+            break;
+        }
+        TestWebKitAPI::Util::runFor(0.1_s);
+    }
+    EXPECT_TRUE(reachedZero);
 
     // Verify directory is deleted.
     EXPECT_FALSE([fileManager fileExistsAtPath:[serviceWorkerDirectory path]]);

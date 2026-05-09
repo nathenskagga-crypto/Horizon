@@ -27,6 +27,7 @@
 #include <JavaScriptCore/JSArray.h>
 #include <JavaScriptCore/JSCellInlines.h>
 #include <JavaScriptCore/JSObjectInlines.h>
+#include <JavaScriptCore/ResourceExhaustion.h>
 #include <JavaScriptCore/ScopedArguments.h>
 #include <JavaScriptCore/Structure.h>
 #include <JavaScriptCore/StructureArrayStorageInlines.h>

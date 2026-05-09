@@ -145,6 +145,13 @@ webkit.org/b/286290 imported/w3c/web-platform-tests/svg/text/reftests/xml-lang-a
 imported/w3c/web-platform-tests/webvtt/rendering/cues-with-video/processing-model/embedded_style_media_queries.html [ Pass ]
 imported/w3c/web-platform-tests/webvtt/rendering/cues-with-video/processing-model/embedded_style_media_queries_resized.html [ Pass ]
 
+imported/w3c/web-platform-tests/css/css-counter-styles/counter-suffix.html [ Pass ]
+imported/w3c/web-platform-tests/css/css-images/object-fit-scale-down-svg-003i.html [ Pass ]
+imported/w3c/web-platform-tests/css/css-images/object-fit-scale-down-svg-003p.html [ Pass ]
+imported/w3c/web-platform-tests/css/css-images/object-fit-scale-down-svg-004i.html [ Pass ]
+imported/w3c/web-platform-tests/css/css-images/object-fit-scale-down-svg-004p.html [ Pass ]
+imported/w3c/web-platform-tests/css/css-lists/list-style-type-decimal-line-height.html [ Pass ]
+
 compositing/scrolling/async-overflow-scrolling [ Pass ]
 compositing/scrolling/async-overflow-scrolling/mac [ Skip ]
 
@@ -589,6 +596,7 @@ webkit.org/b/266195 media/media-source/media-managedmse-multipletracks-bufferedc
 media/media-source/media-source-play-zero-playbackrate.html [ Pass ]
 
 webkit.org/b/272225 media/media-source/media-managedmse-resume-after-stall.html [ Failure ]
+webkit.org/b/314179 media/media-source/media-managedmse-waiting-at-gap.html [ Failure ]
 
 # Test was flaky already before 263317 but it does "enhance its flakyness"
 webkit.org/b/263317 media/video-played-collapse.html [ Failure Pass ]
@@ -1104,7 +1112,7 @@ webkit.org/b/98377 accessibility/textarea-insertion-point-line-number.html [ Fai
 webkit.org/b/98382 accessibility/visible-elements.html [ Failure ]
 
 webkit.org/b/215405 accessibility/roles-computedRoleString.html [ Failure ]
-webkit.org/b/215405 [ Release ] accessibility/roles-exposed.html [ Failure ]
+webkit.org/b/215405 accessibility/roles-exposed.html [ Failure ]
 
 webkit.org/b/217260 accessibility/spinbutton-crash.html [ Failure ]
 
@@ -2380,7 +2388,11 @@ webkit.org/b/185254 http/tests/xmlhttprequest/onloadend-event-after-sync-request
 webkit.org/b/185254 http/tests/xmlhttprequest/response-access-on-error.html [ DumpJSConsoleLogInStdErr ]
 webkit.org/b/185254 http/tests/xmlhttprequest/state-after-network-error.html [ DumpJSConsoleLogInStdErr ]
 
-webkit.org/b/233796 imported/w3c/web-platform-tests/html/browsers/browsing-the-web/navigating-across-documents/refresh [ Failure ]
+webkit.org/b/233796 imported/w3c/web-platform-tests/html/browsers/browsing-the-web/navigating-across-documents/refresh/navigate.window.html [ Failure ]
+webkit.org/b/233796 imported/w3c/web-platform-tests/html/browsers/browsing-the-web/navigating-across-documents/refresh/subresource.any.html [ Failure ]
+webkit.org/b/233796 imported/w3c/web-platform-tests/html/browsers/browsing-the-web/navigating-across-documents/refresh/subresource.any.worker.html [ Failure ]
+
+webkit.org/b/261024 imported/w3c/web-platform-tests/html/browsers/browsing-the-web/navigating-across-documents/javascript-url-return-value-handling-dynamic.html [ Failure Pass ]
 
 webkit.org/b/258547 imported/w3c/web-platform-tests/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/nav-cancelation-2.sub.html [ Failure ]
 
@@ -2616,9 +2628,10 @@ webaudio/MediaElementAudioSource/mediaelementaudiosourcenode-volume.html [ Skip 
 webkit.org/b/216071 fast/canvas/webgl/move-canvas-in-document-while-clean.html [ ImageOnlyFailure ]
 
 webkit.org/b/172812 fast/canvas/webgl/lose-context-on-status-failure.html [ Skip ]
-webkit.org/b/172812 webgl/lose-context-after-context-lost.html [ Failure Timeout ]
 webkit.org/b/172812 webgl/multiple-context-losses.html [ Failure ]
 webkit.org/b/305355 webgl/max-active-contexts-webglcontextlost-prevent-default.html [ Failure ]
+
+webkit.org/b/314269 webgl/lose-context-after-context-lost.html [ Failure Timeout Crash ]
 
 webkit.org/b/210239 fast/canvas/webgl/out-of-bounds-simulated-vertexAttrib0-drawArrays.html [ Slow ]
 
@@ -2880,7 +2893,7 @@ webkit.org/b/235885 webrtc/video-addTransceiver.html [ Timeout Failure ]
 
 # Transceiver direction change support is incomplete.
 webkit.org/b/193641 webkit.org/b/235885 webrtc/video-setDirection.html [ Skip ]
-webkit.org/b/235885 webrtc/direction-change.html [ Failure ]
+webkit.org/b/235885 webkit.org/b/314219 webrtc/direction-change.html [ Crash Failure Timeout ]
 webkit.org/b/235885 webrtc/remove-track.html [ Crash Failure ]
 
 # Stopping a transceiver is unsupported in GstWebRTC.
@@ -4511,7 +4524,7 @@ webkit.org/b/266636 fast/multicol/last-set-crash.html [ Skip ]
 webkit.org/b/266719 fast/canvas/offscreen-giant.html [ ImageOnlyFailure ]
 
 webkit.org/b/268068 imported/w3c/web-platform-tests/html/cross-origin-opener-policy [ Skip ]
-webkit.org/b/267992 http/wpt/cross-origin-opener-policy/header-parsing-with-report-to.https.html [ Failure Pass Crash ]
+webkit.org/b/267992 http/wpt/cross-origin-opener-policy/header-parsing-with-report-to.https.html [ Failure Pass ]
 
 # Skip Merchant-Validation API test cases from GTK / WPE
 webkit.org/b/268238  imported/w3c/web-platform-tests/merchant-validation/complete-method.tentative.https.html [ Skip ]
@@ -4563,8 +4576,7 @@ webkit.org/b/169918 compositing/iframes/scrolling-iframe.html [ Failure ]
 webkit.org/b/169918 compositing/images/direct-image-object-fit.html [ Failure ]
 webkit.org/b/169918 compositing/layer-creation/deep-tree.html [ ImageOnlyFailure ]
 webkit.org/b/202228 compositing/layer-creation/fixed-position-descendants-out-of-view.html [ Failure ]
-webkit.org/b/169918 [ Release ] compositing/layer-creation/fixed-position-out-of-view-scaled-scroll.html [ Failure ]
-webkit.org/b/169918 [ Debug ] compositing/layer-creation/fixed-position-out-of-view-scaled-scroll.html [ Skip ] # Crash.
+webkit.org/b/169918 compositing/layer-creation/fixed-position-out-of-view-scaled-scroll.html [ Failure ]
 webkit.org/b/169918 compositing/layer-creation/fixed-position-out-of-view-scaled.html [ Failure ]
 webkit.org/b/169918 compositing/masks/clip-path-composited-descendent.html [ Failure ]
 webkit.org/b/169918 compositing/masks/compositing-clip-path-change-no-repaint.html [ Failure ]
@@ -4603,7 +4615,7 @@ webkit.org/b/169918 compositing/tiling/non-active-window-tiles-size.html [ Failu
 webkit.org/b/169918 compositing/tiling/offscreen-tiled-layer.html [ Failure ]
 webkit.org/b/212223 compositing/tiling/perspective-on-scroller-tile-coverage.html [ Failure ]
 webkit.org/b/169918 compositing/tiling/tile-cache-zoomed.html [ Failure ]
-webkit.org/b/192432 compositing/tiling/tile-coverage-on-scroll.html [ Failure Crash ]
+webkit.org/b/192432 compositing/tiling/tile-coverage-on-scroll.html [ Failure ]
 webkit.org/b/169918 compositing/tiling/tiled-layer-resize.html [ Failure ]
 webkit.org/b/169918 compositing/tiling/tiled-mask-inwindow.html [ Failure ]
 webkit.org/b/169918 compositing/tiling/tiled-reflection-inwindow.html [ Failure ]
@@ -5136,8 +5148,6 @@ http/tests/performance/performance-resource-timing-redirection-cross-origin-medi
 
 webkit.org/b/304180 media/modern-media-controls/tracks-support/on-off-text-track.html [ Failure ]
 
-webkit.org/b/150840 [ Debug ] imported/w3c/web-platform-tests/html/semantics/forms/the-select-element/customizable-select/select-popover-exit-animation.html [ Crash Pass Timeout ]
-
 webkit.org/b/304615 [ Release ] fast/repaint/missing-out-of-flow-repaint-on-destroy.html [ Pass ImageOnlyFailure ]
 
 webkit.org/b/304619 http/wpt/service-workers/service-worker-preload-when-not-activated.https.html [ Failure Pass Timeout ]
@@ -5449,6 +5459,8 @@ webkit.org/b/313511 media/media-source/media-source-real-duration-after-append.h
 webkit.org/b/313511 media/media-source/media-source-real-fastseek.html [ Failure ]
 webkit.org/b/313511 media/media-source/media-source-real-overlapping-dts.html [ Failure ]
 
+webkit.org/b/314089 media/media-source/media-source-append-media-before-init.html [ Failure ]
+
 [ Debug ] imported/w3c/web-platform-tests/dom/events/Event-dispatch-single-activation-behavior.html [ Pass Failure ]
 
 webkit.org/b/305531 webgl/webgl2-provoking-vertex-primitive-restart-uint16-nocrash.html [ Skip ]
@@ -5468,6 +5480,7 @@ imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-d
 imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/shared-array-buffers/nested-worker-success.https.html [ Skip ]
 imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/shared-array-buffers/no-transferring.https.html [ Skip ]
 imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/shared-array-buffers/serialization-via-history.https.html [ Skip ]
+imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/shared-array-buffers/window-failure.https.html [ Skip ]
 imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/shared-array-buffers/window-iframe-messagechannel.https.html [ Skip ]
 imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/shared-array-buffers/window-messagechannel-success.https.html [ Skip ]
 imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/shared-array-buffers/window-simple-success.https.html [ Skip ]
@@ -5493,6 +5506,9 @@ ipc/serialized-type-info.html [ Skip ]
 ipc/stream-sync-reply-shared-memory.html [ Skip ]
 ipc/convert-to-luminance-mask-float16.html [ Skip ]
 ipc/empty-svgfilterrenderer-expression-crash.html [ Skip ]
+
+webkit.org/b/314373 media/media-source/media-source-real-webm-fastseek.html [ Failure ]
+webkit.org/b/314373 media/media-source/media-source-real-webm-remove.html [ Failure ]
 
 # End: Common failures between GTK and WPE.
 

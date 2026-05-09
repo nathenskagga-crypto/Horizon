@@ -29,7 +29,6 @@
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 
-#include <JavaScriptCore/JSCast.h>
 #include <JavaScriptCore/WeakSetInlines.h>
 #include <wtf/Assertions.h>
 

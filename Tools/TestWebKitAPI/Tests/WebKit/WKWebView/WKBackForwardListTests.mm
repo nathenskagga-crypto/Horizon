@@ -566,7 +566,7 @@ static void runBackForwardNavigationSkipsItemsWithoutUserGestureTest(Function<vo
 
     [webView loadRequest:[NSURLRequest requestWithURL:url3.get()]];
     [navigationDelegate waitForDidFinishNavigationOrDidSameDocumentNavigation];
-    EXPECT_FALSE(webView.get().backForwardList.currentItem._wasCreatedByJSWithoutUserInteraction);
+    EXPECT_FALSE([webView backForwardList].currentItem._wasCreatedByJSWithoutUserInteraction);
 
     // url1 -> url2 -> url2#a (no user gesture) -> url2#b (no user gesture) -> url2#c (no user gesture) -> url3 **
     EXPECT_EQ([webView backForwardList].backList.count, 2U);
@@ -1661,6 +1661,44 @@ TEST(WKBackForwardList, BackForwardNavigationSkipsPromiseRedirectWithoutUserInte
     // Attempting to goBack now should simply fail.
     auto *navigation = [popupWebView goBack];
     EXPECT_NULL(navigation);
+}
+
+TEST(WKBackForwardList, CrossDocumentNavigationWithRecentUserGestureNotFlagged)
+{
+    TestWebKitAPI::HTTPServer server({
+        { "/source"_s, { "Source page"_s } },
+        { "/destination"_s, { "Destination page"_s } },
+    }, TestWebKitAPI::HTTPServer::Protocol::Http);
+
+    RetainPtr webView = adoptNS([[WKWebView alloc] init]);
+    [webView _setDontResetTransientActivationAfterRunJavaScript:YES];
+    RetainPtr navigationDelegate = adoptNS([WKBackForwardNavigationDelegate new]);
+    webView.get().navigationDelegate = navigationDelegate.get();
+
+    [webView loadRequest:server.request("/source"_s)];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // A pattern that's been seen is:
+    // - JS intercepts link click with preventDefault()
+    // - In an async callback, navigates via location.href = <...>
+    // There is a 1-second user gesture forwarding window for such timers.
+    // So sometimes when the load commits and the standard load history update takes place,
+    // it's within the user gesture window, and the resulting back/forward list item is "normal"
+    // Other times it takes longer than a second, and the resulting item is flagged as
+    // "created by JS without user gesture"
+    //
+    // But in other places where we set that flag on a back/forward item we consider the
+    // `lastActivationTimestamp` recency - Which gives 10 seconds of leniency.
+    //
+    // The code change to fix this issue was to allow for the same 10 seconds.
+    // The test has to wait "longer than 1 second" to make sure it exercises the code change.
+    NSString *destinationURL = server.request("/destination"_s).URL.absoluteString;
+    [webView evaluateJavaScript:[NSString stringWithFormat:@"setTimeout(() => { location.href = '%@'; }, 1100);", destinationURL] completionHandler:nil];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    EXPECT_STREQ([webView URL].absoluteString.UTF8String, destinationURL.UTF8String);
+    EXPECT_FALSE([webView backForwardList].currentItem._wasCreatedByJSWithoutUserInteraction);
+    EXPECT_EQ([webView backForwardList].backList.count, 1U);
 }
 
 TEST(WKBackForwardList, BackButtonWorksAfterUserClickFromJSCreatedPage)

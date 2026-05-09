@@ -85,6 +85,7 @@ private:
     bool NODELETE isURLAttribute(const Attribute&) const final;
     bool NODELETE allowsHref() const;
     bool supportsFocus() const final;
+    int defaultTabIndex() const final;
 };
 
 inline bool Node::hasTagName(const MathMLQualifiedName& name) const

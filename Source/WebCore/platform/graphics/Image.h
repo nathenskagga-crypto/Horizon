@@ -34,7 +34,6 @@
 #include <WebCore/ImagePaintingOptions.h>
 #include <WebCore/ImageTypes.h>
 #include <wtf/RefCountedAndCanMakeWeakPtr.h>
-#include <wtf/RefPtr.h>
 #include <wtf/RetainPtr.h>
 #include <wtf/TypeCasts.h>
 #include <wtf/text/WTFString.h>

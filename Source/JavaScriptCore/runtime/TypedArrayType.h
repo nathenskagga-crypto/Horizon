@@ -27,7 +27,6 @@
 
 #include <JavaScriptCore/JSExportMacros.h>
 #include <JavaScriptCore/JSType.h>
-#include <wtf/Float16.h>
 #include <wtf/PrintStream.h>
 
 namespace JSC {

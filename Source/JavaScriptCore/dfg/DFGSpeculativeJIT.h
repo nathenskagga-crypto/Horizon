@@ -1796,6 +1796,7 @@ public:
     void compileStringIndexOf(Node*);
     void compileStringLastIndexOf(Node*);
     void compileStringStartsOrEndsWith(Node*);
+    void compileStringSplit(Node*);
     void compileDateGet(Node*);
     void compileDateSet(Node*);
     void compileGlobalIsNaN(Node*);

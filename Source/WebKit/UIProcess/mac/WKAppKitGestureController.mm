@@ -273,7 +273,8 @@ static WebCore::FloatSize toRawPlatformDelta(WebCore::FloatSize delta)
     [webView addGestureRecognizer:_singleClickGestureRecognizer.get()];
     [webView addGestureRecognizer:_doubleClickGestureRecognizer.get()];
     [webView addGestureRecognizer:_secondaryClickGestureRecognizer.get()];
-    [webView addGestureRecognizer:_dragPressGestureRecognizer.get()];
+
+    // FIXME: Add drag press gesture after rdar://problem/176383341 is resolved.
 }
 
 - (void)enableGesturesIfNeeded
@@ -283,7 +284,8 @@ static WebCore::FloatSize toRawPlatformDelta(WebCore::FloatSize delta)
     [self enableGestureIfNeeded:_singleClickGestureRecognizer.get()];
     [self enableGestureIfNeeded:_doubleClickGestureRecognizer.get()];
     [self enableGestureIfNeeded:_secondaryClickGestureRecognizer.get()];
-    [self enableGestureIfNeeded:_dragPressGestureRecognizer.get()];
+
+    // FIXME: Enable drag press gesture after rdar://problem/176383341 is resolved.
 }
 
 - (void)enableGestureIfNeeded:(NSGestureRecognizer *)gesture
@@ -294,6 +296,14 @@ static WebCore::FloatSize toRawPlatformDelta(WebCore::FloatSize delta)
     bool gestureEnabled = protect(page->preferences())->useAppKitGestures();
     WK_APPKIT_GESTURE_CONTROLLER_RELEASE_LOG(page->logIdentifier(), "%@ setEnabled:%d", gesture, static_cast<int>(gestureEnabled));
     [gesture setEnabled:gestureEnabled];
+}
+
+- (void)cancelClick
+{
+    [self _handleClickCancelled];
+
+    if (RefPtr page = _page.get())
+        page->cancelPotentialClick();
 }
 
 #pragma mark - Gesture Recognition
@@ -807,7 +817,8 @@ ALLOW_NEW_API_WITHOUT_GUARDS_END
         unacceleratedScrollingDelta,
         ioHIDEventTimestamp,
         rawPlatformDelta,
-        momentumEndType
+        momentumEndType,
+        WebKit::WebEventInputSource::Automation
     };
 
     WebKit::NativeWebWheelEvent nativeEvent { wheelEvent };
@@ -864,7 +875,8 @@ ALLOW_NEW_API_WITHOUT_GUARDS_END
         WebCore::FloatSize { },
         timestamp,
         std::nullopt,
-        WebKit::WebWheelEvent::MomentumEndType::Unknown
+        WebKit::WebWheelEvent::MomentumEndType::Unknown,
+        WebKit::WebEventInputSource::Automation
     };
     WebKit::NativeWebWheelEvent nativeMomentumEvent { momentumEvent };
 

@@ -317,13 +317,20 @@ float FontCascade::width(const TextRun& run, SingleThreadWeakHashSet<const Font>
     }
 
     auto* cacheEntry = fonts()->glyphGeometryCache().add(run, { }, TextShapingContext { *this });
+    bool callerNeedsFallbackFonts = fallbackFonts;
+    bool canUseFallbackFontCacheEntry = !callerNeedsFallbackFonts && !run.rtl();
 
     if (cacheEntry && cacheEntry->width) {
-        if (!glyphOverflow)
-            return *cacheEntry->width;
-        if (cacheEntry->glyphOverflow && cacheEntry->glyphOverflow->computeBounds == glyphOverflow->computeBounds) {
-            *glyphOverflow = *cacheEntry->glyphOverflow;
-            return *cacheEntry->width;
+        // The cache key doesn't include inline direction. For primary-font-only text this
+        // is fine (same total advance regardless of direction), but fallback-font text in
+        // vertical writing mode with RTL inline direction can produce different widths.
+        if (!cacheEntry->usedFallbackFonts || canUseFallbackFontCacheEntry) {
+            if (!glyphOverflow)
+                return *cacheEntry->width;
+            if (cacheEntry->glyphOverflow && cacheEntry->glyphOverflow->computeBounds == glyphOverflow->computeBounds) {
+                *glyphOverflow = *cacheEntry->glyphOverflow;
+                return *cacheEntry->width;
+            }
         }
     }
 
@@ -332,10 +339,15 @@ float FontCascade::width(const TextRun& run, SingleThreadWeakHashSet<const Font>
         fallbackFonts = &localFallbackFonts;
 
     float result = width(codePathToUse, run, fallbackFonts, glyphOverflow);
-    if (cacheEntry && fallbackFonts->isEmptyIgnoringNullReferences()) {
-        cacheEntry->width = result;
-        if (glyphOverflow)
-            cacheEntry->glyphOverflow = *glyphOverflow;
+    bool hasFallbackFonts = !fallbackFonts->isEmptyIgnoringNullReferences();
+
+    if (cacheEntry) {
+        if (!hasFallbackFonts || canUseFallbackFontCacheEntry) {
+            cacheEntry->width = result;
+            if (glyphOverflow)
+                cacheEntry->glyphOverflow = *glyphOverflow;
+            cacheEntry->usedFallbackFonts = hasFallbackFonts;
+        }
     }
     return result;
 }

@@ -5435,6 +5435,239 @@ void testVectorSwizzleCompositionMultiUse()
         CHECK(vectors[3].u8x16[i] == 0x80 + i);
 }
 
+// Regression test for argon2id wasm SIMD miscompilation on x64 (rdar://...).
+//
+// OMGIRGenerator::addSIMDShuffle splits a wasm binary i8x16.shuffle on x64
+// into two unary VectorSwizzles (one per source) plus a VectorOr. The split
+// canonicalizes both patterns so that valid indices are in 0..15 and OOB
+// uses 0xFF — without this canonicalization the rightImm-side pattern would
+// keep the original wasm bytes 16..31 (relying on PSHUFB's index masking),
+// which broke B3ReduceStrength's SwizzleSwizzle composition (composeUnaryShuffle
+// treats bytes ≥ 16 as OOB per ARM64 TBL semantics, producing all-0xFF and
+// thus all-zero PSHUFB output instead of the correctly shuffled bytes).
+//
+// This test reproduces the failing pattern shape directly in B3 IR using
+// canonicalized patterns and verifies that composing two unary VectorSwizzles
+// (rotr16 inner ∘ "lower-8-bytes-of-inner-then-OOB" outer) yields the correct
+// PSHUFB result rather than zero.
+void testVectorSwizzleCompositionRightImmOuter()
+{
+    alignas(16) v128_t vectors[2];
+    Procedure proc;
+    BasicBlock* root = proc.addBlock();
+    auto arguments = cCallArgumentValues<void*>(proc, root);
+    Value* address = arguments[0];
+    Value* input = root->appendNew<MemoryValue>(proc, Load, V128, Origin(), address);
+
+    // Inner: rotr16 of i64x2 (the byte pattern argon2 uses for one of its
+    // BLAKE2b rotations). Bytes 0..15.
+    v128_t innerPat = v128_t::fromU8x16(2, 3, 4, 5, 6, 7, 0, 1, 10, 11, 12, 13, 14, 15, 8, 9);
+    Value* innerPatConst = root->appendNew<Const128Value>(proc, Origin(), innerPat);
+    Value* inner = root->appendNew<SIMDValue>(proc, Origin(), VectorSwizzle, B3::V128, SIMDLane::i8x16, SIMDSignMode::None, input, innerPatConst);
+
+    // Outer: take low 8 bytes of inner_result and zero the rest. This is the
+    // canonicalized form of what addSIMDShuffle now emits as the leftImm or
+    // rightImm pattern for a binary shuffle that selects only one half from
+    // a single side. Bytes 0..7 valid, bytes 8..15 OOB (0xFF).
+    v128_t outerPat;
+    for (unsigned i = 0; i < 8; ++i)
+        outerPat.u8x16[i] = static_cast<uint8_t>(i);
+    for (unsigned i = 8; i < 16; ++i)
+        outerPat.u8x16[i] = 0xFF;
+    Value* outerPatConst = root->appendNew<Const128Value>(proc, Origin(), outerPat);
+    Value* outer = root->appendNew<SIMDValue>(proc, Origin(), VectorSwizzle, B3::V128, SIMDLane::i8x16, SIMDSignMode::None, inner, outerPatConst);
+
+    root->appendNew<MemoryValue>(proc, Store, Origin(), outer, address, static_cast<int32_t>(sizeof(v128_t)));
+    root->appendNewControlValue(proc, Return, Origin());
+
+    auto code = compileProc(proc);
+    for (unsigned i = 0; i < 16; ++i)
+        vectors[0].u8x16[i] = static_cast<uint8_t>(0x10 + i);
+    invoke<void>(*code, vectors);
+
+    // Composition collapses to PSHUFB(input, composed) where
+    //   composed[i] = innerPat[outerPat[i]] for outerPat[i] < 16, else 0xFF.
+    // For i in 0..7: composed[i] = innerPat[i] = rotr16's bytes 0..7
+    //                            = {2, 3, 4, 5, 6, 7, 0, 1} (input indices).
+    // For i in 8..15: composed[i] = 0xFF → 0.
+    // So result.bytes[0..7] = input[2..7, 0..1], result.bytes[8..15] = 0.
+    static constexpr uint8_t expectedLowIndices[8] = { 2, 3, 4, 5, 6, 7, 0, 1 };
+    for (unsigned i = 0; i < 8; ++i)
+        CHECK(vectors[1].u8x16[i] == 0x10 + expectedLowIndices[i]);
+    for (unsigned i = 8; i < 16; ++i)
+        CHECK(vectors[1].u8x16[i] == 0);
+}
+
+// Helpers for testVectorSwizzleBinaryOnlyOneSide{Side0,Side1,WithOOB,AllOOB,Mixed}.
+// Each builds a 3-child VectorSwizzle(a, b, pattern) with the given pattern.
+//
+// The 3-child (binary) VectorSwizzle is only lowered to Air on ARM64
+// (VectorSwizzle2 → TBL2). On x86 the binary form would need to be reduced by
+// B3ReduceStrength to a 2-child unary form before lowering, but at O0 the
+// reductions don't run, so directly constructing a 3-child VectorSwizzle on
+// x86 would crash. These tests are therefore registered only under
+// `if (isARM64())` in testb3_1.cpp. The x86 side of isOnlyOneSideMask is
+// exercised end-to-end by JSTests/wasm/stress/simd-shuffle-compose-rightimm.js
+// (and the broader wasm SIMD tests), where OMGIRGenerator::addSIMDShuffle
+// builds the equivalent unary forms and feeds them through the same
+// B3ReduceStrength pipeline.
+//
+// Expected output is computed byte-by-byte using wasm i8x16.shuffle semantics:
+//   result[i] = pattern[i] < 16 ? a[pattern[i]]
+//             : pattern[i] < 32 ? b[pattern[i] - 16]
+//             : 0 (OOB).
+static void runBinarySwizzleAndCheck(v128_t pattern, v128_t aIn, v128_t bIn)
+{
+    alignas(16) v128_t vectors[3];
+    Procedure proc;
+    BasicBlock* root = proc.addBlock();
+    auto arguments = cCallArgumentValues<void*>(proc, root);
+    Value* address = arguments[0];
+    Value* a = root->appendNew<MemoryValue>(proc, Load, V128, Origin(), address);
+    Value* b = root->appendNew<MemoryValue>(proc, Load, V128, Origin(), address, static_cast<int32_t>(sizeof(v128_t)));
+    Value* patternConst = root->appendNew<Const128Value>(proc, Origin(), pattern);
+    Value* result = root->appendNew<SIMDValue>(proc, Origin(), VectorSwizzle, B3::V128, SIMDLane::i8x16, SIMDSignMode::None, a, b, patternConst);
+    root->appendNew<MemoryValue>(proc, Store, Origin(), result, address, static_cast<int32_t>(2 * sizeof(v128_t)));
+    root->appendNewControlValue(proc, Return, Origin());
+
+    auto code = compileProc(proc);
+    vectors[0] = aIn;
+    vectors[1] = bIn;
+    invoke<void>(*code, vectors);
+
+    for (unsigned i = 0; i < 16; ++i) {
+        uint8_t idx = pattern.u8x16[i];
+        uint8_t expected;
+        if (idx < 16)
+            expected = aIn.u8x16[idx];
+        else if (idx < 32)
+            expected = bIn.u8x16[idx - 16];
+        else
+            expected = 0;
+        CHECK(vectors[2].u8x16[i] == expected);
+    }
+}
+
+// Pattern reads only from `a` (no OOB). isOnlyOneSideMask must return
+// {child=0, normalized=pattern} and the binary VectorSwizzle must collapse
+// to a unary VectorSwizzle on `a`. On x64 the lowering is PSHUFB(a, pattern).
+void testVectorSwizzleBinaryOnlyOneSideSide0()
+{
+    // Reverse bytes within 32-bit groups. Reads only from `a`.
+    v128_t pattern;
+    for (unsigned i = 0; i < 16; i += 4) {
+        pattern.u8x16[i + 0] = static_cast<uint8_t>(i + 3);
+        pattern.u8x16[i + 1] = static_cast<uint8_t>(i + 2);
+        pattern.u8x16[i + 2] = static_cast<uint8_t>(i + 1);
+        pattern.u8x16[i + 3] = static_cast<uint8_t>(i + 0);
+    }
+    v128_t a, b;
+    for (unsigned i = 0; i < 16; ++i) a.u8x16[i] = static_cast<uint8_t>(0x10 + i);
+    for (unsigned i = 0; i < 16; ++i) b.u8x16[i] = static_cast<uint8_t>(0x80 + i);
+    runBinarySwizzleAndCheck(pattern, a, b);
+}
+
+// Pattern reads only from `b` (indices 16..31, no OOB). Must collapse to a
+// unary VectorSwizzle on `b` with normalized pattern (idx - 16) and on x64
+// must NOT mistake the high indices as OOB after composition (the bug fixed
+// by canonicalising rightImm in addSIMDShuffle).
+void testVectorSwizzleBinaryOnlyOneSideSide1()
+{
+    // Reverse bytes within 32-bit groups, but reading from `b`.
+    v128_t pattern;
+    for (unsigned i = 0; i < 16; i += 4) {
+        pattern.u8x16[i + 0] = static_cast<uint8_t>(16 + i + 3);
+        pattern.u8x16[i + 1] = static_cast<uint8_t>(16 + i + 2);
+        pattern.u8x16[i + 2] = static_cast<uint8_t>(16 + i + 1);
+        pattern.u8x16[i + 3] = static_cast<uint8_t>(16 + i + 0);
+    }
+    v128_t a, b;
+    for (unsigned i = 0; i < 16; ++i) a.u8x16[i] = static_cast<uint8_t>(0x80 + i);
+    for (unsigned i = 0; i < 16; ++i) b.u8x16[i] = static_cast<uint8_t>(0x10 + i);
+    runBinarySwizzleAndCheck(pattern, a, b);
+}
+
+// Pattern reads from `a` for some bytes and is OOB (≥ 32) for others. Must
+// collapse to a unary VectorSwizzle on `a` whose pattern has 0xFF in the OOB
+// positions, producing zero bytes there.
+void testVectorSwizzleBinaryOnlyOneSideSide0WithOOB()
+{
+    v128_t pattern;
+    for (unsigned i = 0; i < 8; ++i)
+        pattern.u8x16[i] = static_cast<uint8_t>(2 * i); // {0, 2, 4, 6, 8, 10, 12, 14} from `a`
+    for (unsigned i = 8; i < 16; ++i)
+        pattern.u8x16[i] = 0xFF; // OOB (≥ 32)
+    v128_t a, b;
+    for (unsigned i = 0; i < 16; ++i) a.u8x16[i] = static_cast<uint8_t>(0x10 + i);
+    for (unsigned i = 0; i < 16; ++i) b.u8x16[i] = static_cast<uint8_t>(0x80 + i);
+    runBinarySwizzleAndCheck(pattern, a, b);
+}
+
+// Pattern reads from `b` for some bytes and is OOB for others.
+void testVectorSwizzleBinaryOnlyOneSideSide1WithOOB()
+{
+    v128_t pattern;
+    for (unsigned i = 0; i < 8; ++i)
+        pattern.u8x16[i] = 0xFF; // OOB
+    for (unsigned i = 8; i < 16; ++i)
+        pattern.u8x16[i] = static_cast<uint8_t>(16 + 2 * (i - 8)); // {16,18,20,22,24,26,28,30} from `b`
+    v128_t a, b;
+    for (unsigned i = 0; i < 16; ++i) a.u8x16[i] = static_cast<uint8_t>(0x80 + i);
+    for (unsigned i = 0; i < 16; ++i) b.u8x16[i] = static_cast<uint8_t>(0x10 + i);
+    runBinarySwizzleAndCheck(pattern, a, b);
+}
+
+// All bytes are OOB (≥ 32). isOnlyOneSideMask returns {child=2, all-ones}
+// and the swizzle must collapse to a constant all-zero vector.
+void testVectorSwizzleBinaryOnlyOneSideAllOOB()
+{
+    v128_t pattern;
+    for (unsigned i = 0; i < 16; ++i)
+        pattern.u8x16[i] = 0xFF;
+    v128_t a, b;
+    for (unsigned i = 0; i < 16; ++i) a.u8x16[i] = static_cast<uint8_t>(0x80 + i);
+    for (unsigned i = 0; i < 16; ++i) b.u8x16[i] = static_cast<uint8_t>(0x70 + i);
+    runBinarySwizzleAndCheck(pattern, a, b);
+}
+
+// Pattern uses bytes from BOTH sides — isOnlyOneSideMask must return nullopt.
+// On x64 this still must compile correctly (other binary reductions like
+// canonical UZP/ZIP/EXT or the input-equality normalization step kick in).
+// Use S64x2UnzipEven canonical pattern {0..7, 16..23} to ensure a downstream
+// reduction can handle it.
+void testVectorSwizzleBinaryOnlyOneSideMixed()
+{
+    v128_t pattern;
+    for (unsigned i = 0; i < 8; ++i)
+        pattern.u8x16[i] = static_cast<uint8_t>(i); // a[0..7]
+    for (unsigned i = 0; i < 8; ++i)
+        pattern.u8x16[8 + i] = static_cast<uint8_t>(16 + i); // b[0..7]
+    v128_t a, b;
+    for (unsigned i = 0; i < 16; ++i) a.u8x16[i] = static_cast<uint8_t>(0x10 + i);
+    for (unsigned i = 0; i < 16; ++i) b.u8x16[i] = static_cast<uint8_t>(0x80 + i);
+    runBinarySwizzleAndCheck(pattern, a, b);
+}
+
+// Pattern is byte-reverse-of-side-1 with OOB scattered through it. Tests
+// that the normalization in isOnlyOneSideMask correctly subtracts 16 from
+// every valid byte even when the OOB sentinels are interleaved (rather than
+// in a contiguous run).
+void testVectorSwizzleBinaryOnlyOneSideSide1Scattered()
+{
+    v128_t pattern;
+    // Alternating: b[0], OOB, b[2], OOB, ..., b[14], OOB.
+    for (unsigned i = 0; i < 16; ++i) {
+        if (i % 2 == 0)
+            pattern.u8x16[i] = static_cast<uint8_t>(16 + i);
+        else
+            pattern.u8x16[i] = 0xFF;
+    }
+    v128_t a, b;
+    for (unsigned i = 0; i < 16; ++i) a.u8x16[i] = static_cast<uint8_t>(0x80 + i);
+    for (unsigned i = 0; i < 16; ++i) b.u8x16[i] = static_cast<uint8_t>(0x10 + i);
+    runBinarySwizzleAndCheck(pattern, a, b);
+}
+
 // Test VectorShr(VectorZip{Lower,Higher}(x, x), 8) → VectorExtend{Low,High}(x, i16x8, Signed)
 void testVectorShrZipToExtend()
 {

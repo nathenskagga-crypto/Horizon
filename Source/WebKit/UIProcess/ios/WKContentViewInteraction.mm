@@ -2474,8 +2474,12 @@ static WebCore::FloatQuad inflateQuad(const WebCore::FloatQuad& quad, float infl
     if (!preventsNativeGesture)
         return;
 
-    _preventsPanningInXAxis = YES;
-    _preventsPanningInYAxis = YES;
+    if (touchEvent.allTouchPointsAreReleased())
+        [self _resetPanningPreventionFlags];
+    else {
+        _preventsPanningInXAxis = YES;
+        _preventsPanningInYAxis = YES;
+    }
 
     if (![_touchEventGestureRecognizer isDispatchingTouchEvents])
         return;
@@ -3784,7 +3788,7 @@ ALLOW_DEPRECATED_DECLARATIONS_END
     if (![self ensurePositionInformationIsUpToDate:request])
         return NO;
 
-    if (gesture == WKBEGestureTypeLoupe && _positionInformation.selectability == WebKit::InteractionInformationAtPosition::Selectability::UnselectableDueToUserSelectNoneOrQuirk)
+    if ((gesture == WKBEGestureTypeLoupe || gesture == WKBEGestureTypeOneFingerDoubleTap) && _positionInformation.selectability == WebKit::InteractionInformationAtPosition::Selectability::UnselectableDueToUserSelectNoneOrQuirk)
         return NO;
 
     if (_positionInformation.preventTextInteraction)

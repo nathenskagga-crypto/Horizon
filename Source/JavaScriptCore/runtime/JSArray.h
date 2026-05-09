@@ -25,7 +25,6 @@
 #include <JavaScriptCore/Butterfly.h>
 #include <JavaScriptCore/JSCell.h>
 #include <JavaScriptCore/JSObject.h>
-#include <JavaScriptCore/ResourceExhaustion.h>
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 

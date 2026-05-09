@@ -1,4 +1,5 @@
-if (COMPILER_IS_CLANG AND NOT COMPILER_IS_CLANG_CL)
+# FIXME: re-enable for WPE/GTK once forwarded headers land. https://bugs.webkit.org/show_bug.cgi?id=180063
+if (COMPILER_IS_CLANG AND NOT COMPILER_IS_CLANG_CL AND NOT PORT STREQUAL "WPE" AND NOT PORT STREQUAL "GTK")
     set(_USE_HEADER_MAPS_DEFAULT ON)
 else ()
     set(_USE_HEADER_MAPS_DEFAULT OFF)
@@ -43,10 +44,6 @@ function(WEBKIT_MAKE_HEADER_MAP _target _source_root _dirs_var)
         message(WARNING "generate-header-map failed for ${_target}; falling back to -I directories")
         return()
     endif ()
-
-    list(LENGTH _hmap_dirs _hmap_count)
-    list(LENGTH _result _residual_count)
-    message(STATUS "Header map for ${_target}: ${_hmap_count} directories -> ${_target}.hmap (${_residual_count} kept as -I)")
 
     list(TRANSFORM _result REPLACE "^${_placeholder}$" "${_hmap_file}")
     set(${_dirs_var} "${_result}" PARENT_SCOPE)

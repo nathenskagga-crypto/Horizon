@@ -371,6 +371,12 @@ void RenderSVGRoot::paintContents(PaintInfo& paintInfo, const LayoutPoint& paint
     else if (paintInfo.phase == PaintPhase::ChildBlockBackgrounds)
         paintInfoForChild.phase = PaintPhase::ChildBlockBackground;
 
+    // When the SVG root has a self-painting layer, children are painted by
+    // paintChildrenInDOMOrderForSVG() to ensure correct DOM-order interleaving
+    // of layer and non-layer children.
+    if (hasSelfPaintingLayer())
+        return;
+
     paintInfoForChild.updateSubtreePaintRootForChildren(this);
     for (auto& child : childrenOfType<RenderElement>(*this)) {
         if (!child.hasSelfPaintingLayer())
@@ -451,19 +457,9 @@ bool RenderSVGRoot::nodeAtPoint(const HitTestRequest& request, HitTestResult& re
 {
     auto adjustedLocation = accumulatedOffset + location();
 
-    auto visualOverflowRect = this->visualOverflowRect();
-    visualOverflowRect.moveBy(adjustedLocation);
-
-    // Test SVG content if the point is in our content box or it is inside the visualOverflowRect and the overflow is visible.
-    if (contentBoxRect().contains(adjustedLocation) || (!shouldApplyViewportClip() && locationInContainer.intersects(visualOverflowRect))) {
-        // Check kids first.
-        for (auto* child = lastChild(); child; child = child->previousSibling()) {
-            if (!child->hasLayer() && child->nodeAtPoint(request, result, locationInContainer, adjustedLocation, hitTestAction)) {
-                updateHitTestResult(result, locationInContainer.point() - toLayoutSize(adjustedLocation));
-                return true;
-            }
-        }
-    }
+    // SVG children are hit tested by RenderLayer::hitTestChildrenInDOMOrderForSVG(),
+    // which inverse-transforms through non-layer SVG transforms; iterating children here
+    // would bypass that and cause false positives.
 
     // If we didn't early exit above, we've just hit the container <svg> element. Unlike SVG 1.1, 2nd Edition allows container elements to be hit.
     if ((hitTestAction == HitTestAction::BlockBackground || hitTestAction == HitTestAction::ChildBlockBackground) && visibleToHitTesting(request)) {

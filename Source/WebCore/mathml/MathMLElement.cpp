@@ -366,6 +366,11 @@ bool MathMLElement::supportsFocus() const
     return isLink() || StyledElement::supportsFocus();
 }
 
+int MathMLElement::defaultTabIndex() const
+{
+    return localName() == HTMLNames::aTag ? 0 : -1;
+}
+
 }
 
 #endif // ENABLE(MATHML)

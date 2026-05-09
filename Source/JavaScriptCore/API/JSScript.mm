@@ -41,12 +41,10 @@
 #import "JSValuePrivate.h"
 #import "JSVirtualMachineInternal.h"
 #import "Symbol.h"
-#import <sys/stat.h>
 #import <wtf/FileHandle.h>
 #import <wtf/FileSystem.h>
 #import <wtf/SHA1.h>
 #import <wtf/SafeStrerror.h>
-#import <wtf/Scope.h>
 #import <wtf/StdLibExtras.h>
 #import <wtf/WeakObjCPtr.h>
 #import <wtf/spi/darwin/DataVaultSPI.h>

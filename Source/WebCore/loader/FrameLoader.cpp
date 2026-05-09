@@ -456,6 +456,10 @@ void FrameLoader::initForSynthesizedDocument(const URL&)
     m_didCallImplicitClose = true;
     m_isComplete = true;
     m_state = FrameState::Complete;
+    // Synthesized documents bypass setState(FrameState::Complete), which normally
+    // stops recording responses on the DocumentLoader.
+    if (RefPtr documentLoader = m_documentLoader)
+        documentLoader->stopRecordingResponses();
     m_needsClear = true;
 
     m_networkingContext = m_client->createNetworkingContext();
@@ -2375,8 +2379,15 @@ void FrameLoader::provisionalLoadFailedInAnotherProcess()
     m_provisionalLoadHappeningInAnotherProcess = false;
     m_isComplete = true;
 
-    if (RefPtr localParent = dynamicDowncast<LocalFrame>(m_frame->tree().parent()))
-        localParent->loader().checkCompleted();
+    if (RefPtr localParent = dynamicDowncast<LocalFrame>(m_frame->tree().parent())) {
+        Ref parentLoader = localParent->loader();
+        parentLoader->checkCompleted();
+        // checkCompleted() may short-circuit because the parent's document already finished, but the
+        // parent's FrameLoader state machine can still be stuck in CommittedPage if subframeIsLoading()
+        // was true while waiting for this cross-process load. Drive checkLoadComplete() so that
+        // dispatchDidFinishLoad() can fire on the parent now that subframeIsLoading() is false.
+        parentLoader->checkLoadComplete();
+    }
 }
 
 void FrameLoader::commitProvisionalLoad()

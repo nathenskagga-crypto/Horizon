@@ -52,6 +52,7 @@ public:
 
     bool isSecureContext() const final { return false; }
     bool isJSExecutionForbidden() const final { return false; }
+    String agentClusterID() const final { return nullString(); }
     EventLoopTaskGroup& eventLoop() final
     {
         ASSERT_NOT_REACHED();

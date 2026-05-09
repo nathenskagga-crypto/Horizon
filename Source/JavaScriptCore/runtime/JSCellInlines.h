@@ -31,20 +31,16 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 
 #include <JavaScriptCore/AllocatorForMode.h>
 #include <JavaScriptCore/AllocatorInlines.h>
-#include <JavaScriptCore/CPU.h>
 #include <JavaScriptCore/CallFrameInlines.h>
 #include <JavaScriptCore/CompleteSubspaceInlines.h>
 #include <JavaScriptCore/DeferGCInlines.h>
 #include <JavaScriptCore/FreeListInlines.h>
-#include <JavaScriptCore/Handle.h>
 #include <JavaScriptCore/HeapInlines.h>
 #include <JavaScriptCore/IsoSubspaceInlines.h>
 #include <JavaScriptCore/JSBigInt.h>
 #include <JavaScriptCore/JSCast.h>
 #include <JavaScriptCore/JSDestructibleObject.h>
 #include <JavaScriptCore/JSFunction.h>
-#include <JavaScriptCore/JSHeapDouble.h>
-#include <JavaScriptCore/JSHeapInt32.h>
 #include <JavaScriptCore/JSObject.h>
 #include <JavaScriptCore/JSString.h>
 #include <JavaScriptCore/LocalAllocatorInlines.h>

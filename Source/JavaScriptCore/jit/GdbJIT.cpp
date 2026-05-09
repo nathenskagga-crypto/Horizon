@@ -35,14 +35,9 @@
 #include "CallFrameInlines.h"
 #include "Options.h"
 #include "ProfilerSupport.h"
-#include <array>
 #include <fcntl.h>
 #include <mutex>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <wtf/DataLog.h>
-#include <wtf/MonotonicTime.h>
-#include <wtf/PageBlock.h>
 #include <wtf/ProcessID.h>
 #include <wtf/RefCountedAndCanMakeWeakPtr.h>
 #include <wtf/StringPrintStream.h>

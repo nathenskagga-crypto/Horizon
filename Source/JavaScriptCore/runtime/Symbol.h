@@ -27,7 +27,6 @@
 #pragma once
 
 #include <JavaScriptCore/ErrorType.h>
-#include <JavaScriptCore/JSString.h>
 #include <JavaScriptCore/PrivateName.h>
 #include <wtf/Expected.h>
 

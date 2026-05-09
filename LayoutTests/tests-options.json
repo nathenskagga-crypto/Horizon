@@ -4799,7 +4799,7 @@
     "imported/w3c/web-platform-tests/mathml/relations/html5-tree/math-global-event-handlers.tentative.html": [
         "slow"
     ],
-    "imported/w3c/web-platform-tests/mathml/relations/html5-tree/tabindex-002.tentative.html": [
+    "imported/w3c/web-platform-tests/mathml/relations/html5-tree/tabindex-002.html": [
         "slow"
     ],
     "imported/w3c/web-platform-tests/media-capabilities/decodingInfoEncryptedMedia.https.html": [
@@ -7214,7 +7214,7 @@
     "imported/w3c/web-platform-tests/xhr/response-data-progress.htm": [
         "slow"
     ],
-    "imported/w3c/web-platform-tests/xhr/send-redirect-bogus.htm": [
+    "imported/w3c/web-platform-tests/xhr/send-redirect-bogus.sub.htm": [
         "slow"
     ],
     "imported/w3c/web-platform-tests/xhr/setrequestheader-content-type.htm": [

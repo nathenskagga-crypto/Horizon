@@ -218,6 +218,7 @@
 #include "OpportunisticTaskScheduler.h"
 #include "OrientationNotifier.h"
 #include "OwnerPermissionsPolicyData.h"
+#include "Page.h"
 #include "PageGroup.h"
 #include "PageRevealEvent.h"
 #include "PageSwapEvent.h"
@@ -300,6 +301,7 @@
 #include "ServiceWorkerProvider.h"
 #include "Settings.h"
 #include "ShadowRoot.h"
+#include "Site.h"
 #include "SleepDisabler.h"
 #include "SocketProvider.h"
 #include "SpeculationRules.h"
@@ -4596,7 +4598,7 @@ void Document::setURL(URL&& url)
     auto topOrigin = isTopDocument() && !SecurityContext::securityOrigin() ? SecurityOrigin::create(newURL)->data() : this->topOrigin().data();
     m_syncData->documentURL = newURL;
     m_url = { WTF::move(newURL), topOrigin };
-    if (m_frame)
+    if (m_frame && m_frame->document() == this)
         m_frame->documentURLOrOriginDidChange();
 
     m_documentURI = m_url.url();
@@ -8432,6 +8434,24 @@ bool Document::isSecureContext() const
     return isDocumentSecure(*this);
 }
 
+bool Document::crossOriginIsolated() const
+{
+    RefPtr mainDocument = mainFrameDocument();
+    if (!mainDocument)
+        return false;
+    return mainDocument->crossOriginOpenerPolicy().value == CrossOriginOpenerPolicyValue::SameOriginPlusCOEP;
+}
+
+String Document::agentClusterID() const
+{
+    Ref origin = securityOrigin();
+    auto& data = origin->data();
+    auto browsingContextGroupIdentifier = page() && page()->browsingContextGroupIdentifier() ? page()->browsingContextGroupIdentifier()->toUInt64() : 0;
+    if (crossOriginIsolated())
+        return makeString(browsingContextGroupIdentifier, "-coi-"_s, data.toString());
+    return makeString(browsingContextGroupIdentifier, '-', Site(data).toString());
+}
+
 void Document::updateURLForPushOrReplaceState(const URL& url)
 {
     RefPtr frame = this->frame();
@@ -11933,7 +11953,7 @@ void Document::securityOriginDidChange()
 {
     m_syncData->documentSecurityOrigin = SecurityContext::securityOrigin();
     m_permissionsPolicy = nullptr;
-    if (m_frame)
+    if (m_frame && m_frame->document() == this)
         m_frame->documentURLOrOriginDidChange();
 }
 

@@ -27,8 +27,6 @@
 
 #include <JavaScriptCore/GCLogging.h>
 #include <JavaScriptCore/JSExportMacros.h>
-#include <JavaScriptCore/OSCheck.h>
-#include <wtf/MathExtras.h>
 
 #if OS(DARWIN)
 #include <mach/vm_param.h>
@@ -512,6 +510,8 @@ bool hasCapacityToUseLargeGigacage();
     v(OptionString, airGreedyRegAllocDumpFunction, nullptr, Normal, "dump greedy register allocator state and IR for functions matching this substring"_s) \
     v(Bool, airUseGreedyRegAlloc, true, Normal, nullptr) \
     v(Double, airGreedyRegAllocSplitMultiplier, 2.0, Normal, nullptr) \
+    v(Bool, airGreedyRegAllocSplitAroundLoops, false, Normal, nullptr) \
+    v(Double, airGreedyRegAllocLoopSplitMaxLoopFraction, 0.75, Normal, nullptr) \
     v(Bool, airGreedyRegAllocSpillsEverything, false, Normal, nullptr) \
     v(Bool, airDumpPhaseStats, false, Normal, nullptr) \
     v(Bool, airValidateGreedRegAlloc, ASSERT_ENABLED, Normal, nullptr) \
@@ -554,7 +554,6 @@ bool hasCapacityToUseLargeGigacage();
     v(Bool, useSuperSampler, false, Normal, nullptr) \
     \
     v(Bool, useSourceProviderCache, true, Normal, "If false, the parser will not use the source provider cache. It's good to verify everything works when this is false. Because the cache is so successful, it can mask bugs."_s) \
-    v(Bool, useEagerIIFEParsing, true, Normal, "Eagerly build AST for likely IIFEs during the initial parse."_s) \
     v(Bool, useCodeCache, true, Normal, "If false, the unlinked byte code cache will not be used."_s) \
     \
     v(Bool, useWasm, canUseWasm(), Normal, "Expose the Wasm global object."_s) \

@@ -2310,7 +2310,7 @@ std::tuple<Ref<WebProcessProxy>, RefPtr<SuspendedPageProxy>, ASCIILiteral> WebPr
         && !(isRequestFromClientOrUserInput || siteIsolationEnabled))
         return { WTF::move(sourceProcess), nullptr, "Browsing context has opened other windows"_s };
 
-    if (RefPtr targetItem = navigation.targetItem(); targetItem && !siteIsolationEnabled) {
+    if (RefPtr targetItem = navigation.targetItem(); targetItem && frame.isMainFrame() && !siteIsolationEnabled) {
         if (CheckedPtr suspendedPage = targetItem->suspendedPage()) {
             if (suspendedPage->process().state() != AuxiliaryProcessProxy::State::Terminated)
                 return { suspendedPage->process(), suspendedPage.get(), "Using target back/forward item's process and suspended page"_s };

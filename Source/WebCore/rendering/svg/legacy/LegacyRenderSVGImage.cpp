@@ -234,6 +234,9 @@ void LegacyRenderSVGImage::paintForeground(PaintInfo& paintInfo)
     ImagePaintingOptions options = {
         imageOrientation(),
         ImageQualityController::chooseInterpolationQualityForSVG(paintInfo.context(), *this, *image),
+        settings().imageSubsamplingEnabled() ? AllowImageSubsampling::Yes : AllowImageSubsampling::No,
+        settings().showDebugBorders() ? ShowDebugBackground::Yes : ShowDebugBackground::No,
+        settings().hdrAcceleratedApplyGainMapEnabled() ? AllowAcceleratedApplyGainMap::Yes : AllowAcceleratedApplyGainMap::No,
         paintInfo.paintBehavior.contains(PaintBehavior::DrawsHDRContent) ? DrawsHDRContent::Yes : DrawsHDRContent::No,
         style().dynamicRangeLimit().toPlatformDynamicRangeLimit()
     };

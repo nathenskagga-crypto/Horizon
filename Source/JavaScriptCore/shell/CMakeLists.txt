@@ -35,6 +35,7 @@ if (DEVELOPER_MODE)
         ../API/tests/JSObjectGetProxyTargetTest.cpp
         ../API/tests/MultithreadedMultiVMExecutionTest.cpp
         ../API/tests/PingPongStackOverflowTest.cpp
+        ../API/tests/TemporalCoreTest.cpp
         ../API/tests/TypedArrayCTest.cpp
         ../API/tests/VMManagerStopTheWorldTest.cpp
         ../API/tests/testapi.cpp
@@ -136,9 +137,9 @@ if (DEVELOPER_MODE)
     WEBKIT_EXECUTABLE(testdfg)
     WEBKIT_EXECUTABLE(testwasmdebugger)
 
-    ADD_WEBKIT_PREFIX_HEADERS(testapi ../JavaScriptCorePrefix.h)
-    ADD_WEBKIT_PREFIX_HEADERS(testb3 ../JavaScriptCorePrefix.h)
-    ADD_WEBKIT_PREFIX_HEADERS(testwasmdebugger ../JavaScriptCorePrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(testapi ../JavaScriptCorePrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(testb3 ../JavaScriptCorePrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(testwasmdebugger ../JavaScriptCorePrefix.h)
 
     file(COPY
         "${JAVASCRIPTCORE_DIR}/API/tests/testapiScripts"

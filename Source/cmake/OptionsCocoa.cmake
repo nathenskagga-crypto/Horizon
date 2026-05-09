@@ -143,6 +143,15 @@ if (ENABLE_SANITIZERS)
         add_compile_options("$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-fsanitize-address-use-after-return=never>")
         add_link_options("$<$<NOT:$<LINK_LANGUAGE:Swift>>:-fsanitize-address-use-after-return=never>")
     endif ()
+
+    # TSan: ld64 hits "too many personality routines for compact unwind" when
+    # the TSan runtime adds its own personality. Mirror Sanitizers.xcconfig
+    # (which scopes this to WebCore/WebKit/TestWebKitAPI; applying globally is
+    # harmless and avoids per-target plumbing).
+    string(FIND "${ENABLE_SANITIZERS}" "thread" _tsan_pos)
+    if (NOT _tsan_pos EQUAL -1)
+        add_link_options("-Wl,-no_compact_unwind")
+    endif ()
 endif ()
 
 add_link_options("$<$<NOT:$<CONFIG:Debug>>:-Wl,-dead_strip>")
@@ -153,11 +162,12 @@ add_link_options(-Wl,-dead_strip_dylibs)
 find_library(SWIFTCORE_LIBRARY swiftCore HINTS ${CMAKE_OSX_SYSROOT}/usr/lib/swift REQUIRED)
 link_libraries(${SWIFTCORE_LIBRARY})
 
+WEBKIT_XCRUN(_libtool -f libtool)
 if (CMAKE_GENERATOR STREQUAL "Ninja")
-    set(CMAKE_CXX_ARCHIVE_CREATE "xcrun libtool -static -no_warning_for_no_symbols -o <TARGET> <OBJECTS>")
-    set(CMAKE_C_ARCHIVE_CREATE "xcrun libtool -static -no_warning_for_no_symbols -o <TARGET> <OBJECTS>")
-    set(CMAKE_CXX_ARCHIVE_APPEND "xcrun libtool -static -no_warning_for_no_symbols -o <TARGET> <TARGET> <OBJECTS>")
-    set(CMAKE_C_ARCHIVE_APPEND "xcrun libtool -static -no_warning_for_no_symbols -o <TARGET> <TARGET> <OBJECTS>")
+    set(CMAKE_CXX_ARCHIVE_CREATE "${_libtool} -static -no_warning_for_no_symbols -o <TARGET> <OBJECTS>")
+    set(CMAKE_C_ARCHIVE_CREATE "${_libtool} -static -no_warning_for_no_symbols -o <TARGET> <OBJECTS>")
+    set(CMAKE_CXX_ARCHIVE_APPEND "${_libtool} -static -no_warning_for_no_symbols -o <TARGET> <TARGET> <OBJECTS>")
+    set(CMAKE_C_ARCHIVE_APPEND "${_libtool} -static -no_warning_for_no_symbols -o <TARGET> <TARGET> <OBJECTS>")
     set(CMAKE_CXX_ARCHIVE_FINISH true)
     set(CMAKE_C_ARCHIVE_FINISH true)
 endif ()

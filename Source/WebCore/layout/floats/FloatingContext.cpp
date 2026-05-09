@@ -360,7 +360,7 @@ static bool floatContainsLine(const Rect& floatBoxRect, LayoutUnit candidateTop,
 
 static std::optional<std::pair<LayoutUnit, LayoutUnit>> computeShapeEdge(const PlacedFloats::Item& floatItem, const Rect& marginRect, LayoutUnit candidateTop, LayoutUnit candidateHeight)
 {
-    auto* shape = floatItem.shape();
+    RefPtr shape = floatItem.shape();
     if (!shape)
         return { };
 

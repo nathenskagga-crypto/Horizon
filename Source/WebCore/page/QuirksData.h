@@ -145,6 +145,7 @@ struct QuirksData {
         ShouldAllowPopupFromMicrosoftOfficeToOneDrive,
 #endif
         ShouldAutoplayWebAudioForArbitraryUserGestureQuirk,
+        ShouldAvoidProgrammaticScrollClampingQuirk,
         ShouldAvoidResizingWhenInputViewBoundsChangeQuirk,
         ShouldAvoidScrollingWhenFocusedContentIsVisibleQuirk,
         ShouldBlockFetchWithNewlineAndLessThan,
@@ -259,6 +260,7 @@ struct QuirksData {
         ShouldLimitHLSPlaybackRate,
         ShouldDeferIntersectionObserversDuringResize,
         ShouldSuppressHLSSubtitles,
+        ShouldSuppressMediaSessionPauseActionOnInterruption,
 
         NumberOfQuirks
     };

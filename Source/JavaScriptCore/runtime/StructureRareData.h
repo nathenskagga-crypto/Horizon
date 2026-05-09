@@ -25,7 +25,6 @@
 
 #pragma once
 
-#include <JavaScriptCore/ClassInfo.h>
 #include <JavaScriptCore/JSCast.h>
 #include <JavaScriptCore/JSTypeInfo.h>
 #include <JavaScriptCore/PropertyOffset.h>

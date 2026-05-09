@@ -826,6 +826,44 @@ TEST(TextExtractionTests, RequestContainerJSHandleForSearchTexts)
     EXPECT_FALSE([debugText containsString:@"The noise cancellation is incredible"]);
 }
 
+TEST(TextExtractionTests, RequestContainerJSHandleForSearchTextsFallsBackToBodyWhenTargetMisses)
+{
+    RetainPtr webView = adoptNS([[TestWKWebView alloc] initWithFrame:CGRectMake(0, 0, 800, 600) configuration:^{
+        RetainPtr configuration = adoptNS([[WKWebViewConfiguration alloc] init]);
+        [[configuration preferences] _setTextExtractionEnabled:YES];
+        return configuration.autorelease();
+    }()]);
+
+    [webView synchronouslyLoadTestPageNamed:@"debug-text-product"];
+
+    RetainPtr extractionResult = [webView synchronouslyExtractDebugTextResult:^{
+        RetainPtr configuration = adoptNS([_WKTextExtractionConfiguration new]);
+        [configuration setIncludeRects:NO];
+        [configuration setIncludeURLs:NO];
+        [configuration setIncludeAccessibilityAttributes:YES];
+        [configuration setNodeIdentifierInclusion:_WKTextExtractionNodeIdentifierInclusionAllContainers];
+        return configuration.autorelease();
+    }()];
+
+    RetainPtr reviewsSectionID = extractNodeIdentifier([extractionResult textContent], @"5 Reviews");
+    EXPECT_NOT_NULL(reviewsSectionID.get());
+
+    RetainPtr debugText = [webView synchronouslyGetDebugText:^{
+        RetainPtr configuration = adoptNS([_WKTextExtractionConfiguration new]);
+        [configuration setIncludeRects:NO];
+        [configuration setOutputFormat:_WKTextExtractionOutputFormatMarkdown];
+        [configuration setNodeIdentifierInclusion:_WKTextExtractionNodeIdentifierInclusionNone];
+
+        RetainPtr handle = [extractionResult containerJSHandleForSearchTexts:@[ @"Premium Wireless Headphones", @"Ships within 24 hours" ] nodeIdentifier:reviewsSectionID.get()];
+        [configuration setTargetNode:handle.get()];
+        return configuration.autorelease();
+    }()];
+
+    EXPECT_TRUE([debugText containsString:@"Premium Wireless Headphones"]);
+    EXPECT_TRUE([debugText containsString:@"Ships within 24 hours"]);
+    EXPECT_FALSE([debugText containsString:@"Customer Reviews"]);
+}
+
 TEST(TextExtractionTests, ResolveTargetNodeFromSelectorData)
 {
     RetainPtr configuration = adoptNS([[WKWebViewConfiguration alloc] init]);

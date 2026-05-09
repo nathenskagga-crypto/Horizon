@@ -95,6 +95,7 @@
 #include "ResourceExhaustion.h"
 #include "ScopedArguments.h"
 #include "StringConstructor.h"
+#include "StringPrototype.h"
 #include "StringPrototypeInlines.h"
 #include "SuperSampler.h"
 #include "Symbol.h"
@@ -105,7 +106,6 @@
 #include "WeakMapImplInlines.h"
 #include "WeakMapPrototype.h"
 #include "WeakSetPrototype.h"
-#include <wtf/text/MakeString.h>
 
 #if ENABLE(JIT)
 #if ENABLE(DFG_JIT)
@@ -3751,6 +3751,75 @@ JSC_DEFINE_JIT_OPERATION(operationStringEndsWithWithEndPosition, bool, (JSGlobal
         end = 0;
 
     OPERATION_RETURN(scope, baseView->hasInfixEndingAt(suffixView, end));
+}
+
+JSC_DEFINE_JIT_OPERATION(operationStringSplit, JSCell*, (JSGlobalObject* globalObject, JSString* thisString, JSString* separatorString, EncodedJSValue encodedLimit))
+{
+    VM& vm = globalObject->vm();
+    CallFrame* callFrame = DECLARE_CALL_FRAME(vm);
+    JITOperationPrologueCallFrameTracer tracer(vm, callFrame);
+
+    auto scope = DECLARE_THROW_SCOPE(vm);
+
+    JSValue limitValue = JSValue::decode(encodedLimit);
+    unsigned limit = 0xFFFFFFFFu;
+    if (!limitValue.isUndefined()) {
+        limit = limitValue.toUInt32(globalObject);
+        OPERATION_RETURN_IF_EXCEPTION(scope, nullptr);
+    }
+
+    OPERATION_RETURN(scope, stringSplitFast(globalObject, thisString, separatorString, limit));
+}
+
+// JIT operation for the DFG StringSplit node when the separator is speculated as
+// a primordial RegExp instance. Skips the JS regExpPrototypeSplit body and calls
+// the C++ regExpSplitFast engine directly when the per-instance state is fast
+// (no own @@split override, prototype primordial). Falls back to the C++ host
+// for the non-fast path so that observable @@split overrides are honored.
+JSC_DEFINE_JIT_OPERATION(operationStringSplitRegExp, EncodedJSValue, (JSGlobalObject* globalObject, JSString* thisString, RegExpObject* separator, EncodedJSValue encodedLimit))
+{
+    VM& vm = globalObject->vm();
+    CallFrame* callFrame = DECLARE_CALL_FRAME(vm);
+    JITOperationPrologueCallFrameTracer tracer(vm, callFrame);
+    auto scope = DECLARE_THROW_SCOPE(vm);
+
+    JSValue limitValue = JSValue::decode(encodedLimit);
+
+    if (separator->isSymbolSplitFastAndNonObservable()) [[likely]] {
+        unsigned limit = 0xFFFFFFFFu;
+        if (!limitValue.isUndefined()) {
+            limit = limitValue.toUInt32(globalObject);
+            OPERATION_RETURN_IF_EXCEPTION(scope, encodedJSValue());
+        }
+        OPERATION_RETURN(scope, JSValue::encode(regExpSplitFast(globalObject, separator, thisString, limit)));
+    }
+
+    // Slow path: the instance has an own @@split override. Look it up and call it.
+    JSValue splitter = separator->get(globalObject, vm.propertyNames->splitSymbol);
+    OPERATION_RETURN_IF_EXCEPTION(scope, encodedJSValue());
+    if (!splitter.isUndefinedOrNull()) {
+        auto callData = JSC::getCallData(splitter);
+        if (callData.type == CallData::Type::None) [[unlikely]] {
+            throwTypeError(globalObject, scope, "@@split method is not callable"_s);
+            OPERATION_RETURN(scope, encodedJSValue());
+        }
+        std::array<EncodedJSValue, 2> args { {
+            JSValue::encode(thisString),
+            JSValue::encode(limitValue),
+        } };
+        JSValue result = call(globalObject, splitter, callData, separator, ArgList { args.data(), args.size() });
+        OPERATION_RETURN_IF_EXCEPTION(scope, encodedJSValue());
+        OPERATION_RETURN(scope, JSValue::encode(result));
+    }
+    // No @@split — ToString the separator and use the string-separator engine.
+    JSString* separatorString = separator->toString(globalObject);
+    OPERATION_RETURN_IF_EXCEPTION(scope, encodedJSValue());
+    unsigned limit = 0xFFFFFFFFu;
+    if (!limitValue.isUndefined()) {
+        limit = limitValue.toUInt32(globalObject);
+        OPERATION_RETURN_IF_EXCEPTION(scope, encodedJSValue());
+    }
+    OPERATION_RETURN(scope, JSValue::encode(stringSplitFast(globalObject, thisString, separatorString, limit)));
 }
 
 JSC_DEFINE_JIT_OPERATION(operationStringProtoFuncReplaceGeneric, JSCell*, (JSGlobalObject* globalObject, EncodedJSValue thisValue, EncodedJSValue searchValue, EncodedJSValue replaceValue))

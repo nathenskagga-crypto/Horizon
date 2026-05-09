@@ -8,7 +8,7 @@ set(TestWebKitAPI_DISABLED_WARNINGS
 
 macro(WEBKIT_TEST _target)
     WEBKIT_EXECUTABLE(${_target})
-    ADD_WEBKIT_PREFIX_HEADERS(${_target} Helpers/TestWebKitAPIPrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(${_target} Helpers/TestWebKitAPIPrefix.h)
     add_test(${_target} ${TESTWEBKITAPI_RUNTIME_OUTPUT_DIRECTORY}/${_target})
     set_tests_properties(${_target} PROPERTIES TIMEOUT 60)
     set_target_properties(${_target} PROPERTIES
@@ -450,7 +450,7 @@ if (ENABLE_WEBKIT)
         set(TestWebKitAPIInjectedBundle_LIBRARY_TYPE SHARED)
     endif ()
     add_library(TestWebKitAPIInjectedBundle ${TestWebKitAPIInjectedBundle_LIBRARY_TYPE} ${TestWebKitAPIInjectedBundle_SOURCES})
-    ADD_WEBKIT_PREFIX_HEADERS(TestWebKitAPIInjectedBundle Helpers/TestWebKitAPIPrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(TestWebKitAPIInjectedBundle Helpers/TestWebKitAPIPrefix.h)
 
     target_compile_definitions(TestWebKitAPIInjectedBundle PRIVATE BUILDING_TestWebKit)
     target_include_directories(TestWebKitAPIInjectedBundle PRIVATE ${TestWebKit_PRIVATE_INCLUDE_DIRECTORIES})

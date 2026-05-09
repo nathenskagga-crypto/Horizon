@@ -39,7 +39,6 @@
 #include <wtf/DataLog.h>
 #include <wtf/StackCheck.h>
 #include <wtf/TZoneMallocInlines.h>
-#include <wtf/text/WTFString.h>
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 

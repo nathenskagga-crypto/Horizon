@@ -156,7 +156,7 @@ IntOutsets RenderLayerFilters::calculateOutsets(RenderElement& renderer, const F
     return CSSFilterRenderer::calculateOutsets(renderer, filter, targetBoundingBox);
 }
 
-GraphicsContext* RenderLayerFilters::beginFilterEffect(RenderElement& renderer, GraphicsContext& context, const LayoutRect& filterBoxRect, const LayoutRect& dirtyRect, const LayoutRect& layerRepaintRect, const LayoutRect& clipRect, NOESCAPE const Function<void(GraphicsContext&)>& applyAdditionalDestinationClip)
+GraphicsContext* RenderLayerFilters::beginFilterEffect(RenderElement& renderer, GraphicsContext& context, const LayoutRect& filterBoxRect, const LayoutRect& dirtyRect, const LayoutRect& layerRepaintRect, const LayoutRect& clipRect)
 {
     auto preferredFilterRenderingModes = renderer.page().preferredFilterRenderingModes(context);
     auto outsets = calculateOutsets(renderer, filterBoxRect);
@@ -236,7 +236,7 @@ GraphicsContext* RenderLayerFilters::beginFilterEffect(RenderElement& renderer, 
     if (!m_targetSwitcher)
         return nullptr;
 
-    m_targetSwitcher->beginClipAndDrawSourceImage(context, m_repaintRect, clipRect, applyAdditionalDestinationClip);
+    m_targetSwitcher->beginClipAndDrawSourceImage(context, m_repaintRect, clipRect);
 
     return m_targetSwitcher->drawingContext(context);
 }

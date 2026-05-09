@@ -70,6 +70,13 @@ public:
     std::optional<double> originQuotaRatio() const { return m_originQuotaRatio; }
     void setOriginQuotaRatio(std::optional<double> ratio) { m_originQuotaRatio = ratio; }
 
+    bool timeBasedEvictionEnabled() const { return m_timeBasedEvictionEnabled; }
+    void setTimeBasedEvictionEnabled(bool enabled) { m_timeBasedEvictionEnabled = enabled; }
+    Seconds timeBasedEvictionThreshold() const { return m_timeBasedEvictionThreshold; }
+    void setTimeBasedEvictionThreshold(Seconds threshold) { m_timeBasedEvictionThreshold = threshold; }
+    std::optional<Seconds> lastModificationTimeUpdateIntervalOverride() const { return m_lastModificationTimeUpdateIntervalOverride; }
+    void setLastModificationTimeUpdateIntervalOverride(std::optional<Seconds> interval) { m_lastModificationTimeUpdateIntervalOverride = interval; }
+
     std::optional<double> totalQuotaRatio() const { return m_totalQuotaRatio; }
     void setTotalQuotaRatio(std::optional<double> ratio) { m_totalQuotaRatio = ratio; }
 
@@ -303,6 +310,9 @@ private:
     Directories m_directories;
     uint64_t m_perOriginStorageQuota;
     std::optional<double> m_originQuotaRatio;
+    bool m_timeBasedEvictionEnabled { false };
+    Seconds m_timeBasedEvictionThreshold { 180 * 24_h };
+    std::optional<Seconds> m_lastModificationTimeUpdateIntervalOverride;
     std::optional<double> m_totalQuotaRatio;
     std::optional<uint64_t> m_standardVolumeCapacity;
     std::optional<uint64_t> m_volumeCapacityOverride;

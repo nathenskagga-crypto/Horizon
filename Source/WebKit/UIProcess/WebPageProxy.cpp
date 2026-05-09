@@ -2694,8 +2694,11 @@ RefPtr<API::Navigation> WebPageProxy::goBack()
 
     Ref frameItem = backItem->mainFrameItem();
     if (RefPtr currentItem = backForwardList().currentItem()) {
-        if (RefPtr childItem = currentItem->navigatedFrameID() ? frameItem->childItemForFrameID(*currentItem->navigatedFrameID()) : nullptr)
+        if (RefPtr childItem = currentItem->navigatedFrameID() ? frameItem->childItemForFrameID(*currentItem->navigatedFrameID()) : nullptr) {
+            if (childItem.get() != frameItem.ptr())
+                WEBPAGEPROXY_RELEASE_LOG(ProcessSwapping, "goBack: redirecting from mainFrameItem to child frameItem for navigatedFrameID=%" PRIu64, currentItem->navigatedFrameID()->toUInt64());
             frameItem = childItem.releaseNonNull();
+        }
     }
 
     return goToBackForwardItem(frameItem, FrameLoadType::Back);
@@ -2734,6 +2737,9 @@ RefPtr<API::Navigation> WebPageProxy::goToBackForwardItem(WebBackForwardListFram
     }
 
     Ref process = processForTheFrameItem(frameItem);
+    if (process.ptr() != m_legacyMainFrameProcess.ptr())
+        WEBPAGEPROXY_RELEASE_LOG_ERROR(ProcessSwapping, "goToBackForwardItem: processForTheFrameItem selected a different process pid=%d (main frame process pid=%d), frameID=%" PRIu64, process->processID(), m_legacyMainFrameProcess->processID(), frameItem.frameID() ? frameItem.frameID()->toUInt64() : 0);
+
     Ref navigation = m_navigationState->createBackForwardNavigation(process->coreProcessIdentifier(), frameItem, protect(backForwardList().currentItem()), frameLoadType);
     Ref pageLoadState = internals().pageLoadState;
     auto transaction = pageLoadState->transaction();
@@ -2750,26 +2756,45 @@ RefPtr<API::Navigation> WebPageProxy::goToBackForwardItem(WebBackForwardListFram
 
 WebProcessProxy& WebPageProxy::processForTheFrameItem(WebBackForwardListFrameItem& frameItem) const
 {
-    if (protect(preferences())->siteIsolationEnabled()) {
-        if (auto* frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this)
-            return frame->process();
-    }
-
+    if (auto* process = frameProcessForNonCachedBackForwardNavigation(frameItem))
+        return *process;
     return m_legacyMainFrameProcess;
 }
 
 Ref<FrameState> WebPageProxy::copyFrameStateForBackForwardNavigation(WebBackForwardListFrameItem& frameItem) const
 {
     auto frameItemForNavigation = [&]() -> Ref<WebBackForwardListFrameItem> {
-        if (protect(preferences())->siteIsolationEnabled()) {
-            if (auto* frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this)
-                return frameItem;
-        }
+        if (frameProcessForNonCachedBackForwardNavigation(frameItem))
+            return frameItem;
         return frameItem.backForwardListItem()->mainFrameItem();
     };
 
     Ref targetFrameItem = frameItemForNavigation();
     return protect(preferences())->useUIProcessForBackForwardItemLoading() ? targetFrameItem->copyFrameState() : targetFrameItem->copyFrameStateWithChildren();
+}
+
+WebProcessProxy* WebPageProxy::frameProcessForNonCachedBackForwardNavigation(WebBackForwardListFrameItem& frameItem) const
+{
+    if (!protect(preferences())->siteIsolationEnabled())
+        return nullptr;
+
+    // Item should not belong to a cached frame.
+    if (RefPtr item = frameItem.backForwardListItem(); item && item->suspendedPage())
+        return nullptr;
+
+    // The frame must still be live and belong to this page.
+    RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID());
+    if (!frame || frame->page() != this)
+        return nullptr;
+
+    Ref process = frame->process();
+    // The frame's process should still be active.
+    if (process.ptr() != m_legacyMainFrameProcess.ptr() && !protect(browsingContextGroup())->remotePageInProcess(*this, process)) {
+        WEBPAGEPROXY_RELEASE_LOG_ERROR(ProcessSwapping, "frameProcessForNonCachedBackForwardNavigation: frame process pid %d has no RemotePageProxy in BCG, falling back", process->processID());
+        return nullptr;
+    }
+
+    return &frame->process();
 }
 
 void WebPageProxy::tryRestoreScrollPosition()
@@ -2840,8 +2865,11 @@ void WebPageProxy::goToBackForwardItemAtIndex(int32_t steps, FrameLoadType frame
 
     Ref frameItem = item->mainFrameItem();
     if (RefPtr currentItem = backForwardList().currentItem()) {
-        if (RefPtr childItem = currentItem->navigatedFrameID() ? frameItem->childItemForFrameID(*currentItem->navigatedFrameID()) : nullptr)
+        if (RefPtr childItem = currentItem->navigatedFrameID() ? frameItem->childItemForFrameID(*currentItem->navigatedFrameID()) : nullptr) {
+            if (childItem.get() != frameItem.ptr())
+                WEBPAGEPROXY_RELEASE_LOG(ProcessSwapping, "goToBackForwardItemAtIndex: redirecting from mainFrameItem to child frameItem for navigatedFrameID=%" PRIu64, currentItem->navigatedFrameID()->toUInt64());
             frameItem = childItem.releaseNonNull();
+        }
     }
 
     goToBackForwardItem(frameItem, frameLoadType);
@@ -5884,11 +5912,13 @@ void WebPageProxy::continueNavigationInNewProcess(API::Navigation& navigation, W
         }
 
         // FIXME: Work out timing of responding with the last policy delegate, etc
-        ASSERT(!navigation->currentRequest().isEmpty());
         ASSERT(!existingNetworkResourceLoadIdentifierToResume || !navigation->substituteData());
         if (auto& substituteData = navigation->substituteData())
             provisionalPage->loadData(navigation, SharedBuffer::create(Vector(substituteData->content)), substituteData->MIMEType, substituteData->encoding, substituteData->baseURL, substituteData->userData.get(), shouldTreatAsContinuingLoad, isNavigatingToAppBoundDomain(), WTF::move(websitePolicies), substituteData->sessionHistoryVisibility);
-        else
+        else if (navigation->currentRequest().isEmpty()) {
+            WEBPAGEPROXY_RELEASE_LOG_ERROR(Loading, "continueNavigationInNewProcess: Tearing down provisional load because the navigation request URL is empty");
+            m_provisionalPage = nullptr;
+        } else
             provisionalPage->loadRequest(navigation, ResourceRequest { navigation->currentRequest() }, nullptr, shouldTreatAsContinuingLoad, isNavigatingToAppBoundDomain(), WTF::move(websitePolicies), existingNetworkResourceLoadIdentifierToResume, navigationUpgradeToHTTPSBehavior);
     };
 
@@ -6951,6 +6981,14 @@ void WebPageProxy::runJavaScriptInFrameInScriptWorld(RunJavaScriptParameters&& p
 void WebPageProxy::getRenderTreeExternalRepresentation(CompletionHandler<void(const String&)>&& callback)
 {
     sendWithAsyncReply(Messages::WebPage::GetRenderTreeExternalRepresentation(), WTF::move(callback));
+}
+
+void WebPageProxy::clearContentWorld(API::ContentWorld& world, CompletionHandler<void()>&& completionHandler)
+{
+    if (!hasRunningProcess())
+        return completionHandler();
+
+    sendWithAsyncReply(Messages::WebPage::ClearContentWorld(world.identifier()), WTF::move(completionHandler));
 }
 
 void WebPageProxy::getSourceForFrame(WebFrameProxy* frame, CompletionHandler<void(const String&)>&& callback)
@@ -8334,6 +8372,65 @@ void WebPageProxy::broadcastAllFrameTreeSyncData(IPC::Connection& connection, Fr
             return;
         webProcess.send(Messages::WebPage::AllFrameTreeSyncDataChangedInAnotherProcess(frameID, data), pageID);
     });
+}
+
+void WebPageProxy::didNotifyUserActivation(IPC::Connection& connection, FrameIdentifier sourceFrameID, MonotonicTime activationTime)
+{
+    Ref senderProcess = WebProcessProxy::fromConnection(connection);
+
+    RefPtr sourceFrame = WebFrameProxy::webFrame(sourceFrameID);
+    if (!sourceFrame)
+        return;
+
+    if (&sourceFrame->process() != senderProcess.ptr())
+        return;
+
+    HashMap<Ref<WebProcessProxy>, Vector<FrameIdentifier>> framesByProcess;
+    auto addFrame = [&](WebFrameProxy& frame) {
+        Ref process = frame.process();
+        if (process.ptr() == senderProcess.ptr())
+            return;
+        framesByProcess.add(process, Vector<FrameIdentifier> { }).iterator->value.append(frame.frameID());
+    };
+
+    for (RefPtr ancestor = sourceFrame->parentFrame(); ancestor; ancestor = ancestor->parentFrame())
+        addFrame(*ancestor);
+
+    Ref sourceOrigin = sourceFrame->securityOrigin();
+    for (RefPtr descendant = sourceFrame->traverseNext(sourceFrame.get()); descendant; descendant = descendant->traverseNext(sourceFrame.get())) {
+        if (descendant->securityOrigin()->isSameOriginAs(sourceOrigin))
+            addFrame(*descendant);
+    }
+
+    for (auto& [process, frameIDs] : framesByProcess)
+        protect(process)->send(Messages::WebPage::UpdateUserActivationTimestamps(frameIDs, activationTime), webPageIDInProcess(process));
+}
+
+void WebPageProxy::didConsumeUserActivation(IPC::Connection& connection, FrameIdentifier sourceFrameID)
+{
+    Ref senderProcess = WebProcessProxy::fromConnection(connection);
+
+    RefPtr sourceFrame = WebFrameProxy::webFrame(sourceFrameID);
+    if (!sourceFrame)
+        return;
+
+    if (&sourceFrame->process() != senderProcess.ptr())
+        return;
+
+    RefPtr mainFrame = this->mainFrame();
+    if (!mainFrame)
+        return;
+
+    HashMap<Ref<WebProcessProxy>, Vector<FrameIdentifier>> framesByProcess;
+    for (RefPtr frame = mainFrame; frame; frame = frame->traverseNext(nullptr)) {
+        Ref process = frame->process();
+        if (process.ptr() == senderProcess.ptr())
+            continue;
+        framesByProcess.add(process, Vector<FrameIdentifier> { }).iterator->value.append(frame->frameID());
+    }
+
+    for (auto& [process, frameIDs] : framesByProcess)
+        protect(process)->send(Messages::WebPage::ConsumeUserActivations(frameIDs), webPageIDInProcess(process));
 }
 
 void WebPageProxy::didFinishLoadForFrame(IPC::Connection& connection, FrameIdentifier frameID, FrameInfoData&& frameInfo, ResourceRequest&& request, std::optional<WebCore::NavigationIdentifier> navigationID, const UserData& userData, WallTime timestamp)
@@ -13054,6 +13151,7 @@ WebPageCreationParameters WebPageProxy::creationParameters(WebProcessProxy& proc
         .drawingAreaIdentifier = drawingArea.identifier(),
         .webPageProxyIdentifier = identifier(),
         .pageGroupData = m_pageGroup->data(),
+        .browsingContextGroupIdentifier = m_browsingContextGroup->identifier(),
         .visitedLinkTableID = m_visitedLinkStore->identifier(),
         .userContentControllerParameters = m_userContentController->parametersForProcess(process),
         .mainFrameIdentifier = mainFrameIdentifier,

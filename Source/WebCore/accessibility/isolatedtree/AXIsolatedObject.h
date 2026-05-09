@@ -56,6 +56,8 @@ public:
     static Ref<AXIsolatedObject> create(IsolatedObjectData&&);
     ~AXIsolatedObject();
 
+    RefPtr<AXIsolatedObject> approximateHitTest(const IntPoint&) const;
+
     std::optional<AXTreeID> treeID() const final { return tree().treeID(); }
     String debugDescriptionInternal(bool, std::optional<OptionSet<AXDebugStringOption>> = std::nullopt) const final;
 
@@ -130,8 +132,6 @@ private:
     AXIsolatedObject(IsolatedObjectData&&);
     bool isAXIsolatedObjectInstance() const final { return true; }
     AccessibilityObject* associatedAXObject() const;
-
-    RefPtr<AXIsolatedObject> approximateHitTest(const IntPoint&) const;
 
     void setProperty(AXProperty, AXPropertyValueVariant&&);
     void setPropertyInVector(AXProperty property, AXPropertyValueVariant&& value)
@@ -498,6 +498,8 @@ private:
     FloatRect convertFrameToSpace(const FloatRect&, AccessibilityConversionSpace) const final;
     void increment() final;
     void decrement() final;
+    void syncIncrement() final;
+    void syncDecrement() final;
     bool performDismissAction() final;
     void performDismissActionIgnoringResult() final;
     void scrollToMakeVisible() const final;
@@ -506,6 +508,7 @@ private:
     bool replaceTextInRange(const String&, const CharacterRange&) final;
     bool insertText(const String&) final;
     bool press() final;
+    bool syncPress() final;
 
     bool isAccessibilityObject() const final { return false; }
 

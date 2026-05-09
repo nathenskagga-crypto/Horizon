@@ -366,6 +366,7 @@ namespace JSC { namespace DFG {
     macro(StringLastIndexOf, NodeResultInt32) \
     macro(StringStartsWith, NodeResultBoolean) \
     macro(StringEndsWith, NodeResultBoolean) \
+    macro(StringSplit, NodeResultJS | NodeMustGenerate) \
     \
     /* Optimizations for string access */ \
     macro(StringAt, NodeResultJS) \

@@ -5885,6 +5885,13 @@ void HTMLMediaElement::mediaPlayerTimeChanged()
     else
         scheduleTimeupdateEvent(false);
 
+#if ENABLE(MEDIA_SOURCE)
+    // Without this, `waiting` would fire up to maxTimeupdateEventFrequency (~250ms) late — the
+    // playbackProgressTimerFired tick is otherwise the only site that re-evaluates readyState.
+    if (RefPtr mediaSource = m_mediaSource)
+        mediaSource->monitorSourceBuffers();
+#endif
+
     MediaTime now = currentMediaTime();
     MediaTime dur = durationMediaTime();
     double playbackRate = requestedPlaybackRate();

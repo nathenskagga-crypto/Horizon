@@ -44,6 +44,7 @@ WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Atan);
 WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Atan2);
 WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Clamp);
 WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Cos);
+WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Deg2Rad);
 WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Exp);
 WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Hypot);
 WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(Invert);
@@ -301,6 +302,12 @@ std::optional<Type> toType(const Negate& root)
 std::optional<Type> toType(const Invert& root)
 {
     return Type::invert(getType(root.a));
+}
+
+std::optional<Type> toType(const Deg2Rad&)
+{
+    // Deg2Rad wraps an <angle> and produces a <number> (radians).
+    return Type { };
 }
 
 // Utilities to deduce the right input/merge/output policies from the operation.

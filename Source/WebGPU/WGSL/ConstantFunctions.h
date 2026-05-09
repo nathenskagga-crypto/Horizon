@@ -1822,6 +1822,38 @@ VALIDATION_FUNCTION(Smoothstep)
     return std::nullopt;
 }
 
+VALIDATION_FUNCTION(Divide)
+{
+    if (arguments[0] && arguments[1]) {
+        auto result = constantDivide(nullptr, { *arguments[0], *arguments[1] });
+        if (!result)
+            return { result.error() };
+    } else if (arguments[1]) {
+        // right / right only errors for integer zero, which is exactly
+        // the case where division is invalid regardless of the dividend.
+        auto result = constantDivide(nullptr, { *arguments[1], *arguments[1] });
+        if (!result)
+            return { result.error() };
+    }
+
+    return std::nullopt;
+}
+
+VALIDATION_FUNCTION(Modulo)
+{
+    if (arguments[0] && arguments[1]) {
+        auto result = constantModulo(nullptr, { *arguments[0], *arguments[1] });
+        if (!result)
+            return { result.error() };
+    } else if (arguments[1]) {
+        auto result = constantModulo(nullptr, { *arguments[1], *arguments[1] });
+        if (!result)
+            return { result.error() };
+    }
+
+    return std::nullopt;
+}
+
 #undef VALIDATION_FUNCTION
 #undef CALL_
 #undef CALL

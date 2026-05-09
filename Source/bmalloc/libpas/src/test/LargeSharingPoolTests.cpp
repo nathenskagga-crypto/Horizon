@@ -143,7 +143,7 @@ void testGoodCoalesceEpochUpdate()
     pas_large_sharing_pool_boot_free(
         pas_range_create(10 * PG, 20 * PG),
         pas_physical_memory_is_locked_by_virtual_range_common_lock,
-        pas_may_mmap);
+        pas_page_flags_none);
     pas_heap_lock_unlock();
 
     assertState({ Range(0, 10 * PG, pas_committed, 10 * PG, 0),
@@ -154,7 +154,7 @@ void testGoodCoalesceEpochUpdate()
     pas_large_sharing_pool_boot_free(
         pas_range_create(20 * PG, 30 * PG),
         pas_physical_memory_is_locked_by_virtual_range_common_lock,
-        pas_may_mmap);
+        pas_page_flags_none);
     pas_heap_lock_unlock();
 
     assertState({ Range(0, 10 * PG, pas_committed, 10 * PG, 0),
@@ -167,7 +167,7 @@ void testGoodCoalesceEpochUpdate()
               pas_range_create(10 * PG, 30 * PG),
               &transaction,
               pas_physical_memory_is_locked_by_virtual_range_common_lock,
-              pas_may_mmap));
+              pas_page_flags_none));
     pas_heap_lock_unlock();
     
     if (verbose)

@@ -29,7 +29,6 @@
 #include <wtf/Forward.h>
 #include <wtf/LockAlgorithm.h>
 #include <wtf/PrintStream.h>
-#include <wtf/StdLibExtras.h>
 
 namespace JSC {
 

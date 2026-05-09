@@ -50,6 +50,7 @@ struct Sum;
 struct Product;
 struct Negate;
 struct Invert;
+struct Deg2Rad;
 
 // Math Functions.
 struct Min;
@@ -202,6 +203,7 @@ using Node = Variant<
     IndirectNode<Product>,
     IndirectNode<Negate>,
     IndirectNode<Invert>,
+    IndirectNode<Deg2Rad>,
     IndirectNode<Min>,
     IndirectNode<Max>,
     IndirectNode<Clamp>,
@@ -328,6 +330,15 @@ struct Invert {
     Child a;
 
     bool operator==(const Invert&) const = default;
+};
+
+// Deg2Rad converts its <angle>-typed child (which evaluates in the canonical angle unit of degrees) into radians. It is inserted implicitly at parse time inside Sin, Cos, and Tan when their argument is an <angle>, so that trig evaluation no longer needs to inspect the argument's type. It has no direct CSS-level representation and is transparent during serialization.
+struct Deg2Rad {
+    WTF_MAKE_STRUCT_TZONE_ALLOCATED(Deg2Rad);
+
+    Child angle;
+
+    bool operator==(const Deg2Rad&) const = default;
 };
 
 // Math Functions
@@ -899,6 +910,7 @@ std::optional<Type> toType(const Sum&);
 std::optional<Type> toType(const Product&);
 std::optional<Type> toType(const Negate&);
 std::optional<Type> toType(const Invert&);
+std::optional<Type> toType(const Deg2Rad&);
 std::optional<Type> toType(const Min&);
 std::optional<Type> toType(const Max&);
 std::optional<Type> toType(const Clamp&);
@@ -993,6 +1005,12 @@ template<size_t I> const auto& get(const Invert& root)
 {
     static_assert(!I);
     return root.a;
+}
+
+template<size_t I> const auto& get(const Deg2Rad& root)
+{
+    static_assert(!I);
+    return root.angle;
 }
 
 template<size_t I> const auto& get(const Min& root)
@@ -1304,6 +1322,7 @@ OP_TUPLE_LIKE_CONFORMANCE(Sum, 1);
 OP_TUPLE_LIKE_CONFORMANCE(Product, 1);
 OP_TUPLE_LIKE_CONFORMANCE(Negate, 1);
 OP_TUPLE_LIKE_CONFORMANCE(Invert, 1);
+OP_TUPLE_LIKE_CONFORMANCE(Deg2Rad, 1);
 OP_TUPLE_LIKE_CONFORMANCE(Min, 1);
 OP_TUPLE_LIKE_CONFORMANCE(Max, 1);
 OP_TUPLE_LIKE_CONFORMANCE(Clamp, 3);

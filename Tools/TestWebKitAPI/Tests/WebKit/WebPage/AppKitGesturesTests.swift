@@ -165,9 +165,9 @@ struct AppKitGesturesTests {
         #expect(newSelection == crazySelection)
     }
 
-    @Test(arguments: [true, false])
-    func doubleClickingInWordSelectsWord(contentEditable: Bool) async throws {
-        try await loadHTML(contentEditable: contentEditable)
+    @Test(arguments: [true, false], [true, false])
+    func doubleClickingInWordSelectsWord(contentEditable: Bool, clickHandler: Bool) async throws {
+        try await loadHTML(contentEditable: contentEditable, clickHandler: clickHandler)
 
         let crazyRange = try #require(Self.text.utf16Range(of: "crazy"))
         let crazySelection = JavaScriptSelection.range(
@@ -312,9 +312,12 @@ private func convertToCoreGraphicsScreenCoordinates(rectInViewportCoordinates: D
 }
 
 extension AppKitGesturesTests {
-    private func loadHTML(contentEditable: Bool) async throws {
+    private func loadHTML(contentEditable: Bool = false, clickHandler: Bool = false) async throws {
+        let contentEditableMarkup = contentEditable ? "contenteditable" : ""
+        let clickHandlerMarkup = clickHandler ? "onclick='void(0)'" : ""
+
         let html = """
-            <div \(contentEditable ? "contenteditable" : "") id="div" style="font-size: 30px;">\(Self.text)</div>
+            <div \(contentEditableMarkup) \(clickHandlerMarkup) id="div" style="font-size: 30px;">\(Self.text)</div>
             """
 
         try await page.load(html: html).wait()

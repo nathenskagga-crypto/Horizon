@@ -87,10 +87,6 @@ public:
     static bool canCompileStrings(JSC::JSGlobalObject*, JSC::CompilationType, String, const JSC::ArgList&);
     static JSC::Structure* trustedScriptStructure(JSC::JSGlobalObject*);
 
-    // https://tc39.es/ecma262/#sec-agent-clusters
-    String agentClusterID() const;
-    static String defaultAgentClusterID();
-
     // Make binding code generation easier.
     JSDOMGlobalObject* realm() { return this; }
 

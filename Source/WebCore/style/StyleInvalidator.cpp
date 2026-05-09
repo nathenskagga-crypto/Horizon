@@ -401,6 +401,7 @@ void Invalidator::invalidateStyleWithMatchElement(Element& element, MatchElement
         }
         if (matchElement.relation == Relation::Ancestor && hasRelation == HasRelation::Descendant) {
             // .foo:has(.changed) .subject — find outermost ancestor matching any scope selector (.foo) to bound traversal.
+            // If no ancestor matches any ruleset's scope and no ruleset is scope-breaking, no bearer exists and we can skip.
             auto scopeElement = [&] -> RefPtr<Element> {
                 Vector<Element*, 16> ancestors;
                 for (RefPtr ancestor = element.parentElement(); ancestor; ancestor = ancestor->parentElement())
@@ -417,14 +418,14 @@ void Invalidator::invalidateStyleWithMatchElement(Element& element, MatchElement
                         }
                     }
                 }
-                return element.document().documentElement();
+                return { };
             }();
 
-            if (scopeElement) {
-                SelectorMatchingState selectorMatchingState;
-                invalidateStyleForDescendants(*scopeElement, &selectorMatchingState);
+            if (!scopeElement)
                 return;
-            }
+            SelectorMatchingState selectorMatchingState;
+            invalidateStyleForDescendants(*scopeElement, &selectorMatchingState);
+            return;
         }
 
         // Null scopeSelector means scope-breaking: no scope element can be identified.

@@ -429,6 +429,8 @@ bool CocoaApplication::shouldOSFaultLogForAppleApplicationUsingWebKit1()
             return false;
         if (applicationBundleIsEqualTo("com.apple.WebKit.TestWebKitAPI"_s))
             return false;
+        if (applicationBundleIsEqualTo("com.apple.dt.Xcode"_s))
+            return false;
         if (applicationBundleIsEqualTo("com.apple.ibtool"_s))
             return false;
         if (CocoaApplication::isDumpRenderTree())
@@ -650,6 +652,12 @@ bool IOSApplication::isTableau()
 {
     static bool isTableau = applicationBundleIdentifier().startsWith("com.tableausoftware"_s);
     return isTableau;
+}
+
+bool IOSApplication::isTubular()
+{
+    static bool isTubular = applicationBundleIdentifier().startsWith("com.aaronbrannan.youtubeAVP"_s);
+    return isTubular;
 }
 
 #endif // PLATFORM(IOS_FAMILY)

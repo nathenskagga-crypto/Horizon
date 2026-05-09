@@ -26,6 +26,8 @@
 #include "config.h"
 #include "FileSystemHandle.h"
 
+#include "ClientOrigin.h"
+#include "ContextDestructionObserverInlines.h"
 #include "FileSystemStorageConnection.h"
 #include "JSDOMConvertBoolean.h"
 #include "JSDOMPromiseDeferred.h"
@@ -55,10 +57,73 @@ void FileSystemHandle::close()
         return;
 
     m_isClosed = true;
+    if (m_isBorrowed) {
+        m_connection->removeTransferReference(m_identifier);
+        m_isBorrowed = false;
+        resolveEnsureIdentifierCallbacks(false);
+        return;
+    }
     m_connection->closeHandle(m_identifier);
 }
 
-void FileSystemHandle::isSameEntry(FileSystemHandle& handle, DOMPromiseDeferred<IDLBoolean>&& promise) const
+void FileSystemHandle::markAsBorrowed()
+{
+    m_isBorrowed = true;
+    m_connection->addTransferReference(m_identifier);
+}
+
+void FileSystemHandle::ensureIdentifier(CompletionHandler<void(bool)>&& callback)
+{
+    if (!m_isBorrowed)
+        return callback(true);
+
+    m_ensureIdentifierCallbacks.append(WTF::move(callback));
+    if (m_ensureIdentifierCallbacks.size() > 1)
+        return;
+
+    RefPtr context = scriptExecutionContext();
+    if (!context) {
+        resolveEnsureIdentifierCallbacks(false);
+        return;
+    }
+
+    auto origin = clientOriginForContext(*context);
+    m_connection->cloneHandle(WTF::move(origin), m_identifier, [this, protectedThis = Ref { *this }](auto result) mutable {
+        if (m_isClosed) {
+            if (!result.hasException()) {
+                auto& [newIdentifier, newName] = result.returnValue();
+                m_connection->closeHandle(newIdentifier);
+            }
+            resolveEnsureIdentifierCallbacks(false);
+            return;
+        }
+
+        if (result.hasException()) {
+            m_isClosed = true;
+            m_connection->removeTransferReference(m_identifier);
+            m_isBorrowed = false;
+            resolveEnsureIdentifierCallbacks(false);
+            return;
+        }
+
+        auto oldIdentifier = m_identifier;
+        auto& [newIdentifier, newName] = result.returnValue();
+        m_identifier = newIdentifier;
+        if (!newName.isEmpty())
+            m_name = newName;
+        m_isBorrowed = false;
+        m_connection->removeTransferReference(oldIdentifier);
+        resolveEnsureIdentifierCallbacks(true);
+    });
+}
+
+void FileSystemHandle::resolveEnsureIdentifierCallbacks(bool success)
+{
+    for (auto& callback : std::exchange(m_ensureIdentifierCallbacks, { }))
+        callback(success);
+}
+
+void FileSystemHandle::isSameEntry(FileSystemHandle& handle, DOMPromiseDeferred<IDLBoolean>&& promise)
 {
     if (isClosed())
         return promise.reject(Exception { ExceptionCode::InvalidStateError, "Handle is closed"_s });
@@ -66,8 +131,13 @@ void FileSystemHandle::isSameEntry(FileSystemHandle& handle, DOMPromiseDeferred<
     if (m_kind != handle.kind() || m_name != handle.name())
         return promise.resolve(false);
 
-    m_connection->isSameEntry(m_identifier, handle.identifier(), [promise = WTF::move(promise)](auto result) mutable {
-        promise.settle(WTF::move(result));
+    ensureIdentifier([this, protectedThis = Ref { *this }, handle = Ref { handle }, promise = WTF::move(promise)](bool success) mutable {
+        if (!success)
+            return promise.reject(Exception { ExceptionCode::InvalidStateError, "Handle is invalid"_s });
+
+        m_connection->isSameEntry(m_identifier, handle->identifier(), [promise = WTF::move(promise)](auto result) mutable {
+            promise.settle(WTF::move(result));
+        });
     });
 }
 
@@ -79,11 +149,16 @@ void FileSystemHandle::move(FileSystemHandle& destinationHandle, const String& n
     if (destinationHandle.kind() != Kind::Directory)
         return promise.reject(Exception { ExceptionCode::TypeMismatchError });
 
-    m_connection->move(m_identifier, destinationHandle.identifier(), newName, [this, protectedThis = Ref { *this }, newName, promise = WTF::move(promise)](auto result) mutable {
-        if (!result.hasException())
-            m_name = newName;
+    ensureIdentifier([this, protectedThis = Ref { *this }, destinationHandle = Ref { destinationHandle }, newName, promise = WTF::move(promise)](bool success) mutable {
+        if (!success)
+            return promise.reject(Exception { ExceptionCode::InvalidStateError, "Handle is invalid"_s });
 
-        promise.settle(WTF::move(result));
+        m_connection->move(m_identifier, destinationHandle->identifier(), newName, [this, protectedThis = WTF::move(protectedThis), newName, promise = WTF::move(promise)](auto result) mutable {
+            if (!result.hasException())
+                m_name = newName;
+
+            promise.settle(WTF::move(result));
+        });
     });
 }
 

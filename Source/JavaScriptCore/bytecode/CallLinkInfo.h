@@ -25,7 +25,6 @@
 
 #pragma once
 
-#include <JavaScriptCore/BaselineJITRegisters.h>
 #include <JavaScriptCore/CallFrame.h>
 #include <JavaScriptCore/CallFrameShuffleData.h>
 #include <JavaScriptCore/CallLinkInfoBase.h>
@@ -36,7 +35,6 @@
 #include <JavaScriptCore/PolymorphicCallStubRoutine.h>
 #include <JavaScriptCore/WriteBarrier.h>
 #include <wtf/ScopedLambda.h>
-#include <wtf/SentinelLinkedList.h>
 
 namespace JSC {
 namespace DFG {

@@ -68,6 +68,7 @@
 #include "ScriptDisallowedScope.h"
 #include "ScriptExecutionContextInlines.h"
 #include "ScriptTrackingPrivacyCategory.h"
+#include "SecurityOrigin.h"
 #include "ServiceWorker.h"
 #include "ServiceWorkerGlobalScope.h"
 #include "ServiceWorkerProvider.h"

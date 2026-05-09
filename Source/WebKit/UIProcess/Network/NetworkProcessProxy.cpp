@@ -37,6 +37,7 @@
 #include "AuthenticationChallengeProxy.h"
 #include "AuthenticationManager.h"
 #include "BackgroundFetchState.h"
+#include "BrowsingContextGroup.h"
 #include "DidFilterKnownLinkDecoration.h"
 #include "DownloadProxy.h"
 #include "DownloadProxyMap.h"
@@ -57,6 +58,7 @@
 #include "PageClient.h"
 #include "PageLoadState.h"
 #include "ProcessTerminationReason.h"
+#include "RemotePageProxy.h"
 #include "RemoteWorkerType.h"
 #include "SandboxExtension.h"
 #include "ShouldGrandfatherStatistics.h"
@@ -1957,6 +1959,7 @@ void NetworkProcessProxy::deleteWebsiteDataInWebProcessesForOrigin(OptionSet<Web
     RefPtr websiteDataStore = websiteDataStoreFromSessionID(sessionID);
     if (!websiteDataStore)
         return;
+    // FIXME: Under site isolation, a cross-origin subframe may live in a WebProcess that is not registered
     for (Ref process : websiteDataStore->processes()) {
         if (process->canSendMessage() && !process->isDummyProcessProxy())
             process->sendWithAsyncReply(Messages::WebProcess::DeleteWebsiteDataForOrigin(dataTypes, origin), [callbackAggregator] { });
@@ -1986,10 +1989,22 @@ void NetworkProcessProxy::reloadExecutionContextsForOrigin(const WebCore::Client
     RefPtr websiteDataStore = websiteDataStoreFromSessionID(sessionID);
     if (!websiteDataStore)
         return;
+
+    HashSet<Ref<WebProcessProxy>> processesToSend;
     for (Ref process : websiteDataStore->processes()) {
-        if (process->canSendMessage() && !process->isDummyProcessProxy())
-            process->sendWithAsyncReply(Messages::WebProcess::ReloadExecutionContextsForOrigin(origin, triggeringFrame), [callbackAggregator] { });
+        if (!process->canSendMessage() || process->isDummyProcessProxy())
+            continue;
+        processesToSend.add(process);
+        for (Ref page : process->pages()) {
+            protect(page->browsingContextGroup())->forEachRemotePage(page, [&](RemotePageProxy& remotePage) {
+                Ref remoteProcess = remotePage.process();
+                if (remoteProcess->canSendMessage() && !remoteProcess->isDummyProcessProxy())
+                    processesToSend.add(WTF::move(remoteProcess));
+            });
+        }
     }
+    for (Ref process : processesToSend)
+        process->sendWithAsyncReply(Messages::WebProcess::ReloadExecutionContextsForOrigin(origin, triggeringFrame), [callbackAggregator] { });
 }
 
 void NetworkProcessProxy::addAllowedFirstPartyForCookies(WebProcessProxy& webProcessProxy, const WebCore::RegistrableDomain& firstPartyForCookies, LoadedWebArchive loadedWebArchive, CompletionHandler<void()>&& completionHandler)

@@ -791,12 +791,17 @@ LayoutUnit RenderBox::constrainLogicalWidthByMinMax(LayoutUnit logicalWidth, Lay
     return std::max(logicalWidth, computedMinWidth);
 }
 
-LayoutUnit RenderBox::constrainLogicalHeightByMinMax(LayoutUnit logicalHeight, std::optional<LayoutUnit> intrinsicContentHeight) const
+LayoutUnit RenderBox::constrainLogicalHeightByMinMax(LayoutUnit logicalHeight, std::optional<LayoutUnit> intrinsicContentHeight, IsComputingIntrinsicSize isComputingIntrinsicSize) const
 {
     auto& styleToUse = style();
     std::optional<LayoutUnit> computedLogicalMaxHeight;
-    if (!styleToUse.logicalMaxHeight().isNone())
-        computedLogicalMaxHeight = computeLogicalHeightUsing(styleToUse.logicalMaxHeight(), intrinsicContentHeight);
+    if (!styleToUse.logicalMaxHeight().isNone()) {
+        // Per CSS Sizing 3 section 5.1 rule (a), the entire value of a max-size
+        // property containing a cyclic percentage is treated as the initial value
+        // (none) for intrinsic size contributions.
+        if (isComputingIntrinsicSize == IsComputingIntrinsicSize::No || !styleToUse.logicalMaxHeight().isPercentOrCalculated())
+            computedLogicalMaxHeight = computeLogicalHeightUsing(styleToUse.logicalMaxHeight(), intrinsicContentHeight);
+    }
 
     auto logicalMinHeight = styleToUse.logicalMinHeight();
     auto minimumSizeType = MinimumSizeIsAutomaticContentBased::No;
@@ -828,9 +833,16 @@ LayoutUnit RenderBox::constrainLogicalHeightByMinMax(LayoutUnit logicalHeight, s
     }
     if (logicalMinHeight.isMinContent() || logicalMinHeight.isMaxContent())
         logicalMinHeight = CSS::Keyword::Auto { };
-    auto computedLogicalMinHeight = computeLogicalHeightUsing(logicalMinHeight, intrinsicContentHeight);
+    auto computedLogicalMinHeight = [&]() -> std::optional<LayoutUnit> {
+        if (isComputingIntrinsicSize == IsComputingIntrinsicSize::Yes && logicalMinHeight.isPercentOrCalculated()) {
+            // Per CSS Sizing 3, cyclic percentage min-size values resolve with the
+            // percentage treated as 0 during intrinsic size contributions.
+            return adjustBorderBoxLogicalHeightForBoxSizing(Style::evaluateMinimum<LayoutUnit>(logicalMinHeight, 0_lu, styleToUse.usedZoomForLength()));
+        }
+        return computeLogicalHeightUsing(logicalMinHeight, intrinsicContentHeight);
+    }();
     auto maxHeight = computedLogicalMaxHeight.value_or(LayoutUnit::max());
-    auto minHeight = computedLogicalMinHeight.value_or(LayoutUnit());
+    auto minHeight = computedLogicalMinHeight.value_or(0_lu);
     if (styleToUse.aspectRatio().hasRatio())
         constrainLogicalMinMaxSizesByAspectRatio(minHeight, maxHeight, logicalHeight, minimumSizeType, ConstrainDimension::Height);
     logicalHeight = std::min(logicalHeight, maxHeight);
@@ -3557,7 +3569,7 @@ RenderBox::LogicalExtentComputedValues RenderBox::computeLogicalHeight(LayoutUni
     return computedValues;
 }
 
-LayoutUnit RenderBox::computeLogicalHeightWithoutLayout() const
+LayoutUnit RenderBox::computeLogicalHeightForIntrinsicWidthContribution() const
 {
     // FIXME:: We should probably return something other than just
     // border + padding, but for now we have no good way to do anything else
@@ -3567,8 +3579,9 @@ LayoutUnit RenderBox::computeLogicalHeightWithoutLayout() const
         if (auto height = explicitIntrinsicInnerLogicalHeight())
             estimatedHeight += height.value() + scrollbarLogicalHeight();
     }
-    LogicalExtentComputedValues computedValues = computeLogicalHeight(estimatedHeight, 0_lu);
-    return computedValues.extent;
+    auto intrinsicHeight = std::make_optional(estimatedHeight - borderAndPaddingLogicalHeight());
+    auto logicalHeight = computeLogicalHeightUsing(style().logicalHeight(), intrinsicHeight).value_or(estimatedHeight);
+    return constrainLogicalHeightByMinMax(logicalHeight, intrinsicHeight, IsComputingIntrinsicSize::Yes);
 }
 
 template<typename SizeType> std::optional<LayoutUnit> RenderBox::computeLogicalHeightUsingGeneric(const SizeType& logicalHeight, std::optional<LayoutUnit> intrinsicContentHeight) const
@@ -3716,13 +3729,7 @@ template<typename SizeType> std::optional<LayoutUnit> RenderBox::computeSizingKe
             // trigger relayout, even if the height is currently indefinite.
             if (!isOrthogonal(*this, containingBlock) && !isGridItem())
                 view().addPercentHeightDescendant(const_cast<RenderBox&>(*this));
-            // For orthogonal children, the child's block axis maps to the parent's inline axis,
-            // which is always definite for block-level containers.
-            // For flex/grid items, the containing block gets its height from flex/grid
-            // layout which may not be reflected in hasDefiniteLogicalHeight() yet, but
-            // availableLogicalHeight()/gridAreaContentLogicalHeight() below will resolve
-            // it correctly.
-            if (!isOrthogonal(*this, containingBlock) && !containingBlock->isFlexItem() && !isGridItem() && !containingBlock->hasDefiniteLogicalHeight() && !containingBlock->stretchesToViewport())
+            if (!isGridItem() && !containingBlockHasDefiniteBlockSize())
                 return { };
 
             LayoutUnit available;
@@ -5194,7 +5201,28 @@ bool RenderBox::containingBlockHasDefiniteBlockSize() const
 {
     CheckedPtr containingBlock = this->containingBlock();
     ASSERT(containingBlock);
-    return isOrthogonal(*this, *containingBlock) || containingBlock->hasDefiniteLogicalHeight() || containingBlock->stretchesToViewport();
+
+    // Orthogonal children's block axis maps to the parent's inline axis, which is always definite.
+    if (isOrthogonal(*this, *containingBlock))
+        return true;
+
+    // The containing block has a directly resolvable height (fixed, percentage, etc.)
+    if (containingBlock->hasDefiniteLogicalHeight() || containingBlock->stretchesToViewport())
+        return true;
+
+    // hasDefiniteLogicalHeight() is timing-dependent for flex items: it returns false during
+    // "after main axis item sizing" because the overriding cross size hasn't been set yet.
+    // hasDefiniteCrossSizeForFlexItem() answers the same question based purely on style
+    // (container cross size is definite + item will be stretched).
+    // This only applies when the flex item's block axis is the cross axis (row flex).
+    // For column flex, the block axis is the main axis and hasDefiniteLogicalHeight()
+    // already gives the correct answer during that phase.
+    if (containingBlock->isFlexItem()) {
+        if (auto* flexContainer = dynamicDowncast<RenderFlexibleBox>(containingBlock->parent()))
+            return flexContainer->mainAxisIsFlexItemInlineAxis(*containingBlock) && flexContainer->hasDefiniteCrossSizeForFlexItem(*containingBlock);
+    }
+
+    return false;
 }
 
 bool RenderBox::shouldComputeLogicalHeightFromAspectRatio() const

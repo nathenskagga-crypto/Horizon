@@ -105,7 +105,7 @@ class StorageAreaRegistry;
 class NetworkStorageManager final : public IPC::WorkQueueMessageReceiver<WTF::DestructionThread::MainRunLoop> {
     WTF_MAKE_TZONE_ALLOCATED(NetworkStorageManager);
 public:
-    static Ref<NetworkStorageManager> create(NetworkProcess&, PAL::SessionID, Markable<WTF::UUID>, std::optional<IPC::Connection::UniqueID>, const String& path, const String& customLocalStoragePath, const String& customIDBStoragePath, const String& customCacheStoragePath, const String& customServiceWorkerStoragePath, uint64_t defaultOriginQuota, std::optional<double> originQuotaRatio, std::optional<double> totalQuotaRatio, std::optional<uint64_t> standardVolumeCapacity, std::optional<uint64_t> volumeCapacityOverride, UnifiedOriginStorageLevel, bool storageSiteValidationEnabled);
+    static Ref<NetworkStorageManager> create(NetworkProcess&, PAL::SessionID, Markable<WTF::UUID>, std::optional<IPC::Connection::UniqueID>, const String& path, const String& customLocalStoragePath, const String& customIDBStoragePath, const String& customCacheStoragePath, const String& customServiceWorkerStoragePath, uint64_t defaultOriginQuota, std::optional<double> originQuotaRatio, std::optional<double> totalQuotaRatio, std::optional<uint64_t> standardVolumeCapacity, std::optional<uint64_t> volumeCapacityOverride, UnifiedOriginStorageLevel, bool storageSiteValidationEnabled, bool shouldPerformTimeBasedEviction, Seconds timeBasedEvictionThreshold, std::optional<Seconds> lastModificationTimeUpdateIntervalOverride);
     static bool canHandleTypes(OptionSet<WebsiteDataType>);
     static OptionSet<WebsiteDataType> allManagedTypes();
 
@@ -161,7 +161,7 @@ public:
     void queryCacheStorage(WebCore::ClientOrigin&&, WebCore::RetrieveRecordsOptions&&, String&&, CompletionHandler<void(std::optional<WebCore::DOMCacheEngine::Record>&&)>&&);
 
 private:
-    NetworkStorageManager(NetworkProcess&, PAL::SessionID, Markable<WTF::UUID>, std::optional<IPC::Connection::UniqueID>, const String& path, const String& customLocalStoragePath, const String& customIDBStoragePath, const String& customCacheStoragePath, const String& customServiceWorkerStoragePath, uint64_t defaultOriginQuota, std::optional<double> originQuotaRatio, std::optional<double> totalQuotaRatio, std::optional<uint64_t> standardVolumeCapacity, std::optional<uint64_t> volumeCapacityOverride, UnifiedOriginStorageLevel, bool storageSiteValidationEnabled);
+    NetworkStorageManager(NetworkProcess&, PAL::SessionID, Markable<WTF::UUID>, std::optional<IPC::Connection::UniqueID>, const String& path, const String& customLocalStoragePath, const String& customIDBStoragePath, const String& customCacheStoragePath, const String& customServiceWorkerStoragePath, uint64_t defaultOriginQuota, std::optional<double> originQuotaRatio, std::optional<double> totalQuotaRatio, std::optional<uint64_t> standardVolumeCapacity, std::optional<uint64_t> volumeCapacityOverride, UnifiedOriginStorageLevel, bool storageSiteValidationEnabled, bool shouldPerformTimeBasedEviction, Seconds timeBasedEvictionThreshold, std::optional<Seconds> lastModificationTimeUpdateIntervalOverride);
     ~NetworkStorageManager();
 
     std::optional<SharedPreferencesForWebProcess> NODELETE sharedPreferencesForWebProcess(IPC::Connection&) const;
@@ -169,9 +169,10 @@ private:
     bool NODELETE isStorageAreaTypeEnabled(IPC::Connection&, StorageAreaBase::StorageType) const;
     bool NODELETE useSQLiteMemoryBackingStore() const;
 
-    void writeOriginToFileIfNecessary(const WebCore::ClientOrigin&, StorageAreaBase* = nullptr);
+    enum class ShouldUpdateOriginAccessTime: bool { No, Yes };
+    void writeOriginToFileIfNecessary(const WebCore::ClientOrigin&, ShouldUpdateOriginAccessTime, StorageAreaBase* = nullptr);
     enum class ShouldWriteOriginFile : bool { No, Yes };
-    CheckedRef<OriginStorageManager> originStorageManager(const WebCore::ClientOrigin&, ShouldWriteOriginFile = ShouldWriteOriginFile::Yes);
+    CheckedRef<OriginStorageManager> originStorageManager(const WebCore::ClientOrigin&, ShouldWriteOriginFile = ShouldWriteOriginFile::Yes, ShouldUpdateOriginAccessTime = ShouldUpdateOriginAccessTime::No);
     bool removeOriginStorageManagerIfPossible(const WebCore::ClientOrigin&);
 
     void forEachClientOriginDirectoryUnderTopOrigin(const String& encodedTopOrigin, NOESCAPE const Function<void(const String&)>&);
@@ -210,7 +211,10 @@ private:
     void executeCommandForWritable(WebCore::FileSystemHandleIdentifier, WebCore::FileSystemWritableFileStreamIdentifier, WebCore::FileSystemWriteCommandType, std::optional<uint64_t> position, std::optional<uint64_t> size, std::span<const uint8_t> dataBytes, bool hasDataError, CompletionHandler<void(std::optional<FileSystemStorageError>)>&&);
     void getHandleNames(WebCore::FileSystemHandleIdentifier, CompletionHandler<void(Expected<Vector<String>, FileSystemStorageError>)>&&);
     void getHandle(IPC::Connection&, WebCore::FileSystemHandleIdentifier, String&& name, CompletionHandler<void(Expected<std::optional<std::pair<WebCore::FileSystemHandleIdentifier, bool>>, FileSystemStorageError>)>&&);
-    
+    void cloneHandle(IPC::Connection&, WebCore::ClientOrigin&&, WebCore::FileSystemHandleIdentifier, CompletionHandler<void(Expected<std::pair<WebCore::FileSystemHandleIdentifier, String>, FileSystemStorageError>)>&&);
+    void addTransferReference(WebCore::FileSystemHandleIdentifier);
+    void removeTransferReference(WebCore::FileSystemHandleIdentifier);
+
     // Message handlers for WebStorage.
     void connectToStorageArea(IPC::Connection&, WebCore::StorageType, StorageAreaMapIdentifier, std::optional<StorageNamespaceIdentifier>, const WebCore::ClientOrigin&, CompletionHandler<void(std::optional<StorageAreaIdentifier>, HashMap<String, String>, uint64_t)>&&);
     void connectToStorageAreaSync(IPC::Connection&, WebCore::StorageType, StorageAreaMapIdentifier, std::optional<StorageNamespaceIdentifier>, const WebCore::ClientOrigin&, CompletionHandler<void(std::optional<StorageAreaIdentifier>, HashMap<String, String>, uint64_t)>&&);
@@ -286,7 +290,9 @@ private:
         WallTime lastAccessTime;
         Vector<WebCore::SecurityOriginData> clientOrigins;
     };
-    void performEviction(HashMap<WebCore::SecurityOriginData, AccessRecord>&&);
+    void performQuotaBasedEviction(HashMap<WebCore::SecurityOriginData, AccessRecord>&&);
+    void performTimeBasedEviction(Seconds threshold);
+    void performEvictionForOrigin(const WebCore::SecurityOriginData& topOrigin, const AccessRecord&);
     const SuspendableWorkQueue& workQueue() const WTF_RETURNS_CAPABILITY(m_queue.get()) { return m_queue; }
     SuspendableWorkQueue& workQueue() WTF_RETURNS_CAPABILITY(m_queue.get()) { return m_queue; }
     OriginQuotaManager::Parameters originQuotaManagerParameters(const WebCore::ClientOrigin&);
@@ -320,6 +326,7 @@ private:
     std::optional<double> m_totalQuotaRatio;
     std::optional<uint64_t> m_standardVolumeCapacity;
     std::optional<uint64_t> m_volumeCapacityOverride;
+    std::optional<Seconds> m_lastModificationTimeUpdateIntervalOverride;
     std::optional<uint64_t> m_totalUsage;
     std::optional<uint64_t> m_totalQuota;
     bool m_isEvictionScheduled { false };

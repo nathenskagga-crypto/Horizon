@@ -1385,9 +1385,10 @@ static void changeContentOffsetBoundedInValidRange(UIScrollView *scrollView, Web
     if (!surface)
         return nullptr;
 
+    RetainPtr<NSString> displayName = self.window.screen.displayConfiguration.name;
     CARenderServerSnapshot(MACH_PORT_NULL, @{
         kCASnapshotMode: kCASnapshotModeLayer,
-        kCASnapshotDisplayName: kCARenderServerDefaultDisplay,
+        kCASnapshotDisplayName: displayName.get() ?: kCARenderServerDefaultDisplay,
         kCASnapshotContextId: @(self.layer.context.contextId),
         kCASnapshotLayerId: @(reinterpret_cast<uint64_t>(self.layer)),
         kCASnapshotDestination: (__bridge id)surface->surface(),

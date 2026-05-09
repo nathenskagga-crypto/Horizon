@@ -54,6 +54,7 @@ public:
     void didGetHandle(CallbackIdentifier, ExceptionOr<Ref<FileSystemHandleCloseScope>>&&);
     void didResolve(CallbackIdentifier, ExceptionOr<std::optional<Vector<String>>>&&);
     void completeStringCallback(CallbackIdentifier, ExceptionOr<String>&&);
+    void didCloneHandle(CallbackIdentifier, ExceptionOr<std::pair<FileSystemHandleIdentifier, String>>&&);
     void didCreateSyncAccessHandle(CallbackIdentifier, ExceptionOr<FileSystemStorageConnection::SyncAccessHandleInfo>&&);
     void completeVoidCallback(CallbackIdentifier, ExceptionOr<void>&& result);
     void didGetHandleNames(CallbackIdentifier, ExceptionOr<Vector<String>>&&);
@@ -72,6 +73,9 @@ private:
     void resolve(FileSystemHandleIdentifier, FileSystemHandleIdentifier, FileSystemStorageConnection::ResolveCallback&&) final;
     void getHandleNames(FileSystemHandleIdentifier, GetHandleNamesCallback&&) final;
     void getHandle(FileSystemHandleIdentifier, const String& name, GetHandleCallback&&) final;
+    void cloneHandle(ClientOrigin&&, FileSystemHandleIdentifier, CloneHandleCallback&&) final;
+    void addTransferReference(FileSystemHandleIdentifier) final;
+    void removeTransferReference(FileSystemHandleIdentifier) final;
     void getFile(FileSystemHandleIdentifier, StringCallback&&) final;
     void createSyncAccessHandle(FileSystemHandleIdentifier, FileSystemStorageConnection::GetAccessHandleCallback&&) final;
     void closeSyncAccessHandle(FileSystemHandleIdentifier, FileSystemSyncAccessHandleIdentifier, EmptyCallback&&) final;
@@ -92,6 +96,7 @@ private:
     HashMap<CallbackIdentifier, VoidCallback> m_voidCallbacks;
     HashMap<CallbackIdentifier, GetHandleNamesCallback> m_getHandleNamesCallbacks;
     HashMap<CallbackIdentifier, StringCallback> m_stringCallbacks;
+    HashMap<CallbackIdentifier, CloneHandleCallback> m_cloneHandleCallbacks;
     HashMap<CallbackIdentifier, StreamCallback> m_streamCallbacks;
     HashMap<FileSystemSyncAccessHandleIdentifier, Function<void()>> m_accessHandleInvalidationHandlers;
     HashMap<FileSystemSyncAccessHandleIdentifier, WeakPtr<FileSystemSyncAccessHandle>> m_syncAccessHandles;

@@ -26,6 +26,7 @@
 #pragma once
 
 #include <WebCore/FileSystemHandleIdentifier.h>
+#include <WebCore/FileSystemStorageConnection.h>
 #include <WebCore/StorageEstimate.h>
 #include <wtf/CompletionHandler.h>
 #include <wtf/ThreadSafeWeakPtr.h>
@@ -47,6 +48,7 @@ public:
     virtual void fileSystemGetDirectory(ClientOrigin&&, GetDirectoryCallback&&) = 0;
     using GetEstimateCallback = CompletionHandler<void(ExceptionOr<StorageEstimate>&&)>;
     virtual void getEstimate(ClientOrigin&&, GetEstimateCallback&&) = 0;
+    virtual RefPtr<FileSystemStorageConnection> fileSystemStorageConnection() { return nullptr; }
 };
 
 } // namespace WebCore

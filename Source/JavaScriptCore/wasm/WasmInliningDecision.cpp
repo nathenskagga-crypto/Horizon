@@ -69,10 +69,6 @@ bool InliningDecision::canInline(InliningNode* target, size_t initialWasmSize, s
     if (wasmSize > Options::wasmInliningMaximumWasmCalleeSize())
         return false;
 
-    // FIXME: There's no fundamental reason we can't inline these including imports.
-    if (m_module.moduleInformation().callCanClobberInstance(target->callee().index()))
-        return false;
-
     // For tiny functions, let's be a bit more generous.
     if (wasmSize < Options::wasmInliningTinyFunctionThreshold()) {
         if (inlinedWasmSize > 100)

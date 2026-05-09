@@ -1142,6 +1142,16 @@ private:
             break;
         }
 
+        case StringSplit: {
+            fixEdge<StringUse>(node->child1());
+            if (node->child2()->shouldSpeculateRegExpObject() && m_graph.isWatchingRegExpPrimordialPropertiesWatchpoint(node)) {
+                fixEdge<RegExpObjectUse>(node->child2());
+                break;
+            }
+            fixEdge<StringUse>(node->child2());
+            break;
+        }
+
         case EnumeratorGetByVal: {
             fixEdge<KnownInt32Use>(m_graph.varArgChild(node, 3));
             fixEdge<KnownInt32Use>(m_graph.varArgChild(node, 4));

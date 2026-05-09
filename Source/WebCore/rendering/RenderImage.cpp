@@ -786,6 +786,7 @@ ImageDrawResult RenderImage::paintIntoRect(PaintInfo& paintInfo, const FloatRect
         StrictImageClamping::No,
 #endif
         paintInfo.paintBehavior.contains(PaintBehavior::DrawsHDRContent) ? DrawsHDRContent::Yes : DrawsHDRContent::No,
+        settings().hdrAcceleratedApplyGainMapEnabled() ? AllowAcceleratedApplyGainMap::Yes : AllowAcceleratedApplyGainMap::No,
         style().dynamicRangeLimit().toPlatformDynamicRangeLimit()
     };
 

@@ -34,7 +34,6 @@
 #include "NativeCallee.h"
 #include "WasmCallee.h"
 
-#include <wtf/PtrTag.h>
 #include <wtf/StringPrintStream.h>
 #include <wtf/text/MakeString.h>
 

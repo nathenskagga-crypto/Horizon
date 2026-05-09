@@ -35,6 +35,7 @@
 #include "HTMLNames.h"
 #include "MutableStyleProperties.h"
 #include "NodeName.h"
+#include "SimpleRange.h"
 #include "VisibleUnits.h"
 #include <wtf/NeverDestroyed.h>
 #include <wtf/RobinHoodHashSet.h>

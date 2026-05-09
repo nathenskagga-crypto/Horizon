@@ -1575,6 +1575,14 @@ void testVectorSwizzleToDupElement();
 void testVectorSwizzleComposition();
 void testVectorSwizzleUnaryComposition();
 void testVectorSwizzleCompositionMultiUse();
+void testVectorSwizzleCompositionRightImmOuter();
+void testVectorSwizzleBinaryOnlyOneSideSide0();
+void testVectorSwizzleBinaryOnlyOneSideSide1();
+void testVectorSwizzleBinaryOnlyOneSideSide0WithOOB();
+void testVectorSwizzleBinaryOnlyOneSideSide1WithOOB();
+void testVectorSwizzleBinaryOnlyOneSideAllOOB();
+void testVectorSwizzleBinaryOnlyOneSideMixed();
+void testVectorSwizzleBinaryOnlyOneSideSide1Scattered();
 
 void testRotRFromShiftXorChainSHA256Sigma1_32(int32_t);
 void testRotRFromShiftXorChainSHA512Sigma1_64(int64_t);

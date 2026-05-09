@@ -573,8 +573,10 @@ void HistoryController::updateForStandardLoad(HistoryUpdateType updateType)
 
 #if PLATFORM(COCOA)
             if (linkedOnOrAfterSDKWithBehavior(SDKAlignedBehavior::AllBackForwardItemsWithoutUserGestureInvisibleToUI)) {
-                if (m_currentItem && m_frame->isMainFrame() && !documentLoader->triggeringAction().processingUserGesture() && !documentLoader->isRequestFromClientOrUserInput())
-                    m_currentItem->setWasCreatedByJSWithoutUserInteraction(true);
+                if (m_currentItem && m_frame->isMainFrame() && !documentLoader->triggeringAction().processingUserGesture() && !documentLoader->isRequestFromClientOrUserInput()) {
+                    if (RefPtr document = m_frame->document(); document && !document->hasRecentUserInteractionForNavigationFromJS())
+                        m_currentItem->setWasCreatedByJSWithoutUserInteraction(true);
+                }
             }
 #endif
 

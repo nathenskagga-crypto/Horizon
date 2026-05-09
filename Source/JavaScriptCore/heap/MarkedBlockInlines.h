@@ -26,7 +26,6 @@
 #pragma once
 
 #include <JavaScriptCore/BlockDirectory.h>
-#include <JavaScriptCore/JSCast.h>
 #include <JavaScriptCore/MarkedBlock.h>
 #include <JavaScriptCore/MarkedSpace.h>
 #include <JavaScriptCore/Scribble.h>

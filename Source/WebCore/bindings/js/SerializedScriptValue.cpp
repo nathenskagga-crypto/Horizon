@@ -29,7 +29,8 @@
 
 #include "BlobRegistry.h"
 #include "ByteArrayPixelBuffer.h"
-#include "CrossOriginMode.h"
+#include "ClientOrigin.h"
+#include "ContextDestructionObserverInlines.h"
 #include "CryptoKeyAES.h"
 #include "CryptoKeyEC.h"
 #include "CryptoKeyHMAC.h"
@@ -37,7 +38,10 @@
 #include "CryptoKeyRSA.h"
 #include "CryptoKeyRSAComponents.h"
 #include "CryptoKeyRaw.h"
+#include "Document.h"
 #include "DocumentQuirks.h"
+#include "FileSystemDirectoryHandle.h"
+#include "FileSystemFileHandle.h"
 #include "IDBValue.h"
 #include "ImageBuffer.h"
 #include "JSAudioWorkletGlobalScope.h"
@@ -54,6 +58,8 @@
 #include "JSExecState.h"
 #include "JSFile.h"
 #include "JSFileList.h"
+#include "JSFileSystemDirectoryHandle.h"
+#include "JSFileSystemFileHandle.h"
 #include "JSIDBSerializationGlobalObject.h"
 #include "JSImageBitmap.h"
 #include "JSImageData.h"
@@ -74,10 +80,13 @@
 #include "JSWebCodecsVideoFrame.h"
 #include "JSWritableStream.h"
 #include "ScriptExecutionContext.h"
+#include "SecurityOrigin.h"
+#include "SerializedScriptValueInternals.h"
 #include "SharedBuffer.h"
 #include "WebCodecsEncodedAudioChunk.h"
 #include "WebCodecsEncodedVideoChunk.h"
 #include "WebCoreJSClientData.h"
+#include "WorkerSTWParticipation.h"
 #include <JavaScriptCore/APICast.h>
 #include <JavaScriptCore/ArrayConventions.h>
 #include <JavaScriptCore/BigIntObject.h>
@@ -148,6 +157,8 @@
 #endif
 
 namespace WebCore {
+
+WTF_MAKE_STRUCT_TZONE_ALLOCATED_IMPL(SerializedScriptValueInternals);
 
 using namespace JSC;
 
@@ -273,6 +284,7 @@ enum SerializationTag {
     ReadableStreamTag = 65,
     WritableStreamTag = 66,
     TransformStreamTag = 67,
+    FileSystemHandleTag = 68,
     ErrorTag = 255
 };
 
@@ -384,6 +396,7 @@ static ASCIILiteral name(SerializationTag tag)
     case ReadableStreamTag: return "ReadableStreamTag"_s;
     case WritableStreamTag: return "WritableStreamTag"_s;
     case TransformStreamTag : return "TransformStreamTag"_s;
+    case FileSystemHandleTag: return "FileSystemHandleTag"_s;
     case ErrorTag: return "ErrorTag"_s;
     }
     return "<unknown tag>"_s;
@@ -537,6 +550,7 @@ static bool NODELETE isTypeExposedToGlobalObject(JSC::JSGlobalObject& globalObje
     case ReadableStreamTag:
     case WritableStreamTag:
     case TransformStreamTag:
+    case FileSystemHandleTag:
         break;
     }
     return false;
@@ -662,14 +676,26 @@ enum class ImageBitmapSerializationFlags : uint8_t {
             dataLogLn("TRACE ", __VA_ARGS__, " @ ", __LINE__); \
     } while (false)
 
-#if ENABLE(WEBASSEMBLY)
 static String agentClusterIDFromGlobalObject(JSGlobalObject& globalObject)
 {
-    if (auto* domGlobalObject = dynamicDowncast<JSDOMGlobalObject>(globalObject))
-        return domGlobalObject->agentClusterID();
-    return JSDOMGlobalObject::defaultAgentClusterID();
+    auto& domGlobalObject = downcast<JSDOMGlobalObject>(globalObject);
+    RefPtr context = domGlobalObject.scriptExecutionContext();
+    ASSERT(context);
+    if (!context)
+        return nullString();
+    auto result = context->agentClusterID();
+    ASSERT(!result.isNull());
+    return result;
 }
-#endif
+
+static bool isCrossOriginIsolatedContext(JSGlobalObject* globalObject)
+{
+    auto* domGlobalObject = dynamicDowncast<JSDOMGlobalObject>(globalObject);
+    if (!domGlobalObject)
+        return false;
+    RefPtr context = domGlobalObject->scriptExecutionContext();
+    return context && context->crossOriginIsolated();
+}
 
 const uint32_t currentKeyFormatVersion = 1;
 
@@ -1092,7 +1118,9 @@ template <> bool writeLittleEndian<uint8_t>(Vector<uint8_t>& buffer, std::span<c
 
 Ref<SerializedScriptValue> SerializedScriptValue::createFromWireBytes(Vector<uint8_t>&& data)
 {
-    return adoptRef(*new SerializedScriptValue(WTF::move(data), { }));
+    Internals internals;
+    internals.data = WTF::move(data);
+    return adoptRef(*new SerializedScriptValue(WTF::move(internals)));
 }
 
 class CloneSerializer;
@@ -1198,7 +1226,8 @@ public:
             WasmMemoryHandleArray& wasmMemoryHandles,
 #endif
         Vector<URLKeepingBlobAlive>& blobHandles, Vector<uint8_t>& out, SerializationContext context, ArrayBufferContentsArray& sharedBuffers,
-        SerializationForStorage forStorage)
+        SerializationForStorage forStorage,
+        Vector<FileSystemHandleTransferToken>& fileSystemHandleTransferTokens)
     {
 #if ASSERT_ENABLED
         auto& vm = lexicalGlobalObject->vm();
@@ -1238,6 +1267,7 @@ public:
 #endif
             blobHandles, out, context, sharedBuffers, forStorage);
         auto code = serializer.serialize(value);
+        fileSystemHandleTransferTokens = WTF::move(serializer.m_fileSystemHandleTransferTokens);
 #if ENABLE(MEDIA_STREAM)
         for (auto& track : std::exchange(serializer.m_serializedMediaStreamTracks , { }))
             detachedMediaStreamTracks.append(track.releaseNonNull());
@@ -2191,23 +2221,20 @@ private:
                         code = SerializationReturnCode::DataCloneError;
                         return true;
                     }
-                    bool isCrossOriginIsolated = ScriptExecutionContext::crossOriginMode() == CrossOriginMode::Isolated;
-                    if (m_context == SerializationContext::WorkerPostMessage && (isCrossOriginIsolated || JSC::Options::useSharedArrayBuffer())) {
+                    if (isCrossOriginIsolatedContext(m_lexicalGlobalObject) || JSC::Options::useSharedArrayBuffer()) {
                         uint32_t index = m_sharedBuffers.size();
                         ArrayBufferContents contents;
                         if (arrayBuffer->shareWith(contents)) {
                             appendObjectPoolTag(SharedArrayBufferTag);
                             write(SharedArrayBufferTag);
+                            write(agentClusterIDFromGlobalObject(*m_lexicalGlobalObject));
                             m_sharedBuffers.append(WTF::move(contents));
                             write(index);
                             return true;
                         }
                     }
-                    if (m_context != SerializationContext::WindowPostMessage || !isCrossOriginIsolated) {
-                        code = SerializationReturnCode::DataCloneError;
-                        return true;
-                    }
-                    // FIXME: WindowPostMessage should share SharedArrayBuffer when cross-origin isolated, not fall through to a non-shared copy.
+                    code = SerializationReturnCode::DataCloneError;
+                    return true;
                 }
                 
                 if (arrayBuffer->isResizableOrGrowableShared()) {
@@ -2390,6 +2417,34 @@ private:
                 return true;
             }
 #endif
+
+            auto serializeFileSystemHandle = [&](FileSystemHandle& handle) {
+                // FIXME: Add support for storage.
+                if (m_forStorage == SerializationForStorage::Yes || handle.isClosed()) {
+                    code = SerializationReturnCode::DataCloneError;
+                    return true;
+                }
+                RefPtr context = handle.scriptExecutionContext();
+                if (!context || !context->settingsValues().fileSystemHandleSerializationEnabled) {
+                    code = SerializationReturnCode::DataCloneError;
+                    return true;
+                }
+                write(FileSystemHandleTag);
+                write(std::to_underlying(handle.kind()));
+                write(handle.name());
+                write(handle.identifier().toUInt64());
+                ASSERT(!context->securityOrigin()->isOpaque());
+                write(context->securityOrigin()->toString());
+                if (RefPtr connection = fileSystemStorageConnectionForContext(*context)) {
+                    connection->addTransferReference(handle.identifier());
+                    m_fileSystemHandleTransferTokens.append({ handle.identifier(), connection.releaseNonNull() });
+                }
+                return true;
+            };
+            if (auto* fileHandle = dynamicDowncast<JSFileSystemFileHandle>(obj))
+                return serializeFileSystemHandle(fileHandle->wrapped());
+            if (auto* dirHandle = dynamicDowncast<JSFileSystemDirectoryHandle>(obj))
+                return serializeFileSystemHandle(dirHandle->wrapped());
 
             return false;
         }
@@ -2932,6 +2987,7 @@ private:
     ObjectPoolMap m_transferredMediaStreamTrackHandles;
 #endif
     SerializationForStorage m_forStorage;
+    Vector<FileSystemHandleTransferToken> m_fileSystemHandleTransferTokens;
 
 #if ASSERT_ENABLED
     bool m_didSeeComplexCases { false };
@@ -5141,6 +5197,64 @@ private:
         return getJSValue(exception);
     }
 
+    JSValue readFileSystemHandle()
+    {
+        uint8_t kindByte;
+        if (!read(kindByte) || (kindByte != std::to_underlying(FileSystemHandleKind::File) && kindByte != std::to_underlying(FileSystemHandleKind::Directory))) {
+            SERIALIZE_TRACE("FAIL readFileSystemHandle: invalid kind");
+            fail();
+            return JSValue();
+        }
+        auto kind = static_cast<FileSystemHandleKind>(kindByte);
+
+        CachedStringRef name;
+        if (!readStringData(name)) {
+            SERIALIZE_TRACE("FAIL readFileSystemHandle: cannot read name");
+            fail();
+            return JSValue();
+        }
+
+        uint64_t identifierValue;
+        if (!read(identifierValue) || !identifierValue) {
+            SERIALIZE_TRACE("FAIL readFileSystemHandle: invalid identifier");
+            fail();
+            return JSValue();
+        }
+
+        CachedStringRef origin;
+        if (!readStringData(origin)) {
+            fail();
+            return JSValue();
+        }
+
+        RefPtr context = executionContext(m_lexicalGlobalObject);
+        if (!context) {
+            fail();
+            return JSValue();
+        }
+
+        if (context->securityOrigin()->toString() != origin->string()) {
+            fail();
+            return JSValue();
+        }
+
+        RefPtr<FileSystemStorageConnection> connection = fileSystemStorageConnectionForContext(*context);
+        if (!connection) {
+            fail();
+            return JSValue();
+        }
+
+        auto identifier = FileSystemHandleIdentifier(identifierValue);
+        if (kind == FileSystemHandleKind::File) {
+            auto handle = FileSystemFileHandle::create(*context, String { name->string() }, identifier, Ref { *connection });
+            handle->markAsBorrowed();
+            return getJSValue(handle);
+        }
+        auto handle = FileSystemDirectoryHandle::create(*context, String { name->string() }, identifier, Ref { *connection });
+        handle->markAsBorrowed();
+        return getJSValue(handle);
+    }
+
     JSValue readBigInt()
     {
         bool sign;
@@ -5616,9 +5730,12 @@ private:
         }
         case SharedArrayBufferTag: {
             // https://html.spec.whatwg.org/multipage/structured-data.html#structureddeserialize
+            CachedStringRef agentClusterID;
+            bool agentClusterIDSuccessfullyRead = readStringData(agentClusterID);
             uint32_t index = UINT_MAX;
             bool indexSuccessfullyRead = read(index);
-            if (!indexSuccessfullyRead || !m_sharedBuffers || index >= m_sharedBuffers->size() || !JSC::Options::useSharedArrayBuffer()) {
+            if (!agentClusterIDSuccessfullyRead || agentClusterID->string() != agentClusterIDFromGlobalObject(*m_globalObject)
+                || !indexSuccessfullyRead || !m_sharedBuffers || index >= m_sharedBuffers->size()) {
                 SERIALIZE_TRACE("FAIL deserialize");
                 fail();
                 return JSValue();
@@ -5738,6 +5855,9 @@ private:
 #endif
         case DOMExceptionTag:
             return readDOMException();
+
+        case FileSystemHandleTag:
+            return readFileSystemHandle();
 
         default:
             SERIALIZE_TRACE("push back ", tag);
@@ -6227,185 +6347,81 @@ void validateSerializedResult(CloneSerializer& serializer, SerializationReturnCo
 
 SerializedScriptValue::~SerializedScriptValue() = default;
 
-SerializedScriptValue::SerializedScriptValue(Vector<uint8_t>&& buffer
-    , std::unique_ptr<ArrayBufferContentsArray>&& arrayBufferContentsArray
-#if ENABLE(WEB_RTC)
-    , Vector<std::unique_ptr<DetachedRTCDataChannel>>&& detachedRTCDataChannels
-    , Vector<Ref<RTCRtpTransformableFrame>>&& serializedRTCEncodedAudioFrames
-    , Vector<Ref<RTCRtpTransformableFrame>>&& serializedRTCEncodedVideoFrames
-#endif
-#if ENABLE(MEDIA_SOURCE_IN_WORKERS)
-    , Vector<RefPtr<DetachedMediaSourceHandle>>&& detachedMediaSourceHandles
-#endif
-#if ENABLE(WEB_CODECS)
-    , Vector<Ref<WebCodecsEncodedVideoChunkStorage>>&& serializedVideoChunks
-    , Vector<WebCodecsVideoFrameData>&& serializedVideoFrames
-    , Vector<Ref<WebCodecsEncodedAudioChunkStorage>>&& serializedAudioChunks
-    , Vector<WebCodecsAudioInternalData>&& serializedAudioData
-#endif
-#if ENABLE(MEDIA_STREAM)
-    , Vector<std::unique_ptr<MediaStreamTrackDataHolder>>&& detachedMediaStreamTracks
-    , Vector<std::unique_ptr<MediaStreamTrackHandle::DataHolder>>&& detachedMediaStreamTrackHandles
-#endif
-    , uint64_t exposedMessagePortCount
-        )
-    : m_internals {
-        .data = WTF::move(buffer)
-        , .arrayBufferContentsArray = WTF::move(arrayBufferContentsArray)
-#if ENABLE(WEB_RTC)
-        , .detachedRTCDataChannels = WTF::move(detachedRTCDataChannels)
-#endif
-#if ENABLE(WEB_CODECS)
-        , .serializedVideoChunks = WTF::move(serializedVideoChunks)
-        , .serializedAudioChunks = WTF::move(serializedAudioChunks)
-#endif
-        , .exposedMessagePortCount = exposedMessagePortCount
-#if ENABLE(WEB_CODECS)
-        , .serializedVideoFrames = WTF::move(serializedVideoFrames)
-        , .serializedAudioData = WTF::move(serializedAudioData)
-#endif
-#if ENABLE(WEB_RTC)
-        , .serializedRTCEncodedAudioFrames = WTF::move(serializedRTCEncodedAudioFrames)
-        , .serializedRTCEncodedVideoFrames = WTF::move(serializedRTCEncodedVideoFrames)
-#endif
-#if ENABLE(MEDIA_SOURCE_IN_WORKERS)
-        , .detachedMediaSourceHandles = WTF::move(detachedMediaSourceHandles)
-#endif
-#if ENABLE(MEDIA_STREAM)
-        , .detachedMediaStreamTracks = WTF::move(detachedMediaStreamTracks)
-        , .detachedMediaStreamTrackHandles = WTF::move(detachedMediaStreamTrackHandles)
-#endif
-    }
-{
-    m_internals.memoryCost = computeMemoryCost();
-}
-
-SerializedScriptValue::SerializedScriptValue(Vector<uint8_t>&& buffer
-        , Vector<URLKeepingBlobAlive>&& blobHandles
-        , std::unique_ptr<ArrayBufferContentsArray> arrayBufferContentsArray
-        , std::unique_ptr<ArrayBufferContentsArray> sharedBufferContentsArray
-        , Vector<std::optional<DetachedImageBitmap>>&& detachedImageBitmaps
-#if ENABLE(OFFSCREEN_CANVAS_IN_WORKERS)
-        , Vector<std::unique_ptr<DetachedOffscreenCanvas>>&& detachedOffscreenCanvases
-        , Vector<Ref<OffscreenCanvas>>&& inMemoryOffscreenCanvases
-#endif
-        , Vector<Ref<MessagePort>>&& inMemoryMessagePorts
-#if ENABLE(WEB_RTC)
-        , Vector<std::unique_ptr<DetachedRTCDataChannel>>&& detachedRTCDataChannels
-        , Vector<Ref<RTCRtpTransformableFrame>>&& serializedRTCEncodedAudioFrames
-        , Vector<Ref<RTCRtpTransformableFrame>>&& serializedRTCEncodedVideoFrames
-#endif
-#if ENABLE(MEDIA_SOURCE_IN_WORKERS)
-        , Vector<RefPtr<DetachedMediaSourceHandle>>&& detachedMediaSourceHandles
-#endif
-#if ENABLE(WEBASSEMBLY)
-        , WasmModuleArray&& wasmModulesArray
-        , std::unique_ptr<WasmMemoryHandleArray> wasmMemoryHandlesArray
-#endif
-#if ENABLE(WEB_CODECS)
-        , Vector<Ref<WebCodecsEncodedVideoChunkStorage>>&& serializedVideoChunks
-        , Vector<WebCodecsVideoFrameData>&& serializedVideoFrames
-        , Vector<Ref<WebCodecsEncodedAudioChunkStorage>>&& serializedAudioChunks
-        , Vector<WebCodecsAudioInternalData>&& serializedAudioData
-#endif
-#if ENABLE(MEDIA_STREAM)
-        , Vector<std::unique_ptr<MediaStreamTrackDataHolder>>&& detachedMediaStreamTracks
-        , Vector<std::unique_ptr<MediaStreamTrackHandle::DataHolder>>&& detachedMediaStreamTrackHandles
-#endif
-        , uint64_t exposedMessagePortCount
-        )
-    : m_internals {
-        .data = WTF::move(buffer)
-        , .arrayBufferContentsArray = WTF::move(arrayBufferContentsArray)
-#if ENABLE(WEB_RTC)
-        , .detachedRTCDataChannels = WTF::move(detachedRTCDataChannels)
-#endif
-#if ENABLE(WEB_CODECS)
-        , .serializedVideoChunks = WTF::move(serializedVideoChunks)
-        , .serializedAudioChunks = WTF::move(serializedAudioChunks)
-#endif
-        , .exposedMessagePortCount = exposedMessagePortCount
-#if ENABLE(WEB_CODECS)
-        , .serializedVideoFrames = WTF::move(serializedVideoFrames)
-        , .serializedAudioData = WTF::move(serializedAudioData)
-#endif
-#if ENABLE(WEB_RTC)
-        , .serializedRTCEncodedAudioFrames = WTF::move(serializedRTCEncodedAudioFrames)
-        , .serializedRTCEncodedVideoFrames = WTF::move(serializedRTCEncodedVideoFrames)
-#endif
-#if ENABLE(MEDIA_SOURCE_IN_WORKERS)
-        , .detachedMediaSourceHandles = WTF::move(detachedMediaSourceHandles)
-#endif
-#if ENABLE(MEDIA_STREAM)
-        , .detachedMediaStreamTracks = WTF::move(detachedMediaStreamTracks)
-        , .detachedMediaStreamTrackHandles = WTF::move(detachedMediaStreamTrackHandles)
-#endif
-        , .sharedBufferContentsArray = WTF::move(sharedBufferContentsArray)
-        , .detachedImageBitmaps = WTF::move(detachedImageBitmaps)
-#if ENABLE(OFFSCREEN_CANVAS_IN_WORKERS)
-        , .detachedOffscreenCanvases = WTF::move(detachedOffscreenCanvases)
-        , .inMemoryOffscreenCanvases = WTF::move(inMemoryOffscreenCanvases)
-#endif
-        , .inMemoryMessagePorts = WTF::move(inMemoryMessagePorts)
-#if ENABLE(WEBASSEMBLY)
-        , .wasmModulesArray = wasmModulesArray.isEmpty() ? nullptr : makeUnique<WasmModuleArray>(WTF::move(wasmModulesArray))
-        , .wasmMemoryHandlesArray = WTF::move(wasmMemoryHandlesArray)
-#endif
-        , .blobHandles = crossThreadCopy(WTF::move(blobHandles))
-    }
-{
-    m_internals.memoryCost = computeMemoryCost();
-}
-
 SerializedScriptValue::SerializedScriptValue(Internals&& internals)
-    : m_internals(WTF::move(internals))
+    : m_internals(makeUnique<Internals>(WTF::move(internals)))
 {
+    m_internals->memoryCost = computeMemoryCost();
+}
+
+bool SerializedScriptValue::hasBlobURLs() const
+{
+    return !m_internals->blobHandles.isEmpty();
+}
+
+Vector<URLKeepingBlobAlive> SerializedScriptValue::blobHandles() const
+{
+    return crossThreadCopy(m_internals->blobHandles);
+}
+
+const Vector<uint8_t>& SerializedScriptValue::wireBytes() const
+{
+    return m_internals->data;
+}
+
+size_t SerializedScriptValue::memoryCost() const
+{
+    return m_internals->memoryCost;
+}
+
+RefPtr<SerializedScriptValue> SerializedScriptValue::convert(JSGlobalObject& globalObject, JSValue value)
+{
+    return create(globalObject, value, SerializationForStorage::Yes);
 }
 
 size_t SerializedScriptValue::computeMemoryCost() const
 {
-    size_t cost = m_internals.data.size();
+    size_t cost = m_internals->data.size();
 
-    if (m_internals.arrayBufferContentsArray) {
-        for (auto& content : *m_internals.arrayBufferContentsArray)
+    if (m_internals->arrayBufferContentsArray) {
+        for (auto& content : *m_internals->arrayBufferContentsArray)
             cost += content.sizeInBytes();
     }
 
-    if (m_internals.sharedBufferContentsArray) {
-        for (auto& content : *m_internals.sharedBufferContentsArray)
+    if (m_internals->sharedBufferContentsArray) {
+        for (auto& content : *m_internals->sharedBufferContentsArray)
             cost += content.sizeInBytes();
     }
 
-    for (auto& detachedImageBitmap : m_internals.detachedImageBitmaps) {
+    for (auto& detachedImageBitmap : m_internals->detachedImageBitmaps) {
         if (detachedImageBitmap)
             cost += detachedImageBitmap->memoryCost();
     }
 
 #if ENABLE(WEB_RTC)
-    for (auto& channel : m_internals.detachedRTCDataChannels) {
+    for (auto& channel : m_internals->detachedRTCDataChannels) {
         if (channel)
             cost += channel->memoryCost();
     }
 #endif
 #if ENABLE(WEBASSEMBLY)
     // We are not supporting WebAssembly Module memory estimation yet.
-    if (m_internals.wasmMemoryHandlesArray) {
-        for (auto& content : *m_internals.wasmMemoryHandlesArray)
+    if (m_internals->wasmMemoryHandlesArray) {
+        for (auto& content : *m_internals->wasmMemoryHandlesArray)
             cost += content->sizeInBytes(std::memory_order_relaxed);
     }
 #endif
 #if ENABLE(WEB_CODECS)
-    for (auto& chunk : m_internals.serializedVideoChunks)
+    for (auto& chunk : m_internals->serializedVideoChunks)
         cost += chunk->memoryCost();
-    for (auto& frame : m_internals.serializedVideoFrames)
+    for (auto& frame : m_internals->serializedVideoFrames)
         cost += frame.memoryCost();
-    for (auto& chunk : m_internals.serializedAudioChunks)
+    for (auto& chunk : m_internals->serializedAudioChunks)
         cost += chunk->memoryCost();
-    for (auto& data : m_internals.serializedAudioData)
+    for (auto& data : m_internals->serializedAudioData)
         cost += data.memoryCost();
 #endif
 
-    for (auto& handle : m_internals.blobHandles)
+    for (auto& handle : m_internals->blobHandles)
         cost += handle.url().string().sizeInBytes();
 
     return cost;
@@ -6703,6 +6719,7 @@ ExceptionOr<Ref<SerializedScriptValue>> SerializedScriptValue::create(JSGlobalOb
     Vector<RefPtr<WebCodecsAudioData>> serializedAudioData;
 #endif
 
+    Vector<FileSystemHandleTransferToken> fileSystemHandleTransferTokens;
     auto exposedMessagePortsCount = messagePorts.size();
     auto code = CloneSerializer::serialize(&lexicalGlobalObject, value, messagePorts, arrayBuffers, imageBitmaps,
 #if ENABLE(OFFSCREEN_CANVAS_IN_WORKERS)
@@ -6735,7 +6752,8 @@ ExceptionOr<Ref<SerializedScriptValue>> SerializedScriptValue::create(JSGlobalOb
         wasmModules,
         wasmMemoryHandles,
 #endif
-        blobHandles, buffer, context, *sharedBuffers, forStorage);
+        blobHandles, buffer, context, *sharedBuffers, forStorage,
+        fileSystemHandleTransferTokens);
 
     // Serialization may throw an exception. If we see one, we should exit early. To satisfy
     // exception checks, we need to check the exception here. When we throw an exception, we
@@ -6886,36 +6904,46 @@ ExceptionOr<Ref<SerializedScriptValue>> SerializedScriptValue::create(JSGlobalOb
     });
 #endif
 
-    return adoptRef(*new SerializedScriptValue(WTF::move(buffer), WTF::move(blobHandles), arrayBufferContentsArray.releaseReturnValue(), context == SerializationContext::WorkerPostMessage ? WTF::move(sharedBuffers) : nullptr, WTF::move(detachedImageBitmaps)
-#if ENABLE(OFFSCREEN_CANVAS_IN_WORKERS)
-                , WTF::move(detachedCanvases)
-                , WTF::move(inMemoryOffscreenCanvases)
-#endif
-                , WTF::move(inMemoryMessagePorts)
+    return adoptRef(*new SerializedScriptValue(Internals {
+        .data = WTF::move(buffer)
+        , .arrayBufferContentsArray = arrayBufferContentsArray.releaseReturnValue()
 #if ENABLE(WEB_RTC)
-                , WTF::move(detachedRTCDataChannels)
-                , WTF::move(serializedRTCEncodedAudioFrameStorages)
-                , WTF::move(serializedRTCEncodedVideoFrameStorages)
-#endif
-#if ENABLE(MEDIA_SOURCE_IN_WORKERS)
-                , WTF::move(detachedMediaSourceHandles)
-#endif
-#if ENABLE(WEBASSEMBLY)
-                , WTF::move(wasmModules)
-                , context == SerializationContext::WorkerPostMessage ? makeUnique<WasmMemoryHandleArray>(wasmMemoryHandles) : nullptr
+        , .detachedRTCDataChannels = WTF::move(detachedRTCDataChannels)
 #endif
 #if ENABLE(WEB_CODECS)
-                , WTF::move(serializedVideoChunks)
-                , WTF::move(serializedVideoFrameData)
-                , WTF::move(serializedAudioChunks)
-                , WTF::move(serializedAudioInternalData)
+        , .serializedVideoChunks = WTF::move(serializedVideoChunks)
+        , .serializedAudioChunks = WTF::move(serializedAudioChunks)
+#endif
+        , .exposedMessagePortCount = exposedMessagePortsCount
+        , .fileSystemHandleTransferTokens = WTF::move(fileSystemHandleTransferTokens)
+#if ENABLE(WEB_CODECS)
+        , .serializedVideoFrames = WTF::move(serializedVideoFrameData)
+        , .serializedAudioData = WTF::move(serializedAudioInternalData)
+#endif
+#if ENABLE(WEB_RTC)
+        , .serializedRTCEncodedAudioFrames = WTF::move(serializedRTCEncodedAudioFrameStorages)
+        , .serializedRTCEncodedVideoFrames = WTF::move(serializedRTCEncodedVideoFrameStorages)
+#endif
+#if ENABLE(MEDIA_SOURCE_IN_WORKERS)
+        , .detachedMediaSourceHandles = WTF::move(detachedMediaSourceHandles)
 #endif
 #if ENABLE(MEDIA_STREAM)
-                , WTF::move(detachedMediaStreamTrackStorages)
-                , WTF::move(detachedMediaStreamTrackHandleStorages)
+        , .detachedMediaStreamTracks = WTF::move(detachedMediaStreamTrackStorages)
+        , .detachedMediaStreamTrackHandles = WTF::move(detachedMediaStreamTrackHandleStorages)
 #endif
-                , exposedMessagePortsCount
-                ));
+        , .sharedBufferContentsArray = WTF::move(sharedBuffers)
+        , .detachedImageBitmaps = WTF::move(detachedImageBitmaps)
+#if ENABLE(OFFSCREEN_CANVAS_IN_WORKERS)
+        , .detachedOffscreenCanvases = WTF::move(detachedCanvases)
+        , .inMemoryOffscreenCanvases = WTF::move(inMemoryOffscreenCanvases)
+#endif
+        , .inMemoryMessagePorts = WTF::move(inMemoryMessagePorts)
+#if ENABLE(WEBASSEMBLY)
+        , .wasmModulesArray = wasmModules.isEmpty() ? nullptr : makeUnique<WasmModuleArray>(WTF::move(wasmModules))
+        , .wasmMemoryHandlesArray = context == SerializationContext::WorkerPostMessage ? makeUnique<WasmMemoryHandleArray>(wasmMemoryHandles) : nullptr
+#endif
+        , .blobHandles = crossThreadCopy(WTF::move(blobHandles))
+    }));
 }
 
 RefPtr<SerializedScriptValue> SerializedScriptValue::create(StringView string)
@@ -6923,7 +6951,10 @@ RefPtr<SerializedScriptValue> SerializedScriptValue::create(StringView string)
     Vector<uint8_t> buffer;
     if (!CloneSerializer::serialize(string, buffer))
         return nullptr;
-    return adoptRef(*new SerializedScriptValue(WTF::move(buffer), { }));
+
+    Internals internals;
+    internals.data = WTF::move(buffer);
+    return adoptRef(*new SerializedScriptValue(WTF::move(internals)));
 }
 
 RefPtr<SerializedScriptValue> SerializedScriptValue::create(JSContextRef originContext, JSValueRef apiValue, JSValueRef* exception)
@@ -6952,7 +6983,7 @@ Vector<uint8_t> SerializedScriptValue::serializeCryptoKey(const WebCore::CryptoK
 
 String SerializedScriptValue::toString() const
 {
-    return CloneDeserializer::deserializeString(m_internals.data);
+    return CloneDeserializer::deserializeString(m_internals->data);
 }
 
 JSValue SerializedScriptValue::deserialize(JSGlobalObject& lexicalGlobalObject, JSGlobalObject* globalObject, SerializationErrorMode throwExceptions, bool* didFail)
@@ -6973,36 +7004,36 @@ JSValue SerializedScriptValue::deserialize(JSGlobalObject& lexicalGlobalObject, 
     VM& vm = lexicalGlobalObject.vm();
     auto scope = DECLARE_TOP_EXCEPTION_SCOPE(vm);
 
-    DeserializationResult result = CloneDeserializer::deserialize(&lexicalGlobalObject, globalObject, messagePorts, WTF::move(m_internals.detachedImageBitmaps)
+    DeserializationResult result = CloneDeserializer::deserialize(&lexicalGlobalObject, globalObject, messagePorts, WTF::move(m_internals->detachedImageBitmaps)
 #if ENABLE(OFFSCREEN_CANVAS_IN_WORKERS)
-        , WTF::move(m_internals.detachedOffscreenCanvases)
-        , m_internals.inMemoryOffscreenCanvases
+        , WTF::move(m_internals->detachedOffscreenCanvases)
+        , m_internals->inMemoryOffscreenCanvases
 #endif
-        , m_internals.inMemoryMessagePorts
+        , m_internals->inMemoryMessagePorts
 #if ENABLE(WEB_RTC)
-        , WTF::move(m_internals.detachedRTCDataChannels)
-        , WTF::move(m_internals.serializedRTCEncodedAudioFrames)
-        , WTF::move(m_internals.serializedRTCEncodedVideoFrames)
+        , WTF::move(m_internals->detachedRTCDataChannels)
+        , WTF::move(m_internals->serializedRTCEncodedAudioFrames)
+        , WTF::move(m_internals->serializedRTCEncodedVideoFrames)
 #endif
 #if ENABLE(MEDIA_SOURCE_IN_WORKERS)
-        , WTF::move(m_internals.detachedMediaSourceHandles)
+        , WTF::move(m_internals->detachedMediaSourceHandles)
 #endif
-        , m_internals.arrayBufferContentsArray.get(), m_internals.data, blobURLs, blobFilePaths, m_internals.sharedBufferContentsArray.get()
+        , m_internals->arrayBufferContentsArray.get(), m_internals->data, blobURLs, blobFilePaths, m_internals->sharedBufferContentsArray.get()
 #if ENABLE(WEBASSEMBLY)
-        , m_internals.wasmModulesArray.get()
-        , m_internals.wasmMemoryHandlesArray.get()
+        , m_internals->wasmModulesArray.get()
+        , m_internals->wasmMemoryHandlesArray.get()
 #endif
 #if ENABLE(WEB_CODECS)
-        , WTF::move(m_internals.serializedVideoChunks)
-        , WTF::move(m_internals.serializedVideoFrames)
-        , WTF::move(m_internals.serializedAudioChunks)
-        , WTF::move(m_internals.serializedAudioData)
+        , WTF::move(m_internals->serializedVideoChunks)
+        , WTF::move(m_internals->serializedVideoFrames)
+        , WTF::move(m_internals->serializedAudioChunks)
+        , WTF::move(m_internals->serializedAudioData)
 #endif
 #if ENABLE(MEDIA_STREAM)
-        , WTF::move(m_internals.detachedMediaStreamTracks)
-        , WTF::move(m_internals.detachedMediaStreamTrackHandles)
+        , WTF::move(m_internals->detachedMediaStreamTracks)
+        , WTF::move(m_internals->detachedMediaStreamTrackHandles)
 #endif
-        , m_internals.exposedMessagePortCount
+        , m_internals->exposedMessagePortCount
         );
     if (didFail)
         *didFail = result.code != SerializationReturnCode::SuccessfullyCompleted;
@@ -7042,12 +7073,12 @@ JSValueRef SerializedScriptValue::deserialize(JSContextRef destinationContext, J
 
 Ref<SerializedScriptValue> SerializedScriptValue::nullValue()
 {
-    return adoptRef(*new SerializedScriptValue(Vector<uint8_t>(), { }));
+    return adoptRef(*new SerializedScriptValue(Internals { }));
 }
 
 Vector<String> SerializedScriptValue::blobURLs() const
 {
-    return m_internals.blobHandles.map([](auto& handle) {
+    return m_internals->blobHandles.map([](auto& handle) {
         return handle.url().string().isolatedCopy();
     });
 }
@@ -7071,13 +7102,13 @@ void SerializedScriptValue::writeBlobsToDiskForIndexedDB(bool isEphemeral, Compl
             return;
         }
 
-        ASSERT(m_internals.blobHandles.size() == blobFilePaths.size());
+        ASSERT(m_internals->blobHandles.size() == blobFilePaths.size());
 
         completionHandler({ *this, blobURLs(), blobFilePaths });
     });
 }
 
-IDBValue SerializedScriptValue::writeBlobsToDiskForIndexedDBSynchronously(bool isEphemeral)
+IDBValue SerializedScriptValue::writeBlobsToDiskForIndexedDBSynchronously(bool isEphemeral, JSC::VM& vm)
 {
     ASSERT(!isMainThread());
 
@@ -7092,7 +7123,7 @@ IDBValue SerializedScriptValue::writeBlobsToDiskForIndexedDBSynchronously(bool i
             semaphore.signal();
         });
     });
-    semaphore.wait();
+    waitWithSTWParticipation(semaphore, vm);
 
     return value;
 }

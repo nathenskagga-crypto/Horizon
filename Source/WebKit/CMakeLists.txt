@@ -957,7 +957,14 @@ list(APPEND WebKit_SERIALIZATION_DEPENDENCIES "${WebKit_DERIVED_SOURCES_DIR}/Sha
 
 list(APPEND WebKit_DERIVED_SOURCES
     ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializers.h
-    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializers.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersShared.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersWebProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersGPUProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersNetworkProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersPlatform.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersModelProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersUIProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+    ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersCommon.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
     ${WebKit_DERIVED_SOURCES_DIR}/SerializedTypeInfo.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
     ${WebKit_DERIVED_SOURCES_DIR}/WebKitPlatformGeneratedSerializers.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
 )
@@ -965,7 +972,14 @@ list(APPEND WebKit_DERIVED_SOURCES
 add_custom_command(
     OUTPUT
         ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializers.h
-        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializers.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersShared.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersWebProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersGPUProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersNetworkProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersPlatform.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersModelProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersUIProcess.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
+        ${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializersCommon.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
         ${WebKit_DERIVED_SOURCES_DIR}/GeneratedWebKitSecureCoding.h
         ${WebKit_DERIVED_SOURCES_DIR}/GeneratedWebKitSecureCoding.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
         ${WebKit_DERIVED_SOURCES_DIR}/SerializedTypeInfo.${WebKit_GENERATED_SERIALIZERS_SUFFIX}
@@ -974,7 +988,7 @@ add_custom_command(
     DEPENDS
         ${WEBKIT_DIR}/Scripts/webkit/opaque_ipc_types.py
         ${WebKit_SERIALIZATION_DEPENDENCIES}
-    COMMAND ${PYTHON_EXECUTABLE} ${WEBKIT_DIR}/Scripts/generate-serializers.py ${WebKit_GENERATED_SERIALIZERS_SUFFIX} ${WebKit_SERIALIZATION_DEPENDENCIES}
+    COMMAND ${PYTHON_EXECUTABLE} ${WEBKIT_DIR}/Scripts/generate-serializers.py ${WebKit_GENERATED_SERIALIZERS_SUFFIX} --split-by-directory ${WebKit_SERIALIZATION_DEPENDENCIES}
     WORKING_DIRECTORY ${WebKit_DERIVED_SOURCES_DIR}
     VERBATIM
 )
@@ -982,8 +996,21 @@ add_custom_command(
 # These files are very large and exhaust virtual memory on 32-bit ARM.
 if (WTF_CPU_ARM AND NOT CMAKE_CROSSCOMPILING)
     set(GeneratedSerializers_COMPILE_OPTIONS -O0 -DRELEASE_WITHOUT_OPTIMIZATIONS=ON)
-    set_source_files_properties(${WebKit_DERIVED_SOURCES_DIR}/GeneratedSerializers.cpp PROPERTIES COMPILE_OPTIONS "${GeneratedSerializers_COMPILE_OPTIONS}")
-    set_source_files_properties(${WebKit_DERIVED_SOURCES_DIR}/WebKitPlatformGeneratedSerializers.cpp PROPERTIES COMPILE_OPTIONS "${GeneratedSerializers_COMPILE_OPTIONS}")
+    foreach (GeneratedSerializers_BASENAME
+        GeneratedSerializersShared
+        GeneratedSerializersWebProcess
+        GeneratedSerializersGPUProcess
+        GeneratedSerializersNetworkProcess
+        GeneratedSerializersPlatform
+        GeneratedSerializersModelProcess
+        GeneratedSerializersUIProcess
+        GeneratedSerializersCommon
+        WebKitPlatformGeneratedSerializers
+    )
+        set_source_files_properties(${WebKit_DERIVED_SOURCES_DIR}/${GeneratedSerializers_BASENAME}.cpp PROPERTIES
+            COMPILE_OPTIONS "${GeneratedSerializers_COMPILE_OPTIONS}"
+            SKIP_PRECOMPILE_HEADERS ON)
+    endforeach ()
 endif ()
 
 set(WebKit_JSON_RPC_PROTOCOL_GENERATOR_SCRIPTS
@@ -1124,39 +1151,47 @@ if (ENABLE_SWIFT_DEMO_URI_SCHEME)
     )
 endif ()
 
+if (ENABLE_BACK_FORWARD_LIST_SWIFT)
+    set_source_files_properties(
+        ${WebKit_DERIVED_SOURCES_DIR}/WebBackForwardListMessageReceiver.swift
+        PROPERTIES GENERATED TRUE)
+    list(APPEND WebKit_SOURCES
+        ${WebKit_DERIVED_SOURCES_DIR}/WebBackForwardListMessageReceiver.swift
+        ${WEBKIT_DIR}/Shared/API/APIArray.swift
+        ${WEBKIT_DIR}/UIProcess/StdlibExtras.swift
+        ${WEBKIT_DIR}/UIProcess/WebBackForwardList.swift
+    )
+endif ()
+
 list(APPEND WebKit_SOURCES ${WebKit_DERIVED_SOURCES})
 
 WEBKIT_COMPUTE_SOURCES(WebKit)
 WEBKIT_FRAMEWORK(WebKit)
-ADD_WEBKIT_PREFIX_HEADERS(WebKit WebKitPrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(WebKit WebKitPrefix.h)
 
 if (WebKit_ARC_SOURCES)
-    add_library(WebKitARC OBJECT ${WebKit_HEADERS} ${WebKit_ARC_SOURCES})
-    _WEBKIT_TARGET_SETUP(WebKitARC WebKit)
+    WEBKIT_ADD_OBJECT_SUBTARGET(WebKitARC WebKit ${WebKit_ARC_SOURCES})
     target_compile_options(WebKitARC PRIVATE -fobjc-arc)
-    ADD_WEBKIT_PREFIX_HEADERS(WebKitARC WebKitPrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(WebKitARC WebKitPrefix.h)
     target_sources(WebKit PRIVATE $<TARGET_OBJECTS:WebKitARC>)
 endif ()
 
 list(APPEND WebProcess_PRIVATE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:WebKit,INCLUDE_DIRECTORIES>)
 WEBKIT_EXECUTABLE(WebProcess)
-ADD_WEBKIT_PREFIX_HEADERS(WebProcess WebKitPrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(WebProcess WebKitPrefix.h)
 
 list(APPEND NetworkProcess_PRIVATE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:WebKit,INCLUDE_DIRECTORIES>)
 WEBKIT_EXECUTABLE(NetworkProcess)
-ADD_WEBKIT_PREFIX_HEADERS(NetworkProcess WebKitPrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(NetworkProcess WebKitPrefix.h)
 
 if (ENABLE_GPU_PROCESS)
     list(APPEND GPUProcess_PRIVATE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:WebKit,INCLUDE_DIRECTORIES>)
     WEBKIT_EXECUTABLE(GPUProcess)
-    ADD_WEBKIT_PREFIX_HEADERS(GPUProcess WebKitPrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(GPUProcess WebKitPrefix.h)
 endif ()
 
 if (COMPILER_IS_GCC_OR_CLANG)
     WEBKIT_ADD_TARGET_CXX_FLAGS(WebKit -Wno-unused-parameter)
-    if (TARGET WebKitARC)
-        WEBKIT_ADD_TARGET_CXX_FLAGS(WebKitARC -Wno-unused-parameter)
-    endif ()
     WEBKIT_ADD_TARGET_CXX_FLAGS(WebProcess -Wno-unused-parameter)
     WEBKIT_ADD_TARGET_CXX_FLAGS(NetworkProcess -Wno-unused-parameter)
     if (ENABLE_GPU_PROCESS)

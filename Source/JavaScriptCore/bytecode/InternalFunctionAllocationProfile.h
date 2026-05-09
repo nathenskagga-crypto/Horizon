@@ -26,7 +26,6 @@
 #pragma once
 
 #include <JavaScriptCore/JSGlobalObject.h>
-#include <JavaScriptCore/SlotVisitor.h>
 #include <JavaScriptCore/WriteBarrier.h>
 
 namespace JSC {

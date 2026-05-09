@@ -38,6 +38,14 @@
 .c17:has(~ .other17 > .trigger17) .target { color: green; }
 /* Non-subject (Ancestor, SiblingDescendant): subject is descendant of bearer */
 .c18:has(~ .other18 .trigger18) .target { color: green; }
+/* :has() inside :is() with compound peers at both levels - scope merges to .c19.other */
+.c19:is(.other:has(.trigger)) .target { color: green; }
+/* :has() inside :is() with type selector in inner compound - inner skipped, scope stays .c20 */
+.c20:is(div:has(.trigger)) .target { color: green; }
+/* :has() inside :is() with type selector in outer compound and class peer in inner */
+.c21 div:is(.other:has(.trigger)) .target { color: green; }
+/* Scope selector has no matching ancestor - invalidation is skipped entirely */
+.c22:has(.trigger22) .target { color: green; }
 </style>
 <script>
 if (window.testRunner)
@@ -220,6 +228,30 @@ runTest("(Ancestor, SiblingDescendant) .c18:has(~ .other18 .trigger18) .target",
     trigger.className = "trigger18";
     other.firstElementChild.appendChild(trigger);
 }, true, { setup: setupFollowingOther("other18") });
+
+runTest(":is(.other:has(.trigger)) with merged scope .c19.other", "c19 other", function(container) {
+    var trigger = document.createElement("div");
+    trigger.className = "trigger";
+    container.appendChild(trigger);
+}, true, { wrapperClass: "c19" });
+
+runTest(":is(div:has(.trigger)) with type in inner compound - scope stays .c20", "c20", function(container) {
+    var trigger = document.createElement("div");
+    trigger.className = "trigger";
+    container.appendChild(trigger);
+}, true);
+
+runTest(".c21 div:is(.other:has(.trigger)) with type in outer compound", "other", function(container) {
+    var trigger = document.createElement("div");
+    trigger.className = "trigger";
+    container.appendChild(trigger);
+}, true, { wrapperClass: "c21" });
+
+runTest(".c22:has(.trigger22) .target with no .c22 ancestor - skip invalidation", null, function(container) {
+    var trigger = document.createElement("div");
+    trigger.className = "trigger22";
+    container.appendChild(trigger);
+}, false);
 </script>
 </script>
 </body>

@@ -1847,6 +1847,14 @@ bool Quirks::shouldFlipScreenDimensions() const
 #endif
 }
 
+// rdar://175565114
+bool Quirks::shouldAvoidProgrammaticScrollClamping() const
+{
+    QUIRKS_EARLY_RETURN_IF_DISABLED_WITH_VALUE(false);
+
+    return m_quirksData.quirkIsEnabled(QuirksData::SiteSpecificQuirk::ShouldAvoidProgrammaticScrollClampingQuirk);
+}
+
 // This section is dedicated to UA override for iPad. iPads (but iPad Mini) are sending a desktop user agent
 // to websites. In some cases, the website breaks in some ways, not expecting a touch interface for the website.
 // Controls not active or too small, form factor, etc. In this case it is better to send the iPad Mini UA.
@@ -2305,6 +2313,13 @@ bool Quirks::shouldSuppressHLSSubtitles() const
     QUIRKS_EARLY_RETURN_IF_DISABLED_WITH_VALUE(false);
 
     return m_quirksData.quirkIsEnabled(QuirksData::SiteSpecificQuirk::ShouldSuppressHLSSubtitles);
+}
+
+bool Quirks::shouldSuppressMediaSessionPauseActionOnInterruption() const
+{
+    QUIRKS_EARLY_RETURN_IF_DISABLED_WITH_VALUE(false);
+
+    return m_quirksData.quirkIsEnabled(QuirksData::SiteSpecificQuirk::ShouldSuppressMediaSessionPauseActionOnInterruption);
 }
 
 // spotify.com rdar://140707449
@@ -3005,8 +3020,12 @@ static void handleYCombinatorQuirks(QuirksData& quirksData, const URL& quirksURL
 
 static void handleYahooQuirks(QuirksData& quirksData, const URL& /* quirksURL */, const String& /* quirksDomainString */, const URL& /* documentURL */)
 {
-    // yahoo.com: rdar://170502516
-    quirksData.enableQuirk(QuirksData::SiteSpecificQuirk::NeedsYahooVolumeSliderQuirk);
+    quirksData.enableQuirks({
+        // yahoo.com: rdar://170502516
+        QuirksData::SiteSpecificQuirk::NeedsYahooVolumeSliderQuirk,
+        // yahoo.com: rdar://136767005
+        QuirksData::SiteSpecificQuirk::ShouldAvoidStartingSelectionOnMouseDownOverPointerCursor,
+    });
 }
 
 #if ENABLE(TOUCH_EVENTS)
@@ -3667,6 +3686,8 @@ static void handleTwitterXQuirks(QuirksData& quirksData, const URL& /* quirksURL
         QuirksData::SiteSpecificQuirk::ShouldSilenceMediaQueryListChangeEvents,
         // x.com: rdar://problem/58804852 and rdar://problem/61731801
         QuirksData::SiteSpecificQuirk::ShouldSilenceWindowResizeEventsDuringApplicationSnapshotting,
+        // x.com: rdar://175565114
+        QuirksData::SiteSpecificQuirk::ShouldAvoidProgrammaticScrollClampingQuirk,
 #endif
 #if ENABLE(VIDEO_PRESENTATION_MODE)
         // x.com: rdar://73369869
@@ -3720,6 +3741,11 @@ static void handleYouTubeQuirks(QuirksData& quirksData, const URL& quirksURL, co
             QuirksData::SiteSpecificQuirk::NeedsYouTubeMouseOutQuirk
         });
     }
+#endif
+
+#if PLATFORM(IOS_FAMILY)
+    if (WTF::IOSApplication::isTubular())
+        quirksData.enableQuirk(QuirksData::SiteSpecificQuirk::ShouldSuppressMediaSessionPauseActionOnInterruption);
 #endif
 
     UNUSED_PARAM(quirksURL);
@@ -3799,6 +3825,10 @@ void Quirks::determineRelevantQuirks()
 
     // Push state file path restrictions break Mimeo Photo Plugin (rdar://112445672).
     m_quirksData.setQuirkState(QuirksData::SiteSpecificQuirk::ShouldDisablePushStateFilePathRestrictions, shouldDisablePushStateFilePathRestrictions);
+#endif
+
+#if PLATFORM(COCOA)
+    m_quirksData.setQuirkState(QuirksData::SiteSpecificQuirk::NeedsYouTubeCaptionQuirk, isYoutubeEmbedDomain());
 #endif
 
     auto quirksURL = topDocumentURL();

@@ -187,6 +187,8 @@ public:
     bool storageSiteValidationEnabled() const { return m_storageSiteValidationEnabled; }
     void setStorageSiteValidationEnabled(bool);
 
+    bool shouldPerformTimeBasedEviction() const;
+
     uint64_t perOriginStorageQuota() const { return m_configuration->perOriginStorageQuota(); }
     std::optional<double> originQuotaRatio() { return m_configuration->originQuotaRatio(); }
 
