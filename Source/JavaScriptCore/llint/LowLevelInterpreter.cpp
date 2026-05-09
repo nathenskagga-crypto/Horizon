@@ -295,8 +295,9 @@ JSValue CLoop::execute(OpcodeID entryOpcodeID, void* executableAddress, VM* vm, 
         // initialized the opcodeMap above. This is because getCodePtr()
         // can depend on the opcodeMap.
         uint8_t* exceptionInstructions = reinterpret_cast<uint8_t*>(LLInt::exceptionInstructions());
-        for (unsigned i = 0; i < maxBytecodeStructLength + 1; ++i)
-            exceptionInstructions[i] = llint_throw_from_slow_path_trampoline;
+        // Use memset instead of a byte loop — the compiler cannot always vectorize
+        // the original loop because the constant value spans the full byte range.
+        memset(exceptionInstructions, llint_throw_from_slow_path_trampoline, maxBytecodeStructLength + 1);
 
         return JSValue();
     }
@@ -388,16 +389,16 @@ JSValue CLoop::execute(OpcodeID entryOpcodeID, void* executableAddress, VM* vm, 
     JSValue functionReturnValue;
     Opcode opcode = getOpcode(entryOpcodeID);
 
+// Use pre-decrement/post-increment to fold the pointer arithmetic into a
+// single address-mode operation rather than separate sub+store / load+add.
 #define PUSH(cloopReg) \
     do { \
-        sp = sp.ip() - 1; \
-        *sp.ip() = cloopReg.i(); \
+        *--sp.ip() = cloopReg.i(); \
     } while (false)
 
 #define POP(cloopReg) \
     do { \
-        cloopReg = *sp.ip(); \
-        sp = sp.ip() + 1; \
+        cloopReg = *sp.ip()++; \
     } while (false)
 
 #if ENABLE(OPCODE_STATS)
