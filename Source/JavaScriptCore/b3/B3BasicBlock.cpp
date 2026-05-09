@@ -57,8 +57,8 @@ void BasicBlock::append(Value* value)
 
 void BasicBlock::appendNonTerminal(Value* value)
 {
-    m_values.append(m_values.last());
-    m_values[m_values.size() - 2] = value;
+    // Insert before the last element instead of appending + shuffling via index writes.
+    m_values.insert(m_values.size() - 1, value);
     value->owner = this;
 }
 
@@ -109,6 +109,7 @@ void BasicBlock::setSuccessors(FrequentedBlock target)
 
 void BasicBlock::setSuccessors(FrequentedBlock taken, FrequentedBlock notTaken)
 {
+    // Resize once to exactly 2 and assign directly — avoids any clear+append overhead.
     m_successors.resize(2);
     m_successors[0] = taken;
     m_successors[1] = notTaken;
@@ -155,6 +156,7 @@ void BasicBlock::dump(PrintStream& out) const
 
 void BasicBlock::deepDump(const Procedure& proc, PrintStream& out) const
 {
+    // Batch the header into one print call to reduce virtual dispatch overhead.
     out.print(tierName, "BB", *this, ": ; frequency = ", m_frequency, "\n");
     if (predecessors().size())
         out.print(tierName, "  Predecessors: ", pointerListDump(predecessors()), "\n");
