@@ -100,7 +100,11 @@ void FunctionRareData::initializeObjectAllocationProfile(VM& vm, JSGlobalObject*
             if (!currentFunction)
                 break;
 
-            FunctionExecutable* executable = currentFunction->jsExecutable();
+            auto* executableBase = currentFunction->executable();
+            if (!executableBase)
+                break;
+
+            auto* executable = dynamicDowncast<FunctionExecutable>(executableBase);
             if (!executable || !executable->isClassConstructorFunction())
                 break;
 
