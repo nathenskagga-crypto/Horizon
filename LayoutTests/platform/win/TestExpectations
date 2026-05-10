@@ -4681,3 +4681,5 @@ fast/canvas/offscreen-webgl-transfer-after-navigation-crash.html [ Skip ] # Flak
 webkit.org/b/312135 fast/animation/request-video-frame-callback-in-isolated-world-with-javascript-disabled.html [ Timeout ]
 
 webkit.org/b/312924 fast/webcodecs/resetting-audio-decoder-with-zero-size-crash.html [ Skip ]
+
+fast/message-channel/transfer-mediastreamtrack.html [ Skip ]

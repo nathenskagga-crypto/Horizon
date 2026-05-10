@@ -3938,6 +3938,9 @@ fast/images/low-memory-decode.html [ Skip ]
 # Lockdown Mode does not apply
 fast/speechsynthesis/lockdown-mode [ Skip ]
 
+# ManagedMediaSource is not supported
+imported/w3c/web-platform-tests/html/infrastructure/safe-passing-of-structured-data/transfer-mediasourcehandle.html [ Skip ]
+
 #////////////////////////////////////////////////////////////////////////////////////////
 # End of UNSUPPORTED tests.
 #////////////////////////////////////////////////////////////////////////////////////////
