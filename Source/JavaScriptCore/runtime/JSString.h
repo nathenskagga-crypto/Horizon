@@ -750,6 +750,8 @@ private:
     friend JSString* jsAtomString(JSGlobalObject*, VM&, JSString*, JSString*, JSString*);
 };
 
+template<> void JSRopeString::RopeBuilder<RecordOverflow>::expand();
+
 JS_EXPORT_PRIVATE JSString* jsStringWithCacheSlowCase(VM&, StringImpl&);
 
 // JSString::is8Bit is safe to be called concurrently. Concurrent threads can access is8Bit even if the main thread

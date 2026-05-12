@@ -90,26 +90,11 @@ void CoordinatedPlatformLayerBufferRGB::paintToCanvas(SkCanvas& canvas, const Fl
     externalTexture.fID = m_texture ? m_texture->id() : m_textureID;
     externalTexture.fFormat = GL_RGBA8;
     auto backendTexture = GrBackendTextures::MakeGL(m_size.width(), m_size.height(), skgpu::Mipmapped::kNo, externalTexture);
-    sk_sp<SkImage> image = SkImages::BorrowTextureFrom(grContext, backendTexture, kTopLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
+    auto origin = m_flags.contains(TextureMapperFlags::ShouldFlipTexture) ? kBottomLeft_GrSurfaceOrigin : kTopLeft_GrSurfaceOrigin;
+    sk_sp<SkImage> image = SkImages::BorrowTextureFrom(grContext, backendTexture, origin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
 
-    auto imagePaint = paint;
-    if (m_texture && m_texture->colorConvertFlags().contains(TextureMapperFlags::ShouldConvertTextureBGRAToRGBA)) {
-        const auto matrix = swapRedBlueMatrix();
-        auto bgraFilter = SkColorFilters::Matrix(matrix.data().data());
-        if (auto* colorFilter = paint.getColorFilter())
-            imagePaint.setColorFilter(colorFilter->makeComposed(bgraFilter));
-        else
-            imagePaint.setColorFilter(bgraFilter);
-    }
-    bool shouldFlip = m_flags.contains(TextureMapperFlags::ShouldFlipTexture);
-    SkAutoCanvasRestore autoRestore(&canvas, shouldFlip);
-    if (shouldFlip) {
-        canvas.translate(0, targetRect.height());
-        canvas.scale(1, -1);
-    }
-    SkRect srcRect = SkRect::MakeWH(m_size.width(), m_size.height());
-    SkRect dstRect = SkRect::MakeXYWH(targetRect.x(), shouldFlip ? -targetRect.y() : targetRect.y(), targetRect.width(), targetRect.height());
-    canvas.drawImageRect(image, srcRect, dstRect, SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone), &imagePaint, SkCanvas::kFast_SrcRectConstraint);
+    ASSERT(!m_texture || !m_texture->colorConvertFlags().contains(TextureMapperFlags::ShouldConvertTextureBGRAToRGBA));
+    canvas.drawImageRect(image, SkRect::MakeWH(m_size.width(), m_size.height()), SkRect(targetRect), SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone), &paint, SkCanvas::kFast_SrcRectConstraint);
 }
 #endif
 

@@ -255,7 +255,7 @@
     [Legacy] StructureParam WebCore::PushSubscriptionData.clientECDHPublicKey
     [Legacy] StructureParam WebCore::PushSubscriptionData.serverVAPIDPublicKey
     [Legacy] StructureParam WebCore::PushSubscriptionData.sharedAuthenticationSecret
-    [Legacy] StructureParam WebCore::SerializedScriptValue::Internals.data
+    [Legacy] StructureParam WebCore::SerializedScriptValueInternals.data
     [Legacy] StructureParam WebCore::ThreadSafeDataBufferImpl.m_data
     [Legacy] StructureParam WebCore::WebCodecsEncodedAudioChunkData.buffer
     [Legacy] StructureParam WebCore::WebCodecsEncodedVideoChunkData.buffer

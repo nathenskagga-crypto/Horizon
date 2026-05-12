@@ -2144,6 +2144,8 @@ bool JSArray::isToPrimitiveFastAndNonObservable()
         return false;
     if (!globalObject->arrayJoinWatchpointSet().isStillValid()) [[unlikely]]
         return false;
+    if (!globalObject->objectPrototypeValueOfWatchpointSet().isStillValid()) [[unlikely]]
+        return false;
 
     Structure* structure = this->structure();
     return globalObject->isOriginalArrayStructure(structure);

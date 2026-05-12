@@ -184,6 +184,9 @@ void clobberize(Graph& graph, Node* node, const ReadFunctor& read, const WriteFu
         case AtomicsSub:
         case AtomicsXor:
         case NewArrayWithSpecies:
+        case ArraySortCompact:
+        case ArraySortCommit:
+        case GetCellButterflySlot:
             return clobberTop();
         default:
             DFG_CRASH(graph, node, "Unhandled ArrayMode opcode.");
@@ -1958,6 +1961,57 @@ void clobberize(Graph& graph, Node* node, const ReadFunctor& read, const WriteFu
         read(HeapObjectCount);
         write(HeapObjectCount);
         // FIXME: In this phase we say the Array is where the length of the array is def'd but this differs from ObjectAllocationSinking.
+        return;
+    }
+
+    case GetCellButterflySlot:
+        read(IndexedContiguousProperties);
+        return;
+
+    case PutCellButterflySlot:
+        write(IndexedContiguousProperties);
+        return;
+
+    case ArraySortCompact: {
+        AbstractHeap sourceHeap;
+        switch (node->arrayMode().type()) {
+        case Array::Int32:
+            sourceHeap = IndexedInt32Properties;
+            break;
+        case Array::Contiguous:
+            sourceHeap = IndexedContiguousProperties;
+            break;
+        default:
+            DFG_CRASH(graph, node, "Bad array mode for ArraySortCompact");
+            return;
+        }
+        read(JSObject_butterfly);
+        read(Butterfly_publicLength);
+        read(sourceHeap);
+        read(HeapObjectCount);
+        write(HeapObjectCount);
+        write(IndexedContiguousProperties);
+        return;
+    }
+
+    case ArraySortCommit: {
+        AbstractHeap targetHeap;
+        switch (node->arrayMode().type()) {
+        case Array::Int32:
+            targetHeap = IndexedInt32Properties;
+            break;
+        case Array::Contiguous:
+            targetHeap = IndexedContiguousProperties;
+            break;
+        default:
+            DFG_CRASH(graph, node, "Bad array mode for ArraySortCommit");
+            return;
+        }
+        read(JSObject_butterfly);
+        read(Butterfly_publicLength);
+        read(IndexedContiguousProperties);
+        write(IndexedContiguousProperties);
+        write(targetHeap);
         return;
     }
 

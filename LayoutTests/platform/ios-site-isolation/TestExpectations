@@ -232,7 +232,6 @@ http/wpt/css/css-view-transitions/navigation/cross-origin-bfcache.html [ Failure
 http/wpt/css/css-view-transitions/navigation/old_vt_promises_bfcache.html [ Failure ]
 http/wpt/fetch/inspect-preflight.html [ Failure ]
 http/wpt/service-workers/navigation-iframe-site.https.html [ Failure ]
-http/wpt/webauthn/public-key-credential-cross-origin.https.html [ Failure ]
 http/wpt/webcodecs/audioData-serialization.html [ Failure ]
 http/wpt/webcodecs/videoFrame-serialization.html [ Failure ]
 http/wpt/webrtc/third-party-frame-ice-candidate-filtering.html [ Failure ]

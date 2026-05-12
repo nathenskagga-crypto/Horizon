@@ -903,8 +903,8 @@ public:
     SpeculationRules& NODELETE speculationRules() const;
 
     URL baseURLForComplete(const URL& baseURLOverride) const;
-    WEBCORE_EXPORT URL completeURL(const String&, ForceUTF8 = ForceUTF8::No) const final;
-    URL completeURL(const String&, const URL& baseURLOverride, ForceUTF8 = ForceUTF8::No) const;
+    WEBCORE_EXPORT URL completeURL(const String&, ForceUTF8 = ForceUTF8::Yes) const final;
+    URL completeURL(const String&, const URL& baseURLOverride, ForceUTF8 = ForceUTF8::Yes) const;
 
     inline bool shouldMaskURLForBindings(const URL&) const;
     inline const URL& maskedURLForBindingsIfNeeded(const URL&) const;

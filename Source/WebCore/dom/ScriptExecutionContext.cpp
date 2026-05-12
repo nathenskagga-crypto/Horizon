@@ -525,7 +525,7 @@ bool ScriptExecutionContext::canIncludeErrorDetails(CachedScript* script, const 
     // Errors from module scripts are never muted.
     if (fromModule)
         return true;
-    URL completeSourceURL = completeURL(sourceURL);
+    URL completeSourceURL = completeURL(sourceURL, ForceUTF8::No);
     if (completeSourceURL.protocolIsData())
         return true;
     if (script) {

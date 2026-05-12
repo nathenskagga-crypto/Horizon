@@ -1752,7 +1752,7 @@ void WebFrame::handleTextExtractionInteraction(TextExtraction::Interaction&& int
     if (!frame)
         return completion(false, "Browsing context is unavailable"_s, { });
 
-    auto summary = TextExtraction::interactionDescription(interaction, *frame).description;
+    auto summary = TextExtraction::interactionDescription(interaction, *frame, TextExtraction::Tense::Past).description;
     TextExtraction::handleInteraction(WTF::move(interaction), *frame, [completion = WTF::move(completion), summary = WTF::move(summary)](bool success, String&& message, FloatRect interactedElementBounds) mutable {
         if (success && message.isEmpty())
             message = WTF::move(summary);

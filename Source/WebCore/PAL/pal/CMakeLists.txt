@@ -148,7 +148,7 @@ WEBKIT_COPY_FILES(PAL_CopyHeaders
 )
 
 WEBKIT_FRAMEWORK(PAL)
-WEBKIT_ADD_PREFIX_HEADER(PAL PALPrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(PAL PALPrefix.h PREFIX_LANGUAGES CXX OBJCXX)
 
 # Must come after WEBKIT_FRAMEWORK() which adds -warnings-as-errors.
 target_compile_options(PAL PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -no-warnings-as-errors>")

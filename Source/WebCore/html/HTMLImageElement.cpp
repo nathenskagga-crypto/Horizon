@@ -253,7 +253,7 @@ void HTMLImageElement::setBestFitURLAndDPRFromImageCandidate(const ImageCandidat
 
     auto sourceURL = imageSourceURL();
     // Only complete the URL if it's non-empty to avoid resolving "" to the document base URL.
-    m_currentURL = sourceURL.isEmpty() ? URL() : protect(document())->completeURL(sourceURL);
+    m_currentURL = sourceURL.isEmpty() ? URL() : protect(document())->completeURL(sourceURL, ScriptExecutionContext::ForceUTF8::No);
 
     m_currentSrc = { };
     if (candidate.density >= 0)
@@ -733,7 +733,7 @@ String HTMLImageElement::completeURLsInAttributeValue(const URL& base, const Att
             for (const auto& candidate : imageCandidates) {
                 auto urlString = candidate.string.toString();
                 Ref document = this->document();
-                auto completeURL = base.isNull() ? document->completeURL(urlString) : URL(base, urlString);
+                auto completeURL = base.isNull() ? document->completeURL(urlString, ScriptExecutionContext::ForceUTF8::No) : URL(base, urlString);
                 if (document->shouldMaskURLForBindings(completeURL)) {
                     needsToResolveURLs = true;
                     break;
@@ -842,9 +842,9 @@ void HTMLImageElement::addSubresourceAttributeURLs(ListHashSet<URL>& urls) const
     HTMLElement::addSubresourceAttributeURLs(urls);
 
     Ref document = this->document();
-    addSubresourceURL(urls, document->completeURL(imageSourceURL()));
+    addSubresourceURL(urls, document->completeURL(imageSourceURL(), ScriptExecutionContext::ForceUTF8::No));
     // FIXME: What about when the usemap attribute begins with "#"?
-    addSubresourceURL(urls, document->completeURL(attributeWithoutSynchronization(usemapAttr)));
+    addSubresourceURL(urls, document->completeURL(attributeWithoutSynchronization(usemapAttr), ScriptExecutionContext::ForceUTF8::No));
 }
 
 void HTMLImageElement::addCandidateSubresourceURLs(ListHashSet<URL>& urls) const

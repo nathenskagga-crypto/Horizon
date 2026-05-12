@@ -965,7 +965,7 @@ void InspectorNetworkAgent::loadResource(const Inspector::Protocol::Network::Fra
         return;
     }
 
-    URL url = context->completeURL(urlString);
+    URL url = context->completeURL(urlString, ScriptExecutionContext::ForceUTF8::No);
     ResourceRequest request(WTF::move(url));
     request.setHTTPMethod("GET"_s);
     request.setHiddenFromInspector(true);

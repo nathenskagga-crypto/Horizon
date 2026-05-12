@@ -129,6 +129,7 @@ struct NetworkSessionCreationParameters {
     bool shouldPerformTimeBasedEviction { false };
     Seconds timeBasedEvictionThreshold { 180 * 24_h };
     std::optional<Seconds> lastModificationTimeUpdateIntervalOverride;
+    std::optional<Seconds> timeBasedEvictionIntervalOverride;
 #if ENABLE(DECLARATIVE_WEB_PUSH)
     bool isDeclarativeWebPushEnabled { false };
 #endif

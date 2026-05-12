@@ -880,7 +880,8 @@ public:
 #if HAVE(APPKIT_GESTURES_SUPPORT)
     void addTextSelectionManager();
     bool isTextSelectedAtPoint(NSPoint);
-    void cancelClick();
+    void beginSuppressingSingleClickGestureForTextSelection();
+    void endSuppressingSingleClickGestureForTextSelection();
 #endif
 
 private:

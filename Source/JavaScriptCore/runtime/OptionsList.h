@@ -760,7 +760,7 @@ public:
     void dump(PrintStream& out) const;
 
 private:
-    static const char* const s_nullRangeStr;
+    JS_EXPORT_PRIVATE static const char* const s_nullRangeStr;
 
     RangeState m_state { Uninitialized };
     const char* m_rangeString { nullptr };

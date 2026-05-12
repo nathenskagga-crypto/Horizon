@@ -787,6 +787,16 @@ MacroAssemblerCodeRef<JSEntryPtrTag> checkpointOSRExitFromInlinedCallTrampolineT
     return codeRef;
 }
 
+MacroAssemblerCodeRef<JSEntryPtrTag> arraySortComparatorReturnTrampolineThunk()
+{
+    static LazyNeverDestroyed<MacroAssemblerCodeRef<JSEntryPtrTag>> codeRef;
+    static std::once_flag onceKey;
+    std::call_once(onceKey, [&] {
+        codeRef.construct(generateThunkWithJumpToLLIntReturnPoint<JSEntryPtrTag>(array_sort_comparator_return_trampoline, "array_sort_comparator_return_trampoline thunk"));
+    });
+    return codeRef;
+}
+
 MacroAssemblerCodeRef<JSEntryPtrTag> returnLocationThunk(OpcodeID opcodeID, OpcodeSize size)
 {
 #define LLINT_RETURN_LOCATION(name) \

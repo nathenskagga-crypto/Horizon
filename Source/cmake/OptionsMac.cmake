@@ -213,4 +213,9 @@ if (EXISTS ${TOOLS_DIR}/Scripts/generate-cmake-xcode-project)
         OUTPUT_QUIET)
 endif ()
 
+if (WEBKIT_ADDITIONS_INCLUDE_PATH AND EXISTS "${WEBKIT_ADDITIONS_INCLUDE_PATH}/WebKitAdditions/CMake/OptionsMac.cmake")
+    message(STATUS "WebKitAdditions CMake: ${WEBKIT_ADDITIONS_INCLUDE_PATH}/WebKitAdditions/CMake/OptionsMac.cmake")
+    include("${WEBKIT_ADDITIONS_INCLUDE_PATH}/WebKitAdditions/CMake/OptionsMac.cmake")
+endif ()
+
 set(MiniBrowser_DERIVED_SOURCES_DIR "${CMAKE_BINARY_DIR}/DerivedSources/MiniBrowser")

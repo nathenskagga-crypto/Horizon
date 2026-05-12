@@ -128,7 +128,7 @@ RenderMathMLRoot::HorizontalParameters RenderMathMLRoot::horizontalParameters(La
     return parameters;
 }
 
-RenderMathMLRoot::VerticalParameters RenderMathMLRoot::verticalParameters()
+RenderMathMLRoot::VerticalParameters RenderMathMLRoot::verticalParameters() const
 {
     VerticalParameters parameters;
     // We try and read constants to draw the radical from the OpenType MATH and use fallback values otherwise.
@@ -287,6 +287,19 @@ void RenderMathMLRoot::layoutBlock(RelayoutChildren relayoutChildren, LayoutUnit
     updateLogicalHeight();
 
     layoutOutOfFlowBoxes(relayoutChildren);
+}
+
+std::optional<LayoutUnit> RenderMathMLRoot::firstLineBaseline() const
+{
+    // Per MathML Core, an empty <msqrt> renders as if it had a single empty <mrow> child.
+    // Synthesize the baseline of that implicit mrow so that the empty square root aligns
+    // with its non-empty counterpart on the line.
+    if (rootType() == RootType::SquareRoot && !firstInFlowChildBox()) {
+        auto vertical = verticalParameters();
+        return vertical.verticalGap + vertical.ruleThickness + vertical.extraAscender + borderAndPaddingBefore();
+    }
+
+    return RenderMathMLRow::firstLineBaseline();
 }
 
 void RenderMathMLRoot::paint(PaintInfo& info, const LayoutPoint& paintOffset)

@@ -431,7 +431,7 @@ ExceptionOr<void> WorkerGlobalScope::importScripts(const FixedVector<Variant<Ref
     Vector<URLKeepingBlobAlive> completedURLs;
     completedURLs.reserveInitialCapacity(urls.size());
     for (auto& entry : urlStrings) {
-        URL url = completeURL(entry);
+        URL url = completeURL(entry, ForceUTF8::No);
         if (!url.isValid())
             return Exception { ExceptionCode::SyntaxError };
         completedURLs.append({ WTF::move(url), m_topOrigin->data() });
@@ -645,7 +645,7 @@ Ref<FontFaceSet> WorkerGlobalScope::fonts()
 
 RefPtr<FontLoadRequest> WorkerGlobalScope::fontLoadRequest(const String& url, bool, bool, LoadedFromOpaqueSource loadedFromOpaqueSource)
 {
-    return WorkerFontLoadRequest::create(completeURL(url), loadedFromOpaqueSource);
+    return WorkerFontLoadRequest::create(completeURL(url, ForceUTF8::No), loadedFromOpaqueSource);
 }
 
 void WorkerGlobalScope::beginLoadingFontSoon(FontLoadRequest& request)

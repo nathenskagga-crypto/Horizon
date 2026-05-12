@@ -60,7 +60,7 @@ static ExceptionOr<String> computeReferrer(ScriptExecutionContext& context, cons
     if (referrer.isEmpty())
         return "no-referrer"_str;
 
-    URL referrerURL = context.completeURL(referrer, ScriptExecutionContext::ForceUTF8::Yes);
+    URL referrerURL = context.completeURL(referrer);
     if (!referrerURL.isValid())
         return Exception { ExceptionCode::TypeError, "Referrer is not a valid URL."_s };
 
@@ -195,7 +195,7 @@ ExceptionOr<void> FetchRequest::initializeWith(const String& url, Init&& init)
 {
     Ref context = *scriptExecutionContext();
 
-    URL requestURL = context->completeURL(url, ScriptExecutionContext::ForceUTF8::Yes);
+    URL requestURL = context->completeURL(url);
     if (!requestURL.isValid() || requestURL.hasCredentials())
         return Exception { ExceptionCode::TypeError, "URL is not valid or contains user credentials."_s };
 

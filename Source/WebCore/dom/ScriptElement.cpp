@@ -366,7 +366,7 @@ void ScriptElement::updateTaintedOriginFromSourceURL()
     if (!page)
         return;
 
-    if (!page->requiresScriptTrackingPrivacyProtections(hasSourceAttribute() ? document->completeURL(sourceAttributeValue()) : document->url()))
+    if (!page->requiresScriptTrackingPrivacyProtections(hasSourceAttribute() ? document->completeURL(sourceAttributeValue(), ScriptExecutionContext::ForceUTF8::No) : document->url()))
         return;
 
     m_taintedOrigin = JSC::SourceTaintedOrigin::KnownTainted;
@@ -382,7 +382,7 @@ bool ScriptElement::requestClassicScript(const String& sourceURL)
         auto script = LoadableClassicScript::create(element->nonce(), element->attributeWithoutSynchronization(HTMLNames::integrityAttr), referrerPolicy(), fetchPriority(),
             element->attributeWithoutSynchronization(HTMLNames::crossoriginAttr), scriptCharset(), element->localName(), element->isInUserAgentShadowTree(), hasAsyncAttribute());
 
-        auto scriptURL = document->completeURL(sourceURL);
+        auto scriptURL = document->completeURL(sourceURL, ScriptExecutionContext::ForceUTF8::No);
         document->willLoadScriptElement(scriptURL);
 
         if (!protect(document->contentSecurityPolicy())->allowScriptForStrictDynamic(scriptURL, URL(), m_startLineNumber, element->nonce(), script->integrity(), String(), m_parserInserted))
@@ -423,7 +423,7 @@ bool ScriptElement::requestModuleScript(const String& sourceText, const TextPosi
             return false;
         }
 
-        auto moduleScriptRootURL = document->completeURL(sourceURL);
+        auto moduleScriptRootURL = document->completeURL(sourceURL, ScriptExecutionContext::ForceUTF8::No);
         if (!moduleScriptRootURL.isValid()) {
             dispatchErrorEvent();
             return false;

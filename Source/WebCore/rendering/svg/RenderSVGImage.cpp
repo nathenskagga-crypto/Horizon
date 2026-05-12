@@ -289,7 +289,7 @@ bool RenderSVGImage::updateImageViewport()
 
     bool updatedViewport = false;
     Ref imageElement = this->imageElement();
-    URL imageSourceURL = document().completeURL(imageElement->imageSourceURL());
+    URL imageSourceURL = document().completeURL(imageElement->imageSourceURL(), ScriptExecutionContext::ForceUTF8::No);
 
     // Images with preserveAspectRatio=none should force non-uniform scaling. This can be achieved
     // by setting the image's container size to its intrinsic size.

@@ -1251,6 +1251,13 @@ bool Quirks::shouldEnableRemoteTrackLabelQuirk() const
     return m_quirksData.quirkIsEnabled(QuirksData::SiteSpecificQuirk::ShouldEnableRemoteTrackLabelQuirk);
 }
 
+bool Quirks::shouldEnableCameraBackgroundPlayback() const
+{
+    QUIRKS_EARLY_RETURN_IF_DISABLED_WITH_VALUE(false);
+
+    return m_quirksData.quirkIsEnabled(QuirksData::SiteSpecificQuirk::ShouldEnableCameraBackgroundPlayback);
+}
+
 bool Quirks::shouldEnableSpeakerSelectionPermissionsPolicyQuirk() const
 {
     QUIRKS_EARLY_RETURN_IF_DISABLED_WITH_VALUE(false);
@@ -3252,6 +3259,10 @@ static void handleGoogleQuirks(QuirksData& quirksData, const URL& quirksURL, con
     // sites.google.com rdar://58653069
     bool shouldPreventDispatchOfTouchEventQuirk = topDocumentHost == "sites.google.com"_s;
     quirksData.setQuirkState(QuirksData::SiteSpecificQuirk::ShouldPreventDispatchOfTouchEventQuirk, shouldPreventDispatchOfTouchEventQuirk);
+#endif
+#if ENABLE(MEDIA_STREAM)
+    if (topDocumentHost == "meet.google.com"_s)
+        quirksData.enableQuirk(QuirksData::SiteSpecificQuirk::ShouldEnableCameraBackgroundPlayback);
 #endif
 #if PLATFORM(MAC)
     // docs.google.com https://bugs.webkit.org/show_bug.cgi?id=161984

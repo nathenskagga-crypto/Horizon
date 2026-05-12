@@ -31,7 +31,7 @@
 #include <JavaScriptCore/ModuleMap.h>
 #include <JavaScriptCore/ScriptFetchParameters.h>
 #include <JavaScriptCore/ScriptFetcher.h>
-#include <wtf/ListHashSet.h>
+#include <wtf/OrderedHashSet.h>
 #include <wtf/RefPtr.h>
 
 namespace JSC {
@@ -102,7 +102,7 @@ public:
         Identifier localName;
     };
 
-    typedef WTF::ListHashSet<RefPtr<UniquedStringImpl>, IdentifierRepHash> OrderedIdentifierSet;
+    typedef WTF::OrderedHashSet<RefPtr<UniquedStringImpl>, IdentifierRepHash> OrderedIdentifierSet;
     typedef UncheckedKeyHashMap<RefPtr<UniquedStringImpl>, ImportEntry, IdentifierRepHash, HashTraits<RefPtr<UniquedStringImpl>>> ImportEntries;
     typedef UncheckedKeyHashMap<RefPtr<UniquedStringImpl>, ExportEntry, IdentifierRepHash, HashTraits<RefPtr<UniquedStringImpl>>> ExportEntries;
 

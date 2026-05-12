@@ -2492,7 +2492,7 @@ void DocumentLoader::startIconLoading()
 
     auto findResult = m_linkIcons.findIf([](auto& icon) { return icon.type == LinkIconType::Favicon; });
     if (findResult == notFound && document->url().protocolIsInHTTPFamily())
-        m_linkIcons.append({ document->completeURL("/favicon.ico"_s), LinkIconType::Favicon, String(), std::nullopt, { } });
+        m_linkIcons.append({ document->completeURL("/favicon.ico"_s, ScriptExecutionContext::ForceUTF8::No), LinkIconType::Favicon, String(), std::nullopt, { } });
 
     if (!m_linkIcons.size())
         return;

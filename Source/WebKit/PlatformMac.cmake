@@ -62,27 +62,9 @@ list(APPEND WebKit_PRIVATE_INCLUDE_DIRECTORIES
     "${WebKitLegacy_FRAMEWORK_HEADERS_DIR}"
 )
 
-set(XPCService_SOURCES
-    Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp
-
-    Shared/EntryPointUtilities/Cocoa/XPCService/XPCServiceEntryPoint.mm
-    Shared/EntryPointUtilities/Cocoa/XPCService/XPCServiceMain.mm
-)
-
-set(WebProcess_SOURCES
-    WebProcess/EntryPoint/Cocoa/XPCService/WebContentServiceEntryPoint.mm
-    ${XPCService_SOURCES}
-)
-
-set(NetworkProcess_SOURCES
-    NetworkProcess/EntryPoint/Cocoa/XPCService/NetworkServiceEntryPoint.mm
-    ${XPCService_SOURCES}
-)
-
-set(GPUProcess_SOURCES
-    GPUProcess/EntryPoint/Cocoa/XPCService/GPUServiceEntryPoint.mm
-    ${XPCService_SOURCES}
-)
+set(WebProcess_SOURCES Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp)
+set(NetworkProcess_SOURCES Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp)
+set(GPUProcess_SOURCES Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp)
 
 set(WebProcess_INCLUDE_DIRECTORIES ${CMAKE_BINARY_DIR})
 set(NetworkProcess_INCLUDE_DIRECTORIES ${CMAKE_BINARY_DIR})
@@ -167,9 +149,6 @@ list(APPEND WebKit_SOURCES
 list(APPEND WebKit_PRIVATE_LIBRARIES
     "-weak_framework PowerLog"
 )
-# FIXME: Replace with targeted -U flags or explicit stubs.
-# https://bugs.webkit.org/show_bug.cgi?id=312067
-list(APPEND WebKit_PRIVATE_LIBRARIES "-Wl,-undefined,dynamic_lookup")
 
 list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
     Shared/WebPushDaemonConstants.h

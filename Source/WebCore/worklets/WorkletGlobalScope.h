@@ -111,7 +111,7 @@ private:
 
     std::optional<Vector<uint8_t>> serializeAndWrapCryptoKey(CryptoKeyData&&) final { RELEASE_ASSERT_NOT_REACHED(); return std::nullopt; }
     std::optional<Vector<uint8_t>> unwrapCryptoKey(const Vector<uint8_t>&) final { RELEASE_ASSERT_NOT_REACHED(); return std::nullopt; }
-    URL completeURL(const String&, ForceUTF8 = ForceUTF8::No) const final;
+    URL completeURL(const String&, ForceUTF8 = ForceUTF8::Yes) const final;
     String userAgent(const URL&) const final;
     const SettingsValues& settingsValues() const LIFETIME_BOUND final { return m_settingsValues; }
 

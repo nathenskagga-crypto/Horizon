@@ -305,6 +305,9 @@
 		DD3DC86627A4BF8E007E5B61 /* CheckedArithmetic.h in Headers */ = {isa = PBXBuildFile; fileRef = A8A4726A151A825A004123FF /* CheckedArithmetic.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC86727A4BF8E007E5B61 /* SynchronizedFixedQueue.h in Headers */ = {isa = PBXBuildFile; fileRef = 5597F82C1D94B9970066BC21 /* SynchronizedFixedQueue.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC86827A4BF8E007E5B61 /* OrderMaker.h in Headers */ = {isa = PBXBuildFile; fileRef = 0F9495831C571CC900413A48 /* OrderMaker.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		18916AA77E524C80912930B8 /* OrderedHashMap.h in Headers */ = {isa = PBXBuildFile; fileRef = CF0D7A729EEE4CC582E83B30 /* OrderedHashMap.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		39D12598FEA545039883C96C /* OrderedHashSet.h in Headers */ = {isa = PBXBuildFile; fileRef = B6397A84DB2844D9A8644961 /* OrderedHashSet.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		4677959411F147AFBC01B2EA /* OrderedHashTable.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D069A1267BB4822AF40B04C /* OrderedHashTable.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC86927A4BF8E007E5B61 /* BubbleSort.h in Headers */ = {isa = PBXBuildFile; fileRef = 0F4570441BE834410062A629 /* BubbleSort.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC86B27A4BF8E007E5B61 /* IteratorRange.h in Headers */ = {isa = PBXBuildFile; fileRef = 7CDD7FF9186D2A54007433CD /* IteratorRange.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		DD3DC86C27A4BF8E007E5B61 /* NumberOfCores.h in Headers */ = {isa = PBXBuildFile; fileRef = A8A472D6151A825B004123FF /* NumberOfCores.h */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -907,6 +910,7 @@
 		E3260E982DA0E508003FC93F /* StructDump.h in Headers */ = {isa = PBXBuildFile; fileRef = E3260E972DA0E508003FC93F /* StructDump.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E32AB5012B5CE35D00B9FAAE /* LazyRef.h in Headers */ = {isa = PBXBuildFile; fileRef = E32AB4FF2B5CE35D00B9FAAE /* LazyRef.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E32AB5022B5CE35D00B9FAAE /* LazyUniqueRef.h in Headers */ = {isa = PBXBuildFile; fileRef = E32AB5002B5CE35D00B9FAAE /* LazyUniqueRef.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		82722C867A8346EB9034D804 /* ThreadSafeLazyUniquePtr.h in Headers */ = {isa = PBXBuildFile; fileRef = 96C342C5B2894529B448A3CD /* ThreadSafeLazyUniquePtr.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E32B4F3D2E0C698F00BDA4FD /* XTSPI.h in Headers */ = {isa = PBXBuildFile; fileRef = E32B4F3C2E0C698F00BDA4FD /* XTSPI.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E336674A2722551100259122 /* Int128.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E33667492722550900259122 /* Int128.cpp */; };
 		E336BD2F2BAB8A0400E8471C /* CharacterProperties.h in Headers */ = {isa = PBXBuildFile; fileRef = E336BD2E2BAB8A0400E8471C /* CharacterProperties.h */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -1187,6 +1191,9 @@
 		0F93274A1C17F4B700CF6564 /* Box.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Box.h; sourceTree = "<group>"; };
 		0F93274A1C17F4B700CF6566 /* BoxPtr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BoxPtr.h; sourceTree = "<group>"; };
 		0F9495831C571CC900413A48 /* OrderMaker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OrderMaker.h; sourceTree = "<group>"; };
+		CF0D7A729EEE4CC582E83B30 /* OrderedHashMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OrderedHashMap.h; sourceTree = "<group>"; };
+		B6397A84DB2844D9A8644961 /* OrderedHashSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OrderedHashSet.h; sourceTree = "<group>"; };
+		2D069A1267BB4822AF40B04C /* OrderedHashTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OrderedHashTable.h; sourceTree = "<group>"; };
 		0F95B63120CB4B7700479635 /* DebugHeap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DebugHeap.h; sourceTree = "<group>"; };
 		0F95B63220CB4B7700479635 /* DebugHeap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DebugHeap.cpp; sourceTree = "<group>"; };
 		0F95B63420CB53C100479635 /* Vector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Vector.cpp; sourceTree = "<group>"; };
@@ -1993,6 +2000,7 @@
 		E3260E972DA0E508003FC93F /* StructDump.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = StructDump.h; sourceTree = "<group>"; };
 		E32AB4FF2B5CE35D00B9FAAE /* LazyRef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LazyRef.h; sourceTree = "<group>"; };
 		E32AB5002B5CE35D00B9FAAE /* LazyUniqueRef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LazyUniqueRef.h; sourceTree = "<group>"; };
+		96C342C5B2894529B448A3CD /* ThreadSafeLazyUniquePtr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadSafeLazyUniquePtr.h; sourceTree = "<group>"; };
 		E32B4F3C2E0C698F00BDA4FD /* XTSPI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTSPI.h; sourceTree = "<group>"; };
 		E33667492722550900259122 /* Int128.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Int128.cpp; sourceTree = "<group>"; };
 		E336BD2E2BAB8A0400E8471C /* CharacterProperties.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CharacterProperties.h; sourceTree = "<group>"; };
@@ -2616,6 +2624,9 @@
 				07C913F22F820E86003A09D8 /* OptionCountedSet.h */,
 				1A4656181C7FC68E00F5920F /* OptionSet.h */,
 				275DFB6B238BDF72001230E2 /* OptionSetHash.h */,
+				CF0D7A729EEE4CC582E83B30 /* OrderedHashMap.h */,
+				B6397A84DB2844D9A8644961 /* OrderedHashSet.h */,
+				2D069A1267BB4822AF40B04C /* OrderedHashTable.h */,
 				0F9495831C571CC900413A48 /* OrderMaker.h */,
 				A8A472D7151A825B004123FF /* OSAllocator.h */,
 				7CBBA07319BB7FDC00BBF025 /* OSObjectPtr.h */,
@@ -2798,6 +2809,7 @@
 				A8A47335151A825B004123FF /* ThreadingPrimitives.h */,
 				5311BD5B1EA822F900525281 /* ThreadMessage.cpp */,
 				5311BD591EA81A9600525281 /* ThreadMessage.h */,
+				96C342C5B2894529B448A3CD /* ThreadSafeLazyUniquePtr.h */,
 				A8A4733E151A825B004123FF /* ThreadSafeRefCounted.h */,
 				E3427B2E2D1636A200919862 /* ThreadSafeRefCountedWithSuppressingSaferCPPChecking.h */,
 				7B2739DC2624DAAA0040F182 /* ThreadSafetyAnalysis.h */,
@@ -3781,6 +3793,9 @@
 				07C913F32F820E86003A09D8 /* OptionCountedSet.h in Headers */,
 				DD3DC92E27A4BF8E007E5B61 /* OptionSet.h in Headers */,
 				DD3DC90927A4BF8E007E5B61 /* OptionSetHash.h in Headers */,
+				18916AA77E524C80912930B8 /* OrderedHashMap.h in Headers */,
+				39D12598FEA545039883C96C /* OrderedHashSet.h in Headers */,
+				4677959411F147AFBC01B2EA /* OrderedHashTable.h in Headers */,
 				DD3DC86827A4BF8E007E5B61 /* OrderMaker.h in Headers */,
 				DDF307DC27C086DF006A526F /* OrdinalNumber.h in Headers */,
 				DD3DC8F427A4BF8E007E5B61 /* OSAllocator.h in Headers */,
@@ -3975,6 +3990,7 @@
 				463CCFC12B251D79009AB04E /* ThreadingEnums.h in Headers */,
 				DD3DC8E227A4BF8E007E5B61 /* ThreadingPrimitives.h in Headers */,
 				DD3DC92227A4BF8E007E5B61 /* ThreadMessage.h in Headers */,
+				82722C867A8346EB9034D804 /* ThreadSafeLazyUniquePtr.h in Headers */,
 				DD3DC96927A4BF8E007E5B61 /* ThreadSafeRefCounted.h in Headers */,
 				E3427B2F2D1636A200919862 /* ThreadSafeRefCountedWithSuppressingSaferCPPChecking.h in Headers */,
 				DD3DC97C27A4BF8E007E5B61 /* ThreadSafetyAnalysis.h in Headers */,

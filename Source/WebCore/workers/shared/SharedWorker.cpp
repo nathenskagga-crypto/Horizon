@@ -89,7 +89,7 @@ ExceptionOr<Ref<SharedWorker>> SharedWorker::create(Document& document, Variant<
     if (!document.hasBrowsingContext())
         return Exception { ExceptionCode::InvalidStateError, "No browsing context"_s };
 
-    auto url = document.completeURL(compliantScriptURLString.releaseReturnValue());
+    auto url = document.completeURL(compliantScriptURLString.releaseReturnValue(), ScriptExecutionContext::ForceUTF8::No);
     if (!url.isValid())
         return Exception { ExceptionCode::SyntaxError, "Invalid script URL"_s };
 

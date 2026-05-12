@@ -663,6 +663,10 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case NewArrayWithSize:
     case NewArrayWithButterfly:
     case NewButterflyWithSize:
+    case GetCellButterflySlot:
+    case PutCellButterflySlot:
+    case ArraySortCompact:
+    case ArraySortCommit:
     case NewArrayWithSpecies:
     case NewArrayWithSizeAndStructure:
     case NewArrayBuffer:

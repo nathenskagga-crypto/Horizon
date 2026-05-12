@@ -335,6 +335,7 @@ public:
     String customUserAgentAsSiteSpecificQuirks() const final;
     String customNavigatorPlatform() const final;
     OptionSet<AdvancedPrivacyProtections> advancedPrivacyProtections() const final;
+    bool allowPrivacyProxy() const final;
     AutoplayPolicy autoplayPolicy() const final;
 
     WEBCORE_EXPORT SandboxFlags NODELETE effectiveSandboxFlags() const;

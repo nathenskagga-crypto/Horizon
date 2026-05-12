@@ -130,6 +130,7 @@ private:
 #endif
 
     bool m_needsOverlayRegionScrollViewSelection { false };
+    bool m_needsOverlayRegionBehaviorUpdate { false };
     RetainPtr<WKBaseScrollView> m_selectedOverlayRegionScrollView;
 #endif
 

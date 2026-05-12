@@ -2309,8 +2309,18 @@ JSC_DEFINE_JIT_OPERATION(operationNewEmptyArray, char*, (VM* vmPointer, Structur
     CallFrame* callFrame = DECLARE_CALL_FRAME(vm);
     JITOperationPrologueCallFrameTracer tracer(vm, callFrame);
     auto scope = DECLARE_THROW_SCOPE(vm);
-    
+
     OPERATION_RETURN(scope, std::bit_cast<char*>(JSArray::create(vm, arrayStructure)));
+}
+
+JSC_DEFINE_JIT_OPERATION(operationAcquireSortScratch, JSCell*, (VM* vmPointer))
+{
+    VM& vm = *vmPointer;
+    CallFrame* callFrame = DECLARE_CALL_FRAME(vm);
+    JITOperationPrologueCallFrameTracer tracer(vm, callFrame);
+    auto scope = DECLARE_THROW_SCOPE(vm);
+
+    OPERATION_RETURN(scope, static_cast<JSCell*>(JSCellButterfly::create(vm, CopyOnWriteArrayWithContiguous, sortScratchSlotCount)));
 }
 
 JSC_DEFINE_JIT_OPERATION(operationNewArrayWithSize, char*, (JSGlobalObject* globalObject, Structure* arrayStructure, int32_t size, Butterfly* butterfly))
@@ -3839,7 +3849,15 @@ JSC_DEFINE_JIT_OPERATION(operationStringProtoFuncReplaceAllGeneric, JSCell*, (JS
     JITOperationPrologueCallFrameTracer tracer(vm, callFrame);
     auto scope = DECLARE_THROW_SCOPE(vm);
 
-    OPERATION_RETURN(scope, replace<StringReplaceMode::Global>(vm, globalObject, JSValue::decode(thisValue), JSValue::decode(searchValue), JSValue::decode(replaceValue)));
+    JSValue decodedSearchValue = JSValue::decode(searchValue);
+    if (decodedSearchValue.inherits<RegExpObject>()) [[unlikely]] {
+        if (!uncheckedDowncast<RegExpObject>(decodedSearchValue)->regExp()->global()) {
+            throwTypeError(globalObject, scope, "String.prototype.replaceAll argument must not be a non-global regular expression"_s);
+            OPERATION_RETURN(scope, nullptr);
+        }
+    }
+
+    OPERATION_RETURN(scope, replace<StringReplaceMode::Global>(vm, globalObject, JSValue::decode(thisValue), decodedSearchValue, JSValue::decode(replaceValue)));
 }
 
 JSC_DEFINE_JIT_OPERATION(operationStringProtoFuncReplaceRegExpEmptyStr, JSCell*, (JSGlobalObject* globalObject, JSString* thisValue, RegExpObject* searchValue))
@@ -5126,6 +5144,19 @@ JSC_DEFINE_JIT_OPERATION(operationSpreadSet, JSCell*, (JSGlobalObject* globalObj
 
     ASSERT(is<JSSet>(cell));
     JSSet* set = uncheckedDowncast<JSSet>(cell);
+
+    if (!set->isIteratorProtocolFastAndNonObservable()) [[unlikely]] {
+        JSFunction* iterationFunction = globalObject->iteratorProtocolFunction();
+        auto callData = JSC::getCallData(iterationFunction);
+        ASSERT(callData.type != CallData::Type::None);
+        MarkedArgumentBuffer arguments;
+        arguments.append(set);
+        ASSERT(!arguments.hasOverflowed());
+        JSValue arrayResult = call(globalObject, iterationFunction, callData, jsNull(), arguments);
+        OPERATION_RETURN_IF_EXCEPTION(scope, nullptr);
+        JSArray* array = uncheckedDowncast<JSArray>(arrayResult);
+        OPERATION_RETURN(scope, JSCellButterfly::createFromArray(globalObject, vm, array));
+    }
 
     OPERATION_RETURN(scope, JSCellButterfly::createFromSet(globalObject, set));
 }

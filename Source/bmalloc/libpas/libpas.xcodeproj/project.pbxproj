@@ -551,6 +551,7 @@
 		2B2E2FD12949A41100F85C38 /* pas_malloc_stack_logging.c in Sources */ = {isa = PBXBuildFile; fileRef = 2B2E2FCF2949A41100F85C38 /* pas_malloc_stack_logging.c */; };
 		2B2E2FD22949A41100F85C38 /* pas_malloc_stack_logging.h in Headers */ = {isa = PBXBuildFile; fileRef = 2B2E2FD02949A41100F85C38 /* pas_malloc_stack_logging.h */; };
 		2B6055E42805368B00C8BDAC /* BmallocTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2B6055E32805368B00C8BDAC /* BmallocTests.cpp */; };
+		2BA7F3C12E1C000000000002 /* ReallocFastPathTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2BA7F3C12E1C000000000001 /* ReallocFastPathTests.cpp */; };
 		2BDF4F4529E8B36F0056BF50 /* pas_report_crash.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BDF4F4429E8B36F0056BF50 /* pas_report_crash.h */; };
 		2BDF4F4729E8B3AD0056BF50 /* pas_report_crash.c in Sources */ = {isa = PBXBuildFile; fileRef = 2BDF4F4829E8B5510056BF50 /* pas_report_crash.c */; };
 		2BE4B7CB2D2D845E0099B3C5 /* pas_small_medium_bootstrap_free_heap.h in Headers */ = {isa = PBXBuildFile; fileRef = 2BE4B7C72D2D845E0099B3C5 /* pas_small_medium_bootstrap_free_heap.h */; };
@@ -1268,6 +1269,7 @@
 		2B2E2FCF2949A41100F85C38 /* pas_malloc_stack_logging.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pas_malloc_stack_logging.c; sourceTree = "<group>"; };
 		2B2E2FD02949A41100F85C38 /* pas_malloc_stack_logging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pas_malloc_stack_logging.h; sourceTree = "<group>"; };
 		2B6055E32805368B00C8BDAC /* BmallocTests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BmallocTests.cpp; sourceTree = "<group>"; };
+		2BA7F3C12E1C000000000001 /* ReallocFastPathTests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReallocFastPathTests.cpp; sourceTree = "<group>"; };
 		2BDF4F4429E8B36F0056BF50 /* pas_report_crash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pas_report_crash.h; sourceTree = "<group>"; };
 		2BDF4F4829E8B5510056BF50 /* pas_report_crash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pas_report_crash.c; sourceTree = "<group>"; };
 		2BE4B7C72D2D845E0099B3C5 /* pas_small_medium_bootstrap_free_heap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pas_small_medium_bootstrap_free_heap.h; sourceTree = "<group>"; };
@@ -1442,6 +1444,7 @@
 				0FD22D0722CD8A7500B21841 /* MinHeapTests.cpp */,
 				2B2A589B2742D815005EE07C /* PGMTests.cpp */,
 				0F5E483923D69F610046DA5C /* RaceTests.cpp */,
+				2BA7F3C12E1C000000000001 /* ReallocFastPathTests.cpp */,
 				0FF08F3522A59DB300386575 /* RedBlackTreeTests.cpp */,
 				0FA18545236B3C82003609A7 /* ScavengerExternalWorkTests.cpp */,
 				0FDE52552342B7C400A0808F /* SuspendScavenger.h */,
@@ -2714,6 +2717,7 @@
 				0FD22D0822CD8A7500B21841 /* MinHeapTests.cpp in Sources */,
 				2B2A589C2742D815005EE07C /* PGMTests.cpp in Sources */,
 				0F5E483A23D69F610046DA5C /* RaceTests.cpp in Sources */,
+				2BA7F3C12E1C000000000002 /* ReallocFastPathTests.cpp in Sources */,
 				0FF08F3622A59DB300386575 /* RedBlackTreeTests.cpp in Sources */,
 				0FA18546236B3C82003609A7 /* ScavengerExternalWorkTests.cpp in Sources */,
 				0FC681ED21127A19003C6A13 /* TestHarness.cpp in Sources */,

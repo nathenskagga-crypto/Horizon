@@ -4586,6 +4586,26 @@ void SpeculativeJIT::compile(Node* node)
         break;
     }
 
+    case GetCellButterflySlot: {
+        compileGetCellButterflySlot(node);
+        break;
+    }
+
+    case PutCellButterflySlot: {
+        compilePutCellButterflySlot(node);
+        break;
+    }
+
+    case ArraySortCompact: {
+        compileArraySortCompact(node);
+        break;
+    }
+
+    case ArraySortCommit: {
+        compileArraySortCommit(node);
+        break;
+    }
+
     case NewArrayWithButterfly: {
         compileNewArrayWithButterfly(node);
         break;

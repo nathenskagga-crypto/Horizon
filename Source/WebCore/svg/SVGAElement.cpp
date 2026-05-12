@@ -151,7 +151,7 @@ void SVGAElement::defaultEventHandler(Event& event)
             }
 
             Ref document = this->document();
-            URL completedURL = document->completeURL(url);
+            URL completedURL = document->completeURL(url, ScriptExecutionContext::ForceUTF8::No);
 
             auto target = this->target();
             if (target.isEmpty() && attributeWithoutSynchronization(XLinkNames::showAttr) == "new"_s)

@@ -554,7 +554,7 @@ void Adjuster::adjust(RenderStyle& style) const
         }
 
         // Make sure our z-index value is only applied if the object is positioned.
-        return style.position() == PositionType::Static && !parentBoxStyle.display().isFlexibleOrGridFormattingContextBox();
+        return style.position() == PositionType::Static && !parentBoxStyle.display().isFlexibleBoxIncludingDeprecatedOrGridFormattingContextBox();
     };
 
     bool hasAutoSpecifiedZIndex = hasAutoZIndex(style, m_parentBoxStyle, m_element.get());

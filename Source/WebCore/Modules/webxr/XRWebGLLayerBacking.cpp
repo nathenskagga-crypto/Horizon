@@ -177,7 +177,7 @@ ExceptionOr<XRWebGLLayerBacking::XRLayerSwapchains> XRWebGLLayerBacking::createP
 
 ExceptionOr<XRWebGLLayerBacking::XRLayerSwapchains> XRWebGLLayerBacking::createColorAndDepthSwapchains(WebGLRenderingContextBase& context, PlatformXR::LayerHandle handle, GCGLenum colorFormat, std::optional<GCGLenum> depthFormat, IntSize size, bool clearOnAccess, size_t numImages)
 {
-    auto colorSwapchain = WebXRWebGLSharedImageSwapchain::create(context, WebXRSwapchain::SwapchainTargetFlags::Color, colorFormat, clearOnAccess, numImages);
+    auto colorSwapchain = WebXRWebGLSharedImageSwapchain::create(context, WebXRSwapchain::SwapchainTargetFlags::Color, colorFormat, size, clearOnAccess, numImages);
     if (!colorSwapchain)
         return Exception { ExceptionCode::OperationError, "Failed to create a WebGL swapchain."_s };
 

@@ -102,7 +102,9 @@ static pas_allocation_result page_provider(
 pas_large_heap_physical_page_sharing_cache jit_large_fresh_memory_heap = {
     .free_heap = PAS_SIMPLE_LARGE_FREE_HEAP_INITIALIZER,
     .provider = page_provider,
-    .provider_arg = NULL
+    .provider_arg = NULL,
+    /* page_provider commits each chunk before returning it. */
+    .provider_commit_mode = pas_committed
 };
 
 pas_page_header_table jit_small_page_header_table =

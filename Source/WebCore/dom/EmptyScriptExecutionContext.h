@@ -60,7 +60,7 @@ public:
     }
     const URL& url() const LIFETIME_BOUND final { return m_url; }
     const URL& cookieURL() const final { return url(); }
-    URL completeURL(const String&, ForceUTF8 = ForceUTF8::No) const final { return { }; }
+    URL completeURL(const String&, ForceUTF8 = ForceUTF8::Yes) const final { return { }; }
     String userAgent(const URL&) const final { return emptyString(); }
     ReferrerPolicy referrerPolicy() const final { return ReferrerPolicy::EmptyString; }
 

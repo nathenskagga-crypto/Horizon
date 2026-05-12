@@ -8,7 +8,11 @@ set(TestWebKitAPI_DISABLED_WARNINGS
 
 macro(WEBKIT_TEST _target)
     WEBKIT_EXECUTABLE(${_target})
-    WEBKIT_ADD_PREFIX_HEADER(${_target} Helpers/TestWebKitAPIPrefix.h)
+    if (${_target} STREQUAL "TestWTF")
+        WEBKIT_ADD_PREFIX_HEADER(TestWTF Helpers/TestWebKitAPIPrefix.h PREFIX_NO_CODEGEN PREFIX_LANGUAGES CXX OBJCXX)
+    else ()
+        WEBKIT_REUSE_PREFIX_HEADER(${_target} TestWTF Helpers/TestWebKitAPIPrefix.h PREFIX_LANGUAGES CXX OBJCXX)
+    endif ()
     add_test(${_target} ${TESTWEBKITAPI_RUNTIME_OUTPUT_DIRECTORY}/${_target})
     set_tests_properties(${_target} PROPERTIES TIMEOUT 60)
     set_target_properties(${_target} PROPERTIES
@@ -89,6 +93,8 @@ set(TestWTF_SOURCES
     Tests/WTF/NeverDestroyed.cpp
     Tests/WTF/OptionCountedSet.cpp
     Tests/WTF/OptionSet.cpp
+    Tests/WTF/OrderedHashMap.cpp
+    Tests/WTF/OrderedHashSet.cpp
     Tests/WTF/Packed.cpp
     Tests/WTF/PackedRef.cpp
     Tests/WTF/PackedRefPtr.cpp
@@ -450,7 +456,7 @@ if (ENABLE_WEBKIT)
         set(TestWebKitAPIInjectedBundle_LIBRARY_TYPE SHARED)
     endif ()
     add_library(TestWebKitAPIInjectedBundle ${TestWebKitAPIInjectedBundle_LIBRARY_TYPE} ${TestWebKitAPIInjectedBundle_SOURCES})
-    WEBKIT_ADD_PREFIX_HEADER(TestWebKitAPIInjectedBundle Helpers/TestWebKitAPIPrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(TestWebKitAPIInjectedBundle Helpers/TestWebKitAPIPrefix.h PREFIX_LANGUAGES CXX)
 
     target_compile_definitions(TestWebKitAPIInjectedBundle PRIVATE BUILDING_TestWebKit)
     target_include_directories(TestWebKitAPIInjectedBundle PRIVATE ${TestWebKit_PRIVATE_INCLUDE_DIRECTORIES})
@@ -508,7 +514,7 @@ if (ENABLE_WEBKIT)
         )
 
         WEBKIT_EXECUTABLE_DECLARE(TestIPC)
-        target_compile_definitions(TestIPC PRIVATE BUILDING_TEST_IPC GTEST_API_=)
+        target_compile_definitions(TestIPC PRIVATE BUILDING_TEST_IPC)
     endif ()
 endif ()
 
@@ -543,7 +549,7 @@ if (APPLE AND ENABLE_WEBGPU)
     )
 
     WEBKIT_EXECUTABLE_DECLARE(TestWGSL)
-    target_compile_definitions(TestWGSL PRIVATE BUILDING_TEST_WGSL GTEST_API_=)
+    target_compile_definitions(TestWGSL PRIVATE BUILDING_TEST_WGSL)
 endif ()
 
 # Include platform specific files

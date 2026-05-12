@@ -47,7 +47,8 @@ private:
     void paintToCanvas(SkCanvas&, const FloatRect&, const SkPaint&) override;
 #endif
 
-    bool tryEnsureBuffer();
+    enum class UseSkiaForCompositing : bool { No, Yes };
+    bool tryEnsureBuffer(UseSkiaForCompositing = UseSkiaForCompositing::No);
 
     RefPtr<NativeImage> m_image;
     std::unique_ptr<CoordinatedPlatformLayerBuffer> m_buffer;

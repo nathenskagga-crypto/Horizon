@@ -1911,7 +1911,7 @@ String InspectorDOMAgent::documentURLString(Document* document)
 
 static String documentBaseURLString(Document* document)
 {
-    return document->completeURL(emptyString()).string();
+    return document->completeURL(emptyString(), ScriptExecutionContext::ForceUTF8::No).string();
 }
 
 static bool NODELETE pseudoElementType(PseudoElementType pseudoElementType, Inspector::Protocol::DOM::PseudoType* type)

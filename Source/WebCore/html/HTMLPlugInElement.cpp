@@ -447,7 +447,7 @@ bool HTMLPlugInElement::requestObject(const String& relativeURL, const String& m
     Ref document = this->document();
     URL completedURL;
     if (!relativeURL.isEmpty())
-        completedURL = document->completeURL(relativeURL);
+        completedURL = document->completeURL(relativeURL, ScriptExecutionContext::ForceUTF8::No);
 
     if (ReplacementPlugin* replacement = pluginReplacementForType(completedURL, mimeType)) {
         LOG(Plugins, "%p - Found plug-in replacement for %s.", this, completedURL.string().utf8().data());
@@ -534,7 +534,7 @@ RenderEmbeddedObject* HTMLPlugInElement::renderEmbeddedObject() const
 
 bool HTMLPlugInElement::canLoadURL(const String& relativeURL) const
 {
-    return canLoadURL(protect(document())->completeURL(relativeURL));
+    return canLoadURL(protect(document())->completeURL(relativeURL, ScriptExecutionContext::ForceUTF8::No));
 }
 
 bool HTMLPlugInElement::canLoadURL(const URL& completeURL) const
@@ -558,7 +558,7 @@ bool HTMLPlugInElement::wouldLoadAsPlugIn(const String& relativeURL, const Strin
     ASSERT(document->frame());
     URL completedURL;
     if (!relativeURL.isEmpty())
-        completedURL = document->completeURL(relativeURL);
+        completedURL = document->completeURL(relativeURL, ScriptExecutionContext::ForceUTF8::No);
     return document->frame()->loader().client().objectContentType(completedURL, serviceType) == ObjectContentType::PlugIn;
 }
 
@@ -569,7 +569,7 @@ bool HTMLPlugInElement::isImageType()
 
     Ref document = this->document();
     if (RefPtr frame = document->frame())
-        return frame->loader().client().objectContentType(document->completeURL(m_url), m_serviceType) == ObjectContentType::Image;
+        return frame->loader().client().objectContentType(document->completeURL(m_url, ScriptExecutionContext::ForceUTF8::No), m_serviceType) == ObjectContentType::Image;
 
     return Image::supportsType(m_serviceType);
 }
@@ -688,7 +688,7 @@ bool HTMLPlugInElement::canLoadPlugInContent(const String& relativeURL, const St
     Ref document = this->document();
     URL completedURL;
     if (!relativeURL.isEmpty())
-        completedURL = document->completeURL(relativeURL);
+        completedURL = document->completeURL(relativeURL, ScriptExecutionContext::ForceUTF8::No);
 
     ASSERT(document->contentSecurityPolicy());
     CheckedRef contentSecurityPolicy = *document->contentSecurityPolicy();

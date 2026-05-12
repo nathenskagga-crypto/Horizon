@@ -36,7 +36,7 @@ class Element;
 class ImageBuffer;
 class LocalFrameView;
 class Page;
-class RenderBox;
+class RenderReplaced;
 class SVGSVGElement;
 class SVGImageChromeClient;
 class SVGImageForContainer;
@@ -48,7 +48,7 @@ public:
     WEBCORE_EXPORT static void tryCreateFromData(std::span<const uint8_t>, CompletionHandler<void(RefPtr<SVGImage>&&)>&&);
     WEBCORE_EXPORT static bool isDataDecodable(const Settings&, std::span<const uint8_t>);
 
-    RenderBox* embeddedContentBox() const;
+    RenderReplaced* embeddedSVGRoot() const;
     LocalFrameView* NODELETE frameView() const;
 
     bool isSVGImage() const final { return true; }

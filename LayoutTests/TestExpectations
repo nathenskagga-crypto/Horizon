@@ -876,9 +876,6 @@ imported/w3c/web-platform-tests/speculation-rules/prefetch/redirect-to-prefetch-
 imported/w3c/web-platform-tests/compat/webkit-box-rtl-flex.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/compat/webkit-box-horizontal-rtl-variants.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/compat/webkit-box-horizontal-reverse-variants.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/encoding/eof-utf-8-one.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/encoding/eof-utf-8-three.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/encoding/eof-utf-8-two.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/html/browsers/windows/iframe-cross-origin-scaled-print.sub.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/html/browsers/windows/iframe-cross-origin-print.sub.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/html/rendering/non-replaced-elements/the-fieldset-and-legend-elements/fieldset-border-gap-negative-margin.html [ ImageOnlyFailure ]
@@ -1313,7 +1310,7 @@ webkit.org/b/309872 imported/w3c/web-platform-tests/permissions-policy/reporting
 webkit.org/b/182292 imported/w3c/web-platform-tests/css/cssom-view/scrollingElement-quirks-dynamic-001.html [ ImageOnlyFailure ]
 webkit.org/b/182292 imported/w3c/web-platform-tests/css/cssom-view/scrollingElement-quirks-dynamic-002.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-ui/text-overflow-015.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/hr-time/timeOrigin.html [ Failure ]
+imported/w3c/web-platform-tests/hr-time/raf-coarsened-time.https.html [ Pass Failure ]
 imported/w3c/web-platform-tests/eventsource/dedicated-worker/eventsource-constructor-non-same-origin.htm [ Skip ]
 imported/w3c/web-platform-tests/mediacapture-fromelement/capture.html [ Failure ]
 imported/w3c/web-platform-tests/mediacapture-fromelement/ended.html [ Failure ]
@@ -1379,27 +1376,36 @@ webkit.org/b/247290 imported/w3c/web-platform-tests/fetch/api/basic/response-nul
 webkit.org/b/247290 imported/w3c/web-platform-tests/fetch/api/basic/response-null-body.any.serviceworker.html [ Pass Failure ]
 imported/w3c/web-platform-tests/fetch/api/redirect/redirect-count.any.html [ Pass Failure ]
 imported/w3c/web-platform-tests/fetch/api/redirect/redirect-count.any.worker.html [ Pass Failure ]
-imported/w3c/web-platform-tests/fetch/content-encoding/bad-gzip-body.any.html [ Pass Failure ]
 
 webkit.org/b/247283 imported/w3c/web-platform-tests/fetch/metadata/generated/css-images.https.sub.tentative.html [ Skip ]
 
 # Fetch features that are not implemented.
 imported/w3c/web-platform-tests/fetch/corb [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata [ Skip ]
-imported/w3c/web-platform-tests/fetch/private-network-access/mixed-content-fetch.tentative.https.window.html [ Skip ]
+imported/w3c/web-platform-tests/fetch/fetch-later [ Skip ]
 
-# These fetch tests time out on ports without web-platform.test domain working (not glib).
-imported/w3c/web-platform-tests/fetch/api/request/destination/fetch-destination.https.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/api/request/destination/fetch-destination-prefetch.https.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/content-type/response.window.html [ Skip ]
+# ReadableStream upload is not supported.
+imported/w3c/web-platform-tests/fetch/api/basic/request-upload.h2.any.html [ Skip ]
+imported/w3c/web-platform-tests/fetch/api/basic/request-upload.h2.any.worker.html [ Skip ]
+imported/w3c/web-platform-tests/fetch/api/basic/request-upload.h2.any.serviceworker.html [ Skip ]
+imported/w3c/web-platform-tests/fetch/api/basic/request-upload.h2.any.sharedworker.html [ Skip ]
+
+# This fetch test crashes.
+[ Debug ] imported/w3c/web-platform-tests/fetch/api/crashtests/huge-fetch.any.serviceworker.html [ Skip ]
+
+# These fetch tests time out.
+imported/w3c/web-platform-tests/fetch/metadata/generated/script-text-module-import-static.https.sub.html [ Skip ]
+imported/w3c/web-platform-tests/fetch/metadata/generated/script-text-module-import-static.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/metadata/object.https.sub.html [ Skip ]
+imported/w3c/web-platform-tests/fetch/metadata/window-open.https.sub.html [ Skip ]
+imported/w3c/web-platform-tests/fetch/orb/tentative/status.sub.html [ Skip ]
+
+# These fetch tests are non-deterministic.
+imported/w3c/web-platform-tests/fetch/http-cache/pragma-no-cache-with-cache-control.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/metadata/preload.https.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/metadata/report.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/metadata/embed.https.sub.tentative.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/metadata/style.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/metadata/redirect/redirect-http-upgrade.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/metadata/window-open.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/metadata/redirect/ [ Skip ]
+
+# zstd decoding is not available on all bot configurations.
+imported/w3c/web-platform-tests/fetch/content-encoding/zstd [ Pass Failure ]
 
 # These tests have unreliable ordering and are flakey
 
@@ -2085,7 +2091,6 @@ imported/w3c/web-platform-tests/css/selectors/case-insensitive-parent.html [ Ima
 imported/w3c/web-platform-tests/css/mediaqueries/mq-non-matching-lazy-load.tentative.html [ Skip ]
 
 # nth-child tests takes long time and Debug build sometimes timeouts because there are many test cases.
-webkit.org/b/137149 fast/selectors/nth-child-of-basics.html [ Slow ]
 
 # Promises/A+ 2.3.3 has many tests and it sometimes exceeds the time limit.
 webkit.org/b/136878 js/promises-tests/promises-tests-2-3-3.html [ Slow ]
@@ -2143,12 +2148,11 @@ imported/w3c/web-platform-tests/mathml/presentation-markup/operators/embellished
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/embellished-op-3-4.html [ ImageOnlyFailure Pass ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/embellished-op-3-5.html [ ImageOnlyFailure Pass ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/embellished-op-5-1.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/mathml/presentation-markup/operators/mo-form-dynamic.html [ ImageOnlyFailure ]
+webkit.org/b/308410 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/operator-dictionary-arabic-002.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/mrow/legacy-mrow-like-elements-002.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/mrow/semantics-002.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/mrow/semantics-003.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/mrow/semantics-005.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/mathml/presentation-markup/radicals/empty-msqrt.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/munder-mover-align-accent-false.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/munder-mover-align-accent-true.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/munderover-align-accent-false.html [ ImageOnlyFailure ]
@@ -2160,16 +2164,12 @@ imported/w3c/web-platform-tests/mathml/presentation-markup/tables/columnspan-row
 imported/w3c/web-platform-tests/mathml/relations/css-styling/lengths-1.html [ ImageOnlyFailure ]
 
 mathml/non-core/mathvariant/mathvariant-case-sensitivity.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/mathml/presentation-markup/operators/mo-form-minus-plus.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/mathml/presentation-markup/operators/mo-form.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/mo-single-char-and-children.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/relations/css-styling/presentational-hints-001.html [ ImageOnlyFailure Pass ]
 imported/w3c/web-platform-tests/mathml/relations/css-styling/transform.html [ ImageOnlyFailure ]
 
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/mo-lspace-rspace-2.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/mo-movablelimits-and-embellished-operator.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/mathml/presentation-markup/operators/op-dict-8.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/mathml/presentation-markup/operators/op-dict-9.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/operators/painting-stretchy-operator-001.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/underover-stretchy-002.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/mathml/relations/css-styling/display-with-overflow.html [ ImageOnlyFailure ]
@@ -2465,11 +2465,6 @@ webkit.org/b/139595 http/tests/xmlhttprequest/workers/abort-exception-assert.htm
 webkit.org/b/121628 [ Release ] fast/history/history-back-while-pdf-in-pagecache.html [ Pass ImageOnlyFailure ]
 [ Debug ] fullscreen/full-screen-iframe-legacy.html [ Pass Crash ]
 
-webkit.org/b/139634 [ Debug ] fast/selectors/is-backtracking.html [ Slow ]
-webkit.org/b/139634 [ Debug ] fast/selectors/matches-backtracking.html [ Slow ]
-webkit.org/b/139634 [ Debug ] fast/selectors/nth-child-of-register-requirement.html [ Slow ]
-webkit.org/b/139634 [ Debug ] fast/selectors/not-backtracking.html [ Slow ]
-
 webkit.org/b/224941 [ Debug ] editing/pasteboard/paste-as-quotation-then-paste-crash.html [ WontFix ]
 
 webkit.org/b/61932 [ Debug ] jquery/manipulation.html [ Slow ]
@@ -2707,9 +2702,6 @@ webkit.org/b/141267 http/tests/misc/detached-frame-console.html [ Pass Failure ]
 
 # The current expectations for this test only make sense for WebKit on iOS; other platforms can have very different behaviors.
 webkit.org/b/141488 fast/replaced/pdf-as-object-and-embed.html [ Skip ]
-
-webkit.org/b/141695 [ Debug ] fast/selectors/nth-last-child-of-register-requirement.html [ Slow ]
-[ Debug ] fast/selectors/case-insensitive-attribute-register-requirement-1.html [ Slow ]
 
 # Content extensions are Mac-WK2-only for now
 http/tests/contentextensions [ Skip ]
@@ -4511,7 +4503,6 @@ imported/w3c/web-platform-tests/css/css-sizing/fit-content-length-percentage-015
 imported/w3c/web-platform-tests/css/css-sizing/fit-content-length-percentage-016.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-sizing/hori-block-size-small-or-larger-than-container-with-min-or-max-content-1.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-sizing/max-content-input-001.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-sizing/replaced-aspect-ratio-intrinsic-size-001.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-sizing/vert-block-size-small-or-larger-than-container-with-min-or-max-content-1.html [ ImageOnlyFailure ]
 webkit.org/b/214463 imported/w3c/web-platform-tests/css/css-sizing/aspect-ratio/flex-aspect-ratio-038.html [ ImageOnlyFailure ]
 webkit.org/b/214463 imported/w3c/web-platform-tests/css/css-sizing/aspect-ratio/floats-aspect-ratio-001.html [ ImageOnlyFailure ]
@@ -4538,7 +4529,6 @@ imported/w3c/web-platform-tests/css/css-sizing/responsive-iframe/responsive-ifra
 imported/w3c/web-platform-tests/css/css-sizing/aspect-ratio/replaced-element-047.tentative.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-sizing/aspect-ratio/replaced-element-048.tentative.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-sizing/intrinsic-percent-non-replaced-001.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-sizing/intrinsic-percent-replaced-019.html [ ImageOnlyFailure ]
 
 # wpt css-text-decor failures
 webkit.org/b/230041 imported/w3c/web-platform-tests/css/css-text-decor/text-decoration-color-selection-pseudo-01.html [ ImageOnlyFailure ]
@@ -5610,7 +5600,6 @@ imported/w3c/web-platform-tests/css/css-counter-styles/upper-roman/css3-counter-
 
 # CSS will-change failures
 webkit.org/b/225035 imported/w3c/web-platform-tests/css/css-will-change/will-change-fixedpos-cb-002.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/css-will-change/will-change-fixpos-cb-webkit-perspective-1.html [ ImageOnlyFailure ]
 webkit.org/b/224899 imported/w3c/web-platform-tests/css/css-will-change/will-change-fixedpos-cb-005.html [ ImageOnlyFailure ]
 imported/w3c/web-platform-tests/css/css-will-change/will-change-stacking-context-z-index-4.html [ ImageOnlyFailure ]
 
@@ -6205,7 +6194,6 @@ imported/w3c/web-platform-tests/fetch/corb/script-html-correctly-labeled.tentati
 imported/w3c/web-platform-tests/fetch/corb/script-html-js-polyglot.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/corb/script-html-via-cross-origin-blob-url.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/corb/script-resource-with-json-parser-breaker.tentative.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/metadata/generated/appcache-manifest.https.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/metadata/generated/css-images.sub.tentative.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/metadata/generated/element-a.https.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/metadata/generated/element-area.https.sub.html [ Skip ]
@@ -6239,14 +6227,6 @@ imported/w3c/web-platform-tests/fetch/metadata/generated/window-location.https.s
 imported/w3c/web-platform-tests/fetch/metadata/redirect/redirect-https-downgrade.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/metadata/track.https.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fetch/range/sw.https.window.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/embed.tentative.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/iframe.tentative.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/object.tentative.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/redirect/multiple-redirect-cross-site.tentative.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/redirect/multiple-redirect-same-site.tentative.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/redirect/same-origin-redirect.tentative.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/track.tentative.https.sub.html [ Skip ]
-imported/w3c/web-platform-tests/fetch/sec-metadata/window-open.tentative.https.sub.html [ Skip ]
 imported/w3c/web-platform-tests/fullscreen/api/element-request-fullscreen-cross-origin.sub.html [ Skip ]
 # Geolocation tests
 # Bug 291197: WebDriver BiDi not implemented - tests require test_driver.bidi.permissions/emulation APIs

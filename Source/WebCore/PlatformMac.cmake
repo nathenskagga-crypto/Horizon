@@ -552,6 +552,7 @@ list(APPEND WebCore_SOURCES
     testing/MockContentFilter.cpp # FIXME: Compiled into WebCore because CMake links WebCoreTestSupport statically (Bug 312062).
     testing/MockContentFilterManager.cpp
     testing/MockContentFilterSettings.cpp
+    testing/MockParentalControlsURLFilter.mm
 
     workers/service/ServiceWorkerRoute.mm
 )
@@ -1104,7 +1105,6 @@ list(APPEND WebCoreTestSupport_SOURCES
     testing/MockApplePaySetupFeature.cpp
     testing/MockContentFilter.cpp
     testing/MockContentFilterSettings.cpp
-    testing/MockParentalControlsURLFilter.mm
     testing/MockMediaSessionCoordinator.cpp
     testing/MockPaymentCoordinator.cpp
     testing/MockPreviewLoaderClient.cpp

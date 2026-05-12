@@ -1264,6 +1264,21 @@ template<typename T> inline T* StringImpl::tailPointer()
 }
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
 
+template<typename CharacterType> inline Ref<StringImpl> StringImpl::createUninitializedInternalNonEmpty(size_t length, std::span<CharacterType>& data)
+{
+    ASSERT(length);
+
+    // Allocate a single buffer large enough to contain the StringImpl
+    // struct as well as the data which it contains. This removes one
+    // heap allocation from this call.
+    if (!isValidLength<CharacterType>(length))
+        CRASH();
+
+    SUPPRESS_UNCOUNTED_LOCAL StringImpl* string = static_cast<StringImpl*>(StringImplMalloc::malloc(allocationSize<CharacterType>(length)));
+    data = unsafeMakeSpan(string->tailPointer<CharacterType>(), length);
+    return constructInternal<CharacterType>(*string, length);
+}
+
 inline StringImpl* const& StringImpl::substringBuffer() const
 {
     ASSERT(bufferOwnership() == BufferSubstring);

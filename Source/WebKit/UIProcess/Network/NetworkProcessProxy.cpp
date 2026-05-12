@@ -1959,10 +1959,16 @@ void NetworkProcessProxy::deleteWebsiteDataInWebProcessesForOrigin(OptionSet<Web
     RefPtr websiteDataStore = websiteDataStoreFromSessionID(sessionID);
     if (!websiteDataStore)
         return;
-    // FIXME: Under site isolation, a cross-origin subframe may live in a WebProcess that is not registered
     for (Ref process : websiteDataStore->processes()) {
         if (process->canSendMessage() && !process->isDummyProcessProxy())
             process->sendWithAsyncReply(Messages::WebProcess::DeleteWebsiteDataForOrigin(dataTypes, origin), [callbackAggregator] { });
+    }
+    if (RefPtr page = WebProcessProxy::webPage(webPageProxyID)) {
+        protect(page->browsingContextGroup())->forEachRemotePage(*page, [&](auto& remotePage) {
+            Ref process = remotePage.process();
+            if (process->canSendMessage() && !websiteDataStore->processes().contains(process.get()))
+                process->sendWithAsyncReply(Messages::WebProcess::DeleteWebsiteDataForOrigin(dataTypes, origin), [callbackAggregator] { });
+        });
     }
     bool shouldClearNavigationSnapshots = dataTypes.contains(WebsiteDataType::MemoryCache) && origin.topOrigin == origin.clientOrigin;
     if (shouldClearNavigationSnapshots) {

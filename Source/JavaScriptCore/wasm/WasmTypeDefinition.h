@@ -46,6 +46,7 @@
 #include <wtf/ReferenceWrapperVector.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/TZoneMalloc.h>
+#include <wtf/ThreadSafeLazyUniquePtr.h>
 #include <wtf/ThreadSafeRefCounted.h>
 #include <wtf/Vector.h>
 
@@ -867,8 +868,8 @@ public:
     CodePtr<JSEntryPtrTag> jsToWasmICEntrypoint() const;
 #endif
 
-    // Function-kind only. Lazy-install under m_ipintBytecodeLock; buffer is
-    // immutable once published.
+    // Function-kind only. Lazy-installed via a CAS in ThreadSafeLazyUniquePtr;
+    // buffer is immutable once published.
     void ensureArgumINTBytecode(const CallInformation&) const;
     void ensureUINTBytecode(const CallInformation&) const;
 
@@ -966,6 +967,19 @@ public:
     static constexpr ptrdiff_t offsetOfTailCallBytecode() { return OBJECT_OFFSETOF(RTT, m_tailCallBytecode); }
     using TrailingArrayType::offsetOfData;
 
+    unsigned hashMayBeEmpty() const
+    {
+        return m_hash;
+    }
+
+    void setHash(unsigned hash) const
+    {
+        if (!hash)
+            m_hash = 1;
+        else
+            m_hash = hash;
+    }
+
 private:
     // Templated payload-aware constructors. Initialize m_payload in the
     // initializer list so the Variant is never observed in an unset state
@@ -1006,6 +1020,7 @@ private:
     const bool m_isFinalType { false };
     const unsigned m_displaySizeExcludingThis { };
     const StructFieldCount m_fieldCount { 0 };
+    mutable unsigned m_hash { 0 };
     mutable RefPtr<const RTTGroup> m_group { nullptr };
     mutable uint32_t m_canonicalIndexInGroup { 0 };
     mutable uint32_t m_virtualRefCount { 0 };
@@ -1016,11 +1031,10 @@ private:
     mutable RefPtr<JSToWasmICCallee> m_jsToWasmICCallee;
     mutable Lock m_jitCodeLock;
 #endif
-    mutable Lock m_ipintBytecodeLock;
-    mutable std::unique_ptr<const IPIntSharedBytecode> m_argumINTBytecode;
-    mutable std::unique_ptr<const IPIntSharedBytecode> m_uINTBytecode;
-    mutable std::unique_ptr<const IPIntSharedBytecode> m_callBytecode;
-    mutable std::unique_ptr<const IPIntSharedBytecode> m_tailCallBytecode;
+    mutable ThreadSafeLazyUniquePtr<const IPIntSharedBytecode> m_argumINTBytecode;
+    mutable ThreadSafeLazyUniquePtr<const IPIntSharedBytecode> m_uINTBytecode;
+    mutable ThreadSafeLazyUniquePtr<const IPIntSharedBytecode> m_callBytecode;
+    mutable ThreadSafeLazyUniquePtr<const IPIntSharedBytecode> m_tailCallBytecode;
     Variant<RTTFunctionPayload, RTTStructPayload, RTTArrayPayload> m_payload;
 };
 
@@ -1050,6 +1064,19 @@ public:
     uint32_t virtualRefCount() const { return m_virtualRefCount; }
     void setVirtualRefCount(uint32_t value) const { m_virtualRefCount = value; }
 
+    unsigned hashMayBeEmpty() const
+    {
+        return m_hash;
+    }
+
+    void setHash(unsigned hash) const
+    {
+        if (!hash)
+            m_hash = 1;
+        else
+            m_hash = hash;
+    }
+
 private:
     explicit RTTGroup(Vector<Ref<const RTT>>&& rtts)
         : m_rtts(WTF::move(rtts))
@@ -1057,6 +1084,7 @@ private:
 
     Vector<Ref<const RTT>> m_rtts;
     mutable uint32_t m_virtualRefCount { 0 };
+    mutable unsigned m_hash { 0 };
 };
 
 // Isorecursive canonical recursion-group entry. Wraps an owning Ref to the

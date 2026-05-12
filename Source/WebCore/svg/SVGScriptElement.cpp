@@ -112,7 +112,7 @@ void SVGScriptElement::addSubresourceAttributeURLs(ListHashSet<URL>& urls) const
 {
     SVGElement::addSubresourceAttributeURLs(urls);
 
-    addSubresourceURL(urls, protect(document())->completeURL(href()));
+    addSubresourceURL(urls, protect(document())->completeURL(href(), ScriptExecutionContext::ForceUTF8::No));
 }
 Ref<Element> SVGScriptElement::cloneElementWithoutAttributesAndChildren(Document& document, CustomElementRegistry*) const
 {

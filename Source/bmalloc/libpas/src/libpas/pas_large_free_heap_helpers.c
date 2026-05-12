@@ -87,7 +87,8 @@ static pas_aligned_allocation_result large_utility_aligned_allocator(size_t size
         pas_large_sharing_pool_boot_free(
             pas_range_create(allocation_result.begin, allocation_result.begin + aligned_size),
             pas_physical_memory_is_locked_by_heap_lock,
-            pas_page_flags_none);
+            pas_page_flags_none,
+            pas_committed);
     }
 
     result.result = (void*)allocation_result.begin;

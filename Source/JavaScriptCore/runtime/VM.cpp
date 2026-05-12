@@ -379,6 +379,7 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
     bigIntStructure.setWithoutWriteBarrier(JSBigInt::createStructure(*this, nullptr, jsNull()));
     m_orderedHashTableDeletedValue.setWithoutWriteBarrier(OrderedHashMap::createDeletedValue(*this));
     m_orderedHashTableSentinel.setWithoutWriteBarrier(OrderedHashMap::createSentinel(*this));
+    m_sortScratchSentinel.setWithoutWriteBarrier(JSCellButterfly::create(*this, CopyOnWriteArrayWithContiguous, 0));
 
     // Eagerly initialize constant cells since the concurrent compiler can access them.
     if (Options::useJIT()) {
@@ -1885,6 +1886,8 @@ void VM::visitAggregateImpl(Visitor& visitor)
     visitor.append(m_emptyPropertyNameEnumerator);
     visitor.append(m_orderedHashTableDeletedValue);
     visitor.append(m_orderedHashTableSentinel);
+    visitor.append(m_cachedSortScratch);
+    visitor.append(m_sortScratchSentinel);
     visitor.append(m_fastCanConstructBoundExecutable);
     visitor.append(m_slowCanConstructBoundExecutable);
     visitor.append(lastCachedString);

@@ -4348,7 +4348,7 @@ class WebCore::SpeechRecognitionUpdate {
 
 #if USE(SYSTEM_PREVIEW)
 [RefCounted, AdditionalEncoder=StreamConnectionEncoder] class WebCore::ARKitBadgeSystemImage {
-    WebCore::RenderingResourceIdentifier imageIdentifier();
+    std::optional<WebCore::RenderingResourceIdentifier> imageIdentifier();
     WebCore::FloatSize m_imageSize;
 };
 #endif
@@ -7985,8 +7985,8 @@ using WebCore::RiceSocket = std::pair<String, WebCore::RTCIceProtocol>;
 };
 #endif
 
-headers: <JavaScriptCore/WasmModule.h> <WebCore/ImageBitmap.h> <WebCore/MessagePort.h> <WebCore/OffscreenCanvas.h> <WebCore/SerializedScriptValue.h> <WebCore/SerializedScriptValueInternals.h>
-[Nested] class WebCore::SerializedScriptValue::Internals {
+headers: <JavaScriptCore/WasmModule.h> <WebCore/ImageBitmap.h> <WebCore/MessagePort.h> <WebCore/OffscreenCanvas.h>
+struct WebCore::SerializedScriptValueInternals {
     Vector<uint8_t> data;
     std::unique_ptr<Vector<JSC::ArrayBufferContents>> arrayBufferContentsArray;
 #if ENABLE(WEB_RTC)

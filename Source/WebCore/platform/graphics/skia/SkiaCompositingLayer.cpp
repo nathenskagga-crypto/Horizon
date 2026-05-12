@@ -456,7 +456,8 @@ void SkiaCompositingLayer::paintSelf(SkCanvas& canvas, PaintContext& context)
 
     SkPaint paint;
     paint.setStyle(SkPaint::kFill_Style);
-    paint.setAntiAlias(true);
+    auto ctm = canvas.getLocalToDeviceAs3x3();
+    paint.setAntiAlias(!ctm.preservesAxisAlignment() && !ctm.preservesRightAngles());
     paint.setAlphaf(context.opacity);
     if (context.blendMode)
         paint.setBlendMode(*context.blendMode);

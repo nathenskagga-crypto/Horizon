@@ -285,7 +285,7 @@ static URL processAndCreateYouTubeURL(const URL& url, bool& isYouTubeShortenedUR
 
 AtomString YouTubePluginReplacement::youTubeURL(const AtomString& srcString)
 {
-    URL srcURL = protect(m_parentElement->document())->completeURL(srcString);
+    URL srcURL = protect(m_parentElement->document())->completeURL(srcString, ScriptExecutionContext::ForceUTF8::No);
     return youTubeURLFromAbsoluteURL(srcURL, srcString);
 }
 

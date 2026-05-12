@@ -425,7 +425,7 @@ Navigation::Result Navigation::reload(JSC::JSGlobalObject& globalObject, ReloadO
 Navigation::Result Navigation::navigate(JSC::JSGlobalObject& globalObject, const String& url, NavigateOptions&& options, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished)
 {
     RefPtr window = this->window();
-    auto newURL = protect(window->document())->completeURL(url, ScriptExecutionContext::ForceUTF8::Yes);
+    auto newURL = protect(window->document())->completeURL(url);
     const URL& currentURL = protect(scriptExecutionContext())->url();
 
     if (!newURL.isValid())

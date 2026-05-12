@@ -36,7 +36,9 @@
 #include "JSGenericTypedArrayViewConstructor.h"
 #include "JSGlobalObject.h"
 #include "JSTypedArrays.h"
+#include "MathCommon.h"
 #include "StructureCreateInlines.h"
+#include <wtf/Assertions.h>
 #include <wtf/text/ASCIILiteral.h>
 
 namespace JSC {
@@ -352,8 +354,23 @@ static EncodedJSValue constructDataViewImpl(JSGlobalObject* globalObject, CallFr
     if (argCount > 2) {
         // If the length value is present but undefined, treat it as missing.
         if (JSValue lengthValue = callFrame->uncheckedArgument(2); !lengthValue.isUndefined()) [[likely]] {
-            length = lengthValue.toIndex(globalObject, "byteLength"_s);
+            size_t viewByteLength = lengthValue.toIndex(globalObject, "byteLength"_s);
             RETURN_IF_EXCEPTION(scope, { });
+
+            // Accroding to the spec (April 24, 2026),
+            // https://tc39.es/ecma262/#sec-dataview-buffer-byteoffset-bytelength defines as the step 9-b that
+            // we should throw RangeError rather even if ToIndex(byteLength) happens to detach the buffer as:
+            // As user observable behavior, the sequence would be:
+            //
+            //  9-a: Let viewByteLength be ? ToIndex(byteLength): the weird object can detach the buffer at here.
+            //  9-b: If `(offset + viewByteLength) > bufferByteLength`, throw RangeError. <- here.
+            //  11: If the buffer is detached, throw TypeError.
+            ASSERT(offset <= maxSafeInteger());
+            ASSERT(viewByteLength <= maxSafeInteger());
+            if ((offset + viewByteLength) > bufferByteLength) [[unlikely]]
+                return throwVMRangeError(globalObject, scope, arrayBufferViewErrorMessageOutOfRangeOfBuffer);
+
+            length = viewByteLength;
         }
     }
 

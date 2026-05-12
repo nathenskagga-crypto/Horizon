@@ -450,7 +450,7 @@ bool FrameLoader::SubframeLoader::loadPlugin(HTMLPlugInElement& pluginElement, c
 URL FrameLoader::SubframeLoader::completeURL(const String& url) const
 {
     ASSERT(m_frame->document());
-    return protect(m_frame->document())->completeURL(url);
+    return protect(m_frame->document())->completeURL(url, ScriptExecutionContext::ForceUTF8::No);
 }
 
 bool FrameLoader::SubframeLoader::shouldConvertInvalidURLsToBlank() const

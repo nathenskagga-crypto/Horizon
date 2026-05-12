@@ -174,6 +174,7 @@ public:
     bool shouldEnableEnumerateDeviceQuirk() const;
     bool shouldEnableCameraAndMicrophonePermissionStateQuirk() const;
     bool shouldEnableRemoteTrackLabelQuirk() const;
+    bool shouldEnableCameraBackgroundPlayback() const;
 #endif
 #if ENABLE(WEB_RTC)
     bool shouldEnableRTCEncodedStreamsQuirk() const;

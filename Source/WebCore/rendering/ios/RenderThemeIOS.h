@@ -49,6 +49,7 @@ public:
 
 #if USE(SYSTEM_PREVIEW)
     void paintSystemPreviewBadge(Image&, const PaintInfo&, const FloatRect&) final;
+    void paintSystemPreviewBadge(const PaintInfo&, const FloatRect&) final;
 #endif
 
     using CSSValueToSystemColorMap = HashMap<CSSValueKey, Color>;

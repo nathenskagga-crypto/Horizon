@@ -137,9 +137,9 @@ if (DEVELOPER_MODE)
     WEBKIT_EXECUTABLE(testdfg)
     WEBKIT_EXECUTABLE(testwasmdebugger)
 
-    WEBKIT_ADD_PREFIX_HEADER(testapi ../JavaScriptCorePrefix.h)
-    WEBKIT_ADD_PREFIX_HEADER(testb3 ../JavaScriptCorePrefix.h)
-    WEBKIT_ADD_PREFIX_HEADER(testwasmdebugger ../JavaScriptCorePrefix.h)
+    WEBKIT_ADD_PREFIX_HEADER(testapi ../JavaScriptCorePrefix.h PREFIX_NO_CODEGEN PREFIX_LANGUAGES CXX)
+    WEBKIT_REUSE_PREFIX_HEADER(testb3 testapi ../JavaScriptCorePrefix.h PREFIX_LANGUAGES CXX)
+    WEBKIT_REUSE_PREFIX_HEADER(testwasmdebugger testapi ../JavaScriptCorePrefix.h PREFIX_LANGUAGES CXX)
 
     file(COPY
         "${JAVASCRIPTCORE_DIR}/API/tests/testapiScripts"

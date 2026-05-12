@@ -133,6 +133,9 @@ void printInternal(PrintStream& out, JSC::InlineCallFrame::Kind kind)
     case JSC::InlineCallFrame::BoundFunctionTailCall:
         out.print("BoundFunctionTailCall");
         return;
+    case JSC::InlineCallFrame::ArraySortComparatorCall:
+        out.print("ArraySortComparatorCall");
+        return;
     }
     RELEASE_ASSERT_NOT_REACHED();
 }

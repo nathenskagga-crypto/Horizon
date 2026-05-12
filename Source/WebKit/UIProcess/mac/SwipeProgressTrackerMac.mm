@@ -28,6 +28,7 @@
 
 #if PLATFORM(MAC)
 
+#import "APIPageConfiguration.h"
 #import "DisplayLink.h"
 #import "DrawingAreaProxy.h"
 #import "ViewGestureController.h"

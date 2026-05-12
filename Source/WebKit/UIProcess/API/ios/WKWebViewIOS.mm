@@ -3711,6 +3711,8 @@ static WebCore::UserInterfaceLayoutDirection toUserInterfaceLayoutDirection(UISe
 #if ENABLE(RESPONSIVE_LIVE_RESIZE_UPDATE)
             UNUSED_PARAM(liveResizeSnapshotView);
             RetainPtr strongSelf = weakSelf.get();
+            if (!strongSelf)
+                return;
             [strongSelf->_liveResizeSnapshotContainerView removeFromSuperview];
             strongSelf->_liveResizeSnapshotContainerView = nil;
 #else
@@ -3725,6 +3727,8 @@ static WebCore::UserInterfaceLayoutDirection toUserInterfaceLayoutDirection(UISe
 #if ENABLE(RESPONSIVE_LIVE_RESIZE_UPDATE)
         UNUSED_PARAM(liveResizeSnapshotView);
         RetainPtr strongSelf = weakSelf.get();
+        if (!strongSelf)
+            return;
         [strongSelf->_liveResizeSnapshotContainerView removeFromSuperview];
         strongSelf->_liveResizeSnapshotContainerView = nil;
 #else
@@ -5162,8 +5166,10 @@ ALLOW_DEPRECATED_IMPLEMENTATIONS_END
     if (!_page || !_perProcessState.committedFindLayerID)
         return nil;
 
-    if (RefPtr drawingArea = _page->drawingArea())
-        return downcast<WebKit::RemoteLayerTreeDrawingAreaProxy>(*drawingArea).remoteLayerTreeHost().layerForID(*_perProcessState.committedFindLayerID);
+    if (RefPtr drawingArea = _page->drawingArea()) {
+        RetainPtr layer = downcast<WebKit::RemoteLayerTreeDrawingAreaProxy>(*drawingArea).remoteLayerTreeHost().layerForID(*_perProcessState.committedFindLayerID);
+        return layer.autorelease();
+    }
 
     return nil;
 }

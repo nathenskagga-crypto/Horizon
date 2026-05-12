@@ -273,7 +273,7 @@ void ImageLoader::updateFromElement(RelevantMutation relevantMutation)
                 return;
             }
         } else
-            imageURL = document->completeURL(attr);
+            imageURL = document->completeURL(attr, ScriptExecutionContext::ForceUTF8::No);
         m_pendingURL = attr;
     }
     ResourceRequest resourceRequest(WTF::move(imageURL));

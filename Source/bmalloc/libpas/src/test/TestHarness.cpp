@@ -381,6 +381,7 @@ void addMinHeapTests();
 void addPGMTests();
 void addRaceTests();
 void addRedBlackTreeTests();
+void addReallocFastPathTests();
 void addScavengerExternalWorkTests();
 void addTLCDecommitTests();
 void addTSDTests();
@@ -866,6 +867,7 @@ int main(int argc, char** argv)
     ADD_SUITE(PGM);
     ADD_SUITE(Race);
     ADD_SUITE(RedBlackTree);
+    ADD_SUITE(ReallocFastPath);
     ADD_SUITE(ScavengerExternalWork);
     ADD_SUITE(TLCDecommit);
     ADD_SUITE(TSD);

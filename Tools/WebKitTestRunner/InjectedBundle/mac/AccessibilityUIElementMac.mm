@@ -738,7 +738,7 @@ RefPtr<AccessibilityUIElement> AccessibilityUIElementMac::ariaLabelledByElementA
 
 RefPtr<AccessibilityUIElement> AccessibilityUIElementMac::labelForElementAtIndex(unsigned index)
 {
-    return elementForAttributeAtIndex(@"AXLabelFor", index);
+    return elementForAttributeAtIndex(@"AXServesAsTitleForUIElements", index);
 }
 
 RefPtr<AccessibilityUIElement> AccessibilityUIElementMac::ownerElementAtIndex(unsigned index)

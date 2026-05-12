@@ -2811,7 +2811,7 @@ void LocalDOMWindow::setLocation(LocalDOMWindow& activeWindow, const URL& comple
     // If the loader for activeWindow's frame (browsing context) has no outgoing referrer, set its outgoing referrer
     // to the URL of its parent frame's Document.
     if (RefPtr activeFrame = activeWindow.frame(); activeFrame && activeFrame->loader().outgoingReferrer().isEmpty() && localParent)
-        activeFrame->loader().setOutgoingReferrer(protect(document())->completeURL(localParent->document()->url().strippedForUseAsReferrer().string));
+        activeFrame->loader().setOutgoingReferrer(protect(document())->completeURL(localParent->document()->url().strippedForUseAsReferrer().string, ScriptExecutionContext::ForceUTF8::No));
 
     // We want a new history item if we are processing a user gesture.
     LockHistory lockHistory = (locking != SetLocationLocking::LockHistoryBasedOnGestureState || !UserGestureIndicator::processingUserGesture()) ? LockHistory::Yes : LockHistory::No;
@@ -2833,7 +2833,7 @@ ExceptionOr<RefPtr<Frame>> LocalDOMWindow::createWindow(const String& urlString,
     if (!activeDocument)
         return RefPtr<Frame> { nullptr };
 
-    URL completedURL = urlString.isEmpty() ? URL({ }, emptyString()) : protect(firstFrame.document())->completeURL(urlString);
+    URL completedURL = urlString.isEmpty() ? URL({ }, emptyString()) : protect(firstFrame.document())->completeURL(urlString, ScriptExecutionContext::ForceUTF8::No);
     if (!completedURL.isEmpty() && !completedURL.isValid())
         return Exception { ExceptionCode::SyntaxError };
 
@@ -2917,7 +2917,7 @@ static bool shouldBypassPopupBlockerForQuirk(const Document* document, const Str
 {
     if (RefPtr firstFrameDocument = document) {
         if (firstFrameDocument->quirks().shouldAllowPopupFromMicrosoftOfficeToOneDrive())
-            return firstFrameDocument->quirks().needsPopupFromMicrosoftOfficeToOneDrive(firstFrameDocument->completeURL(urlString));
+            return firstFrameDocument->quirks().needsPopupFromMicrosoftOfficeToOneDrive(firstFrameDocument->completeURL(urlString, ScriptExecutionContext::ForceUTF8::No));
     }
     return false;
 }
@@ -2946,7 +2946,7 @@ ExceptionOr<RefPtr<WindowProxy>> LocalDOMWindow::open(LocalDOMWindow& activeWind
     RefPtr userContentProvider = firstFrame->userContentProvider();
     RefPtr firstFrameDocumentLoader = firstFrameDocument ? firstFrameDocument->loader() : nullptr;
     if (firstFrameDocument && page && userContentProvider && firstFrameDocumentLoader) {
-        auto results = userContentProvider->processContentRuleListsForLoad(*page, firstFrameDocument->completeURL(urlString), ContentExtensions::ResourceType::Popup, *firstFrameDocumentLoader);
+        auto results = userContentProvider->processContentRuleListsForLoad(*page, firstFrameDocument->completeURL(urlString, ScriptExecutionContext::ForceUTF8::No), ContentExtensions::ResourceType::Popup, *firstFrameDocumentLoader);
         if (results.shouldBlock())
             return RefPtr<WindowProxy> { nullptr };
     }
@@ -2983,7 +2983,7 @@ ExceptionOr<RefPtr<WindowProxy>> LocalDOMWindow::open(LocalDOMWindow& activeWind
         if (activeDocument->canNavigate(targetFrame.get()) != CanNavigateState::Able)
             return RefPtr<WindowProxy> { nullptr };
 
-        URL completedURL = protect(firstFrame->document())->completeURL(urlString);
+        URL completedURL = protect(firstFrame->document())->completeURL(urlString, ScriptExecutionContext::ForceUTF8::No);
 
         if (protect(targetFrame->window())->isInsecureScriptAccess(activeWindow, completedURL))
             return &targetFrame->windowProxy();

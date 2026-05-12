@@ -94,6 +94,10 @@ private:
                 node->setArithMode(Arith::CheckOverflow);
             else
                 node->setArithMode(Arith::CheckOverflowAndNegativeZero);
+            // Regardless of whether we have a check, we clear MustGenerate flag. If nobody is using the output (including MovHint),
+            // we do not need to perform checks and keep this node.
+            // This condition is met only when we are not utilizing this checks as an additional constraint in integer-range-optimization.
+            node->clearFlags(NodeMustGenerate);
             return;
         }
 
@@ -105,6 +109,7 @@ private:
         // the original division.
         Node* newDivision = m_insertionSet.insertNode(m_indexInBlock, SpecBytecodeDouble, *node);
         newDivision->setResult(NodeResultDouble);
+        newDivision->clearFlags(NodeMustGenerate);
 
         node->setOp(DoubleAsInt32);
         node->children.initialize(Edge(newDivision, DoubleRepUse), Edge(), Edge());
@@ -143,6 +148,10 @@ private:
                 node->setArithMode(Arith::CheckOverflow);
             else
                 node->setArithMode(Arith::CheckOverflowAndNegativeZero);
+            // Regardless of whether we have a check, we clear MustGenerate flag. If nobody is using the output (including MovHint),
+            // we do not need to perform checks and keep this node.
+            // This condition is met only when we are not utilizing this checks as an additional constraint in integer-range-optimization.
+            node->clearFlags(NodeMustGenerate);
             node->setResult(NodeResultInt52);
             return;
         }
@@ -164,6 +173,10 @@ private:
                 node->setArithMode(Arith::CheckOverflow);
             else
                 node->setArithMode(Arith::CheckOverflowAndNegativeZero);
+            // Regardless of whether we have a check, we clear MustGenerate flag. If nobody is using the output (including MovHint),
+            // we do not need to perform checks and keep this node.
+            // This condition is met only when we are not utilizing this checks as an additional constraint in integer-range-optimization.
+            node->clearFlags(NodeMustGenerate);
             return;
         }
         if (m_graph.binaryArithShouldSpeculateInt52(node, FixupPass)) {
@@ -173,6 +186,10 @@ private:
                 node->setArithMode(Arith::CheckOverflow);
             else
                 node->setArithMode(Arith::CheckOverflowAndNegativeZero);
+            // Regardless of whether we have a check, we clear MustGenerate flag. If nobody is using the output (including MovHint),
+            // we do not need to perform checks and keep this node.
+            // This condition is met only when we are not utilizing this checks as an additional constraint in integer-range-optimization.
+            node->clearFlags(NodeMustGenerate);
             node->setResult(NodeResultInt52);
             return;
         }
@@ -2618,6 +2635,31 @@ private:
             // Phantoms are meaningless past Fixup. We recreate them on-demand in the backend.
             node->remove(m_graph);
             break;
+
+        case GetCellButterflySlot: {
+            fixEdge<KnownCellUse>(node->child1());
+            fixEdge<Int32Use>(node->child2());
+            break;
+        }
+
+        case PutCellButterflySlot: {
+            fixEdge<KnownCellUse>(node->child1());
+            fixEdge<Int32Use>(node->child2());
+            break;
+        }
+
+        case ArraySortCompact: {
+            fixEdge<KnownCellUse>(node->child1());
+            fixEdge<KnownInt32Use>(node->child2());
+            break;
+        }
+
+        case ArraySortCommit: {
+            fixEdge<KnownCellUse>(node->child1());
+            fixEdge<KnownCellUse>(node->child2());
+            fixEdge<KnownInt32Use>(node->child3());
+            break;
+        }
 
         case FiatInt52: {
             RELEASE_ASSERT(enableInt52());

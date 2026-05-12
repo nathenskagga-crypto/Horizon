@@ -185,6 +185,7 @@ public:
 
     constexpr ExactTime() = default;
     constexpr ExactTime(const ExactTime&) = default;
+    constexpr ExactTime& operator=(const ExactTime&) = default;
     constexpr explicit ExactTime(Int128 epochNanoseconds) : m_epochNanoseconds(epochNanoseconds) { }
 
     static constexpr ExactTime fromEpochMilliseconds(int64_t epochMilliseconds)
@@ -497,6 +498,7 @@ PlainDate NODELETE createISODateRecord(double, double, double);
 
 std::optional<ExactTime> parseInstant(StringView);
 std::optional<ParsedMonthCode> NODELETE parseMonthCode(StringView);
+std::optional<TimeZone> JS_EXPORT_PRIVATE parseTemporalTimeZoneIdentifier(StringView);
 
 bool isDateTimeWithinLimits(int32_t year, uint8_t month, uint8_t day, unsigned hour, unsigned minute, unsigned second, unsigned millisecond, unsigned microsecond, unsigned nanosecond);
 

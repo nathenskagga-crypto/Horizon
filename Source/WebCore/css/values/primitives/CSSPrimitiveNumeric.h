@@ -223,11 +223,17 @@ template<Range R = All, typename V = float> struct AnglePercentage : PrimitiveNu
     using Base = PrimitiveNumeric<AnglePercentageRaw<R, V>>;
     using Base::Base;
     using MarkableTraits = PrimitiveDataMarkableTraits<AnglePercentage<R, V>>;
+
+    using Dimension = CSS::Angle<R, V>;
+    using Percentage = CSS::Percentage<R, V>;
 };
 template<Range R = All, typename V = float> struct LengthPercentage : PrimitiveNumeric<LengthPercentageRaw<R, V>> {
     using Base = PrimitiveNumeric<LengthPercentageRaw<R, V>>;
     using Base::Base;
     using MarkableTraits = PrimitiveDataMarkableTraits<LengthPercentage<R, V>>;
+
+    using Dimension = CSS::Length<R, V>;
+    using Percentage = CSS::Percentage<R, V>;
 };
 
 

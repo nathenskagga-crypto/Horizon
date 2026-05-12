@@ -179,6 +179,9 @@ bool doesGC(Graph& graph, Node* node)
     case FencedStoreBarrier:
     case InvalidationPoint:
     case NotifyWrite:
+    case GetCellButterflySlot:
+    case PutCellButterflySlot:
+    case ArraySortCommit:
     case AssertInBounds:
     case CheckInBounds:
     case CheckInBoundsInt52:
@@ -415,6 +418,7 @@ bool doesGC(Graph& graph, Node* node)
     case NewInternalFieldObject:
     case Spread:
     case NewButterflyWithSize:
+    case ArraySortCompact:
     case NewArrayWithSize:
     case NewArrayWithButterfly:
     case NewArrayWithSpecies:

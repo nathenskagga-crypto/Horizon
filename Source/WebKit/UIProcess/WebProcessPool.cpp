@@ -1397,10 +1397,6 @@ Ref<WebPageProxy> WebProcessPool::createWebPage(PageClient& pageClient, Ref<API:
     }
 #endif
 
-#if ENABLE(LAUNCHSERVICES_SANDBOX_EXTENSION_BLOCKING)
-    NetworkProcessProxy::ensureDefaultNetworkProcess();
-#endif
-
     return page;
 }
 
@@ -2163,6 +2159,20 @@ void WebProcessPool::processForNavigation(WebPageProxy& page, WebFrameProxy& fra
     }
 
     if (siteIsolationEnabled && !site.isEmpty()) {
+        if (RefPtr targetItem = navigation.targetItem(); targetItem && frame.isMainFrame()) {
+            if (RefPtr suspendedPage = targetItem->suspendedPage()) {
+                Ref process = suspendedPage->process();
+                if (process->state() != AuxiliaryProcessProxy::State::Terminated) {
+                    ASSERT(isolatedProcessType != WebProcessProxy::IsolatedProcessType::Shared);
+                    prepareProcessForNavigation(WTF::move(process), page, suspendedPage.get(),
+                        "Using target back/forward item's process and suspended page"_s, isolatedProcessType,
+                        site, mainFrameSite, navigation, lockdownMode, enhancedSecurity, loadedWebArchive,
+                        WTF::move(dataStore), WTF::move(completionHandler));
+                    return;
+                }
+            }
+        }
+
         ASSERT(frameInfo.isMainFrame ? site == mainFrameSite : Site(URL(protect(page.pageLoadState())->activeURL())) == mainFrameSite);
         if (!frame.isMainFrame() && site == mainFrameSite) {
             Ref mainFrameProcess = Ref { page.mainFrame()->process() };

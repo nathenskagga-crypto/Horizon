@@ -1335,6 +1335,28 @@ private:
             break;
         }
 
+        case GetCellButterflySlot: {
+            switch (m_currentNode->arrayMode().type()) {
+            case Array::Int32:
+                setPrediction(SpecInt32Only);
+                break;
+            default:
+                setPrediction(SpecBytecodeTop);
+                break;
+            }
+            break;
+        }
+
+        case PutCellButterflySlot:
+        case ArraySortCommit: {
+            break;
+        }
+
+        case ArraySortCompact: {
+            setPrediction(SpecObjectOther);
+            break;
+        }
+
         case GetGlobalThis:
             setPrediction(SpecGlobalProxy);
             break;

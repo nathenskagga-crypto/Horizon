@@ -133,7 +133,7 @@ public:
     BufferMemoryHandle(void*, size_t size, size_t mappedCapacity, PageCount initial, PageCount maximum, MemorySharingMode, MemoryMode);
     JS_EXPORT_PRIVATE ~BufferMemoryHandle();
 
-    void* memory() const;
+    JS_EXPORT_PRIVATE void* memory() const;
     size_t size(std::memory_order order = std::memory_order_seq_cst) const
     {
         if (m_sharingMode == MemorySharingMode::Default)

@@ -56,6 +56,7 @@ WK_CLASS_AVAILABLE(macos(10.13), ios(11.0))
 @property (nonatomic) BOOL timeBasedEvictionEnabled;
 @property (nonatomic) NSTimeInterval timeBasedEvictionThreshold;
 @property (nonatomic, nullable, copy) NSNumber *lastModificationTimeUpdateIntervalOverride;
+@property (nonatomic, nullable, copy) NSNumber *timeBasedEvictionIntervalOverride;
 @property (nonatomic, nullable, copy) NSNumber *originQuotaRatio WK_API_AVAILABLE(macos(14.0), ios(17.0));
 @property (nonatomic, nullable, copy) NSNumber *totalQuotaRatio WK_API_AVAILABLE(macos(14.0), ios(17.0));
 @property (nonatomic, nullable, copy) NSNumber *standardVolumeCapacity WK_API_AVAILABLE(macos(14.0), ios(17.0));

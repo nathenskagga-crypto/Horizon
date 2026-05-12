@@ -42,4 +42,18 @@
   Traversal count: 7
 .c22:has(.trigger22) .target with no .c22 ancestor - skip invalidation
   Traversal count: 0
+.c22:has(.trigger22) .target class toggle with no .c22 ancestor - skip invalidation
+  Traversal count: 0
+.c23:has(#trigger23) .target id toggle with no .c23 ancestor - skip invalidation
+  Traversal count: 0
+.c24:has([data-trigger24]) .target attribute toggle with no .c24 ancestor - skip invalidation
+  Traversal count: 0
+.c25:has(:checked) .target pseudo-class toggle with no .c25 ancestor - skip invalidation
+  Traversal count: 1
+.c26:has(.trigger26) .target class toggle with .c26 ancestor - bounded invalidation
+  Traversal count: 7
+.c28:has([data-trigger28]) .target attribute toggle with .c28 ancestor - bounded invalidation
+  Traversal count: 14
+.c29:has(:checked) .target pseudo-class toggle with .c29 ancestor - bounded invalidation
+  Traversal count: 8
 

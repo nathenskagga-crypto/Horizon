@@ -272,6 +272,7 @@ public:
 
 #if USE(SYSTEM_PREVIEW)
     virtual void paintSystemPreviewBadge(Image&, const PaintInfo&, const FloatRect&);
+    virtual void paintSystemPreviewBadge(const PaintInfo&, const FloatRect&);
 #endif
     virtual Seconds switchAnimationVisuallyOnDuration() const { return 0_s; }
     virtual Seconds switchAnimationHeldDuration() const { return 0_s; }

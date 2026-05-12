@@ -158,11 +158,14 @@ PAS_API extern bool pas_large_sharing_pool_validate_each_splat;
 
 PAS_API extern pas_large_sharing_pool_epoch_update_mode pas_large_sharing_pool_epoch_update_mode_setting;
 
-/* This makes the memory free and also bumps the epoch. */
+/* Registers the range as free in the tracker and bumps the epoch. The range MUST be
+   page-aligned at both ends - the splat needs to carve it into whole-page nodes, and the
+   per-node is_committed bit cannot represent a half-decommitted boundary. */
 PAS_API void pas_large_sharing_pool_boot_free(
     pas_range range,
     pas_physical_memory_synchronization_style synchronization_style,
-    pas_page_flags page_flags);
+    pas_page_flags page_flags,
+    pas_commit_mode initial_commit_mode);
 
 PAS_API void pas_large_sharing_pool_free(
     pas_range range,

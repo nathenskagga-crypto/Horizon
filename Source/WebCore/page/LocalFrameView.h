@@ -65,6 +65,7 @@ class RenderEmbeddedObject;
 class RenderLayer;
 class RenderLayerModelObject;
 class RenderObject;
+class RenderReplaced;
 class RenderScrollbarPart;
 class RenderStyle;
 class RenderView;
@@ -578,7 +579,7 @@ public:
 
     bool NODELETE shouldSuspendScrollAnimations() const final;
 
-    RenderBox* embeddedContentBox() const;
+    RenderReplaced* embeddedSVGRoot() const;
     
     WEBCORE_EXPORT void setTracksRepaints(bool);
     bool isTrackingRepaints() const { return m_isTrackingRepaints; }

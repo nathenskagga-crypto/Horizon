@@ -1339,7 +1339,12 @@ void WebPage::frameTreeSyncDataChangedInAnotherProcess(FrameIdentifier frameID, 
     if (!frame)
         return;
 
-    ASSERT(frame->page() == this);
+    // Multi-process BFCache lifecycle can route a cross-process frame-tree sync message
+    // to a WebPage that no longer owns this WebFrame (e.g. when a sibling WebPage in the
+    // same process holds the frame after a suspend/restore transition). Silently ignore
+    // such mis-routed updates rather than acting on a frame in a different WebPage.
+    if (frame->page() != this)
+        return;
 
     RefPtr coreFrame = frame->coreFrame();
     if (coreFrame) {
@@ -2210,12 +2215,16 @@ void WebPage::suspendForProcessSwap(CompletionHandler<void(std::optional<bool>)>
 {
     flushDeferredDidReceiveMouseEvent();
 
+    RefPtr page = corePage();
+    if (!page)
+        return completionHandler(false);
+
     // FIXME: Make this work if the main frame is not a LocalFrame.
     RefPtr currentHistoryItem = m_mainFrame->coreLocalFrame()->loader().history().currentItem();
     if (!currentHistoryItem)
         return completionHandler(false);
 
-    if (!BackForwardCache::singleton().addIfCacheable(*currentHistoryItem, protect(corePage()).get()))
+    if (!BackForwardCache::singleton().addIfCacheable(currentHistoryItem->frameItemID(), *page))
         return completionHandler(false);
 
     // Back/forward cache does not break the opener link for the main frame (only does so for the subframes) because the
@@ -8670,33 +8679,51 @@ void WebPage::setIsSuspended(bool suspended, CompletionHandler<void(std::optiona
     suspendForProcessSwap(WTF::move(completionHandler));
 }
 
-void WebPage::setIsSuspendedWithFrameItem(bool suspended, BackForwardFrameItemIdentifier identifier, CompletionHandler<void(bool)>&& completionHandler)
+void WebPage::suspendWithFrameItem(BackForwardFrameItemIdentifier identifier, CompletionHandler<void(bool)>&& completionHandler)
 {
-    if (m_isSuspended == suspended)
+    if (m_isSuspended)
         return completionHandler(true);
-    m_isSuspended = suspended;
 
-    if (!suspended) {
-        // FIXME: Restore path (follow-up patch).
-        return completionHandler(true);
+    RefPtr page = corePage();
+    if (!page) {
+        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "suspendWithFrameItem: No corePage");
+        return completionHandler(false);
     }
 
     freezeLayerTree(LayerTreeFreezeReason::PageSuspended);
     unfreezeLayerTree(LayerTreeFreezeReason::BackgroundApplication);
     flushDeferredDidReceiveMouseEvent();
 
+    if (!BackForwardCache::singleton().addIfCacheable(identifier, *page)) {
+        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "suspendWithFrameItem: addIfCacheable failed");
+        return completionHandler(false);
+    }
+
+    m_isSuspended = true;
+    WEBPAGE_RELEASE_LOG(ProcessSwapping, "suspendWithFrameItem: Successfully cached page");
+    completionHandler(true);
+}
+
+void WebPage::restoreWithFrameItem(BackForwardFrameItemIdentifier identifier, CompletionHandler<void(bool)>&& completionHandler)
+{
+    if (!m_isSuspended)
+        return completionHandler(true);
+
     RefPtr page = corePage();
     if (!page) {
-        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setIsSuspendedWithFrameItem: No corePage");
+        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "restoreWithFrameItem: No corePage");
         return completionHandler(false);
     }
 
-    if (!BackForwardCache::singleton().addIfCacheable(identifier, *page)) {
-        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setIsSuspendedWithFrameItem: addIfCacheable failed");
+    auto cachedPage = BackForwardCache::singleton().take(identifier, page);
+    if (!cachedPage) {
+        WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "restoreWithFrameItem: take failed, cache entry missing or expired");
         return completionHandler(false);
     }
 
-    WEBPAGE_RELEASE_LOG(ProcessSwapping, "setIsSuspendedWithFrameItem: Successfully cached page");
+    m_isSuspended = false;
+    unfreezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+    cachedPage->restore(*page);
     completionHandler(true);
 }
 
@@ -9406,7 +9433,7 @@ void WebPage::requestTextRecognition(Element& element, TextRecognitionOptions&& 
             return;
 
         RefPtr cachedImage = renderImage->cachedImage();
-        auto imageURL = cachedImage ? protect(weakElement->document())->completeURL(cachedImage->url().string()) : URL { };
+        auto imageURL = cachedImage ? protect(weakElement->document())->completeURL(cachedImage->url().string(), ScriptExecutionContext::ForceUTF8::No) : URL { };
         protectedThis->sendWithAsyncReply(Messages::WebPageProxy::RequestTextRecognition(WTF::move(imageURL), WTF::move(*bitmapHandle), options.sourceLanguageIdentifier, options.targetLanguageIdentifier), [weakThis, weakElement, resolveAndRemoveHandlerFollowingError = WTF::move(resolveAndRemoveHandlerFollowingError)] (auto&& result) mutable {
             RefPtr protectedThis = weakThis.get();
             if (!protectedThis)

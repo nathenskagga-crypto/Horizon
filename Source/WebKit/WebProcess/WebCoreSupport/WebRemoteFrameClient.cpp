@@ -250,6 +250,7 @@ void WebRemoteFrameClient::applyWebsitePolicies(WebsitePoliciesData&& websitePol
     coreFrame->setCustomUserAgent(WTF::move(websitePolicies.customUserAgent));
     coreFrame->setCustomUserAgentAsSiteSpecificQuirks(WTF::move(websitePolicies.customUserAgentAsSiteSpecificQuirks));
     coreFrame->setAdvancedPrivacyProtections(websitePolicies.advancedPrivacyProtections);
+    coreFrame->setAllowPrivacyProxy(websitePolicies.allowPrivacyProxy);
     coreFrame->setCustomNavigatorPlatform(WTF::move(websitePolicies.customNavigatorPlatform));
     coreFrame->setAutoplayPolicy(core(websitePolicies.autoplayPolicy));
 }

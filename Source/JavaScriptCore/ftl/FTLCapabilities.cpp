@@ -255,6 +255,10 @@ inline CapabilityLevel canCompile(Node* node)
     case NewArrayWithSize:
     case NewArrayWithButterfly:
     case NewButterflyWithSize:
+    case GetCellButterflySlot:
+    case PutCellButterflySlot:
+    case ArraySortCompact:
+    case ArraySortCommit:
     case NewArrayWithSpecies:
     case NewArrayWithSizeAndStructure:
     case TryGetById:

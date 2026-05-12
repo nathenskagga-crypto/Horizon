@@ -220,7 +220,7 @@ void HTMLScriptElement::addSubresourceAttributeURLs(ListHashSet<URL>& urls) cons
 {
     HTMLElement::addSubresourceAttributeURLs(urls);
 
-    addSubresourceURL(urls, protect(document())->completeURL(sourceAttributeValue()));
+    addSubresourceURL(urls, protect(document())->completeURL(sourceAttributeValue(), ScriptExecutionContext::ForceUTF8::No));
 }
 
 String HTMLScriptElement::sourceAttributeValue() const

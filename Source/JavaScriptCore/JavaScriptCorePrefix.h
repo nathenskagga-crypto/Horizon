@@ -59,18 +59,40 @@
 #endif
 
 #ifdef __cplusplus
+#include "B3ValueRep.h"
+#include "ButterflyInlinesLight.h"
 #include "Bytecodes.h"
+#include "CacheableIdentifierInlines.h"
 #include "CodeBlock.h"
+#include "GCSegmentedArrayInlines.h"
+#include "GenericArgumentsImplInlines.h"
 #include "Heap.h"
+#include "IsoCellSetInlines.h"
+#include "JSArray.h"
+#include "JSArrayBufferView.h"
 #include "JSCJSValue.h"
+#include "JSCJSValueInlines.h"
 #include "JSCJSValuePropertyInlines.h"
+#include "JSDataView.h"
 #include "JSGlobalObject.h"
+#include "JSLexicalEnvironment.h"
 #include "JSObject.h"
+#include "JSObjectInlines.h"
+#include "JSObjectRef.h"
 #include "JSString.h"
+#include "JSStringInlines.h"
 #include "MarkedBlockInlines.h"
+#include "Operations.h"
+#include "OperationsInlines.h"
+#include "OperandsInlines.h"
 #include "OptionsList.h"
+#include "Strong.h"
 #include "Structure.h"
+#include "StructureChain.h"
+#include "StructureInlinesLight.h"
+#include "UnlinkedMetadataTableInlines.h"
 #include "VM.h"
+#include "WeakGCMapInlines.h"
 #include <chrono>
 #include <functional>
 #include <list>
@@ -80,6 +102,8 @@
 #include <typeinfo>
 #include <wtf/HashMap.h>
 #include <wtf/HashSet.h>
+#include <wtf/MediaTime.h>
+#include <wtf/RefCountedFixedVector.h>
 #include <wtf/SIMDHelpers.h>
 #include <wtf/TZoneMalloc.h>
 #include <wtf/TZoneMallocInlines.h>
@@ -101,7 +125,9 @@
 #endif
 
 #if ENABLE(WEBASSEMBLY)
+#include "WasmCallee.h"
 #include "WasmCallingConvention.h"
+#include "WebAssemblyFunction.h"
 #endif
 #endif
 

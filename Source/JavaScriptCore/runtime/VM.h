@@ -580,6 +580,9 @@ public:
     WriteBarrier<JSCell> m_orderedHashTableDeletedValue;
     WriteBarrier<JSCell> m_orderedHashTableSentinel;
 
+    WriteBarrier<JSCell> m_cachedSortScratch;
+    WriteBarrier<JSCell> m_sortScratchSentinel;
+
     WriteBarrier<NativeExecutable> m_fastCanConstructBoundExecutable;
     WriteBarrier<NativeExecutable> m_slowCanConstructBoundExecutable;
 

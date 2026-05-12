@@ -4731,7 +4731,7 @@ void WebViewImpl::startDrag(const WebCore::DragItem& item, ShareableBitmap::Hand
     if (RefPtr frame = WebFrameProxy::webFrame(item.rootFrameID)) {
         // FIXME: The `dragLocationInWindowCoordinates` is in window coordinates (equivalent to root view), but `convertPointToMainFrameCoordinates`
         // expects the input to be in content coordinates of the frame corresponding to the given frame ID.
-        m_page->convertPointToMainFrameCoordinates(item.dragLocationInWindowCoordinates, item.rootFrameID, [weakThis = WeakPtr { *this }, promisedAttachmentInfo = item.promisedAttachmentInfo, dragNSImage = WTF::move(dragNSImage), size, lastMouseDownEvent = m_lastMouseDownEvent, frameID, &sourceAction = item.sourceAction] (std::optional<FloatPoint> dragLocationInMainFrameCoordinates) mutable {
+        m_page->convertPointToMainFrameCoordinates(item.dragLocationInWindowCoordinates, item.rootFrameID, [weakThis = WeakPtr { *this }, promisedAttachmentInfo = item.promisedAttachmentInfo, dragNSImage = WTF::move(dragNSImage), size, lastMouseDownEvent = m_lastMouseDownEvent, frameID](std::optional<FloatPoint> dragLocationInMainFrameCoordinates) mutable {
 
             BEGIN_BLOCK_OBJC_EXCEPTIONS
 
@@ -4745,7 +4745,7 @@ void WebViewImpl::startDrag(const WebCore::DragItem& item, ShareableBitmap::Hand
             auto clientDragLocation = IntPoint(dragLocationInMainFrameCoordinates.value());
             auto draggingFrame = NSMakeRect(clientDragLocation.x(), clientDragLocation.y() - size.height(), size.width(), size.height());
 
-            bool isImageDrag = protectedThis->m_promisedImageDragData && sourceAction == WebCore::DragSourceAction::Image;
+            bool isImageDrag = protectedThis->m_promisedImageDragData.has_value();
             bool canUseFilePromiseForImageDrag = isImageDrag && !protectedThis->m_promisedImageDragData->imageUTI.isEmpty();
 
             RetainPtr pasteboard = [NSPasteboard pasteboardWithName:NSPasteboardNameDrag];
@@ -7653,9 +7653,14 @@ bool WebViewImpl::isTextSelectedAtPoint(NSPoint point)
     return [m_textSelectionController isTextSelectedAtPoint:point];
 }
 
-void WebViewImpl::cancelClick()
+void WebViewImpl::beginSuppressingSingleClickGestureForTextSelection()
 {
-    [m_appKitGestureController cancelClick];
+    [m_appKitGestureController beginSuppressingSingleClickGestureForTextSelection];
+}
+
+void WebViewImpl::endSuppressingSingleClickGestureForTextSelection()
+{
+    [m_appKitGestureController endSuppressingSingleClickGestureForTextSelection];
 }
 #endif // HAVE(APPKIT_GESTURES_SUPPORT)
 

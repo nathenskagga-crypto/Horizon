@@ -182,7 +182,7 @@ void HTMLTableCellElement::addSubresourceAttributeURLs(ListHashSet<URL>& urls) c
 {
     HTMLTablePartElement::addSubresourceAttributeURLs(urls);
 
-    addSubresourceURL(urls, protect(document())->completeURL(attributeWithoutSynchronization(backgroundAttr)));
+    addSubresourceURL(urls, protect(document())->completeURL(attributeWithoutSynchronization(backgroundAttr), ScriptExecutionContext::ForceUTF8::No));
 }
 
 HTMLTableCellElement* HTMLTableCellElement::cellAbove() const

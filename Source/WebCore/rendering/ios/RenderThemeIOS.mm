@@ -1446,6 +1446,11 @@ void RenderThemeIOS::paintSystemPreviewBadge(Image& image, const PaintInfo& pain
 {
     paintInfo.context().drawSystemImage(ARKitBadgeSystemImage::create(image), rect);
 }
+
+void RenderThemeIOS::paintSystemPreviewBadge(const PaintInfo& paintInfo, const FloatRect& rect)
+{
+    paintInfo.context().drawSystemImage(ARKitBadgeSystemImage::createWithoutImage(), rect);
+}
 #endif
 
 constexpr auto checkboxRadioBorderWidth = 1.5f;

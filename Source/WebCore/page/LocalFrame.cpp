@@ -1393,6 +1393,13 @@ OptionSet<AdvancedPrivacyProtections> LocalFrame::advancedPrivacyProtections() c
     return { };
 }
 
+bool LocalFrame::allowPrivacyProxy() const
+{
+    if (RefPtr documentLoader = loader().activeDocumentLoader())
+        return documentLoader->allowPrivacyProxy();
+    return true;
+}
+
 AutoplayPolicy LocalFrame::autoplayPolicy() const
 {
     if (auto* documentLoader = loader().activeDocumentLoader())

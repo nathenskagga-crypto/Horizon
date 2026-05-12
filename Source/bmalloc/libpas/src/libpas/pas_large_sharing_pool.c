@@ -559,7 +559,8 @@ enum splat_command {
     splat_decommit,
     splat_allocate_and_commit,
     splat_free,
-    splat_boot_free
+    splat_boot_free_committed,
+    splat_boot_free_decommitted
 };
 
 typedef enum splat_command splat_command;
@@ -573,8 +574,10 @@ static const char* splat_command_get_string(splat_command command)
         return "allocate_and_commit";
     case splat_free:
         return "free";
-    case splat_boot_free:
-        return "boot_free";
+    case splat_boot_free_committed:
+        return "boot_free_committed";
+    case splat_boot_free_decommitted:
+        return "boot_free_decommitted";
     }
     PAS_ASSERT_NOT_REACHED();
     return NULL;
@@ -589,7 +592,8 @@ static pas_free_mode splat_command_get_free_mode(splat_command command)
     case splat_allocate_and_commit:
         return pas_allocated;
     case splat_free:
-    case splat_boot_free:
+    case splat_boot_free_committed:
+    case splat_boot_free_decommitted:
         return pas_free;
     }
     PAS_ASSERT_NOT_REACHED();
@@ -676,7 +680,7 @@ static bool try_splat_impl(pas_range range,
 
         max_node = successor(min_node);
         if (pas_range_size(max_node->range) == page_size
-            && (command == splat_free || command == splat_boot_free || max_node->is_committed)) {
+            && (command == splat_free || command == splat_boot_free_committed || max_node->is_committed)) {
             PAS_ASSERT(max_node->range.begin < range.end);
             PAS_ASSERT(max_node->range.end >= range.end);
             remove_from_min_heap(min_node);
@@ -752,9 +756,10 @@ static bool try_splat_impl(pas_range range,
         desired_commit_mode = pas_committed;
         do_commit_stuff = true;
         break;
-        
+
     case splat_free:
-    case splat_boot_free:
+    case splat_boot_free_committed:
+    case splat_boot_free_decommitted:
         break;
     }
 
@@ -900,7 +905,16 @@ static bool try_splat_impl(pas_range range,
             break;
 
         case splat_free:
-        case splat_boot_free:
+        case splat_boot_free_committed:
+            splat_live_bytes(
+                node,
+                pas_range_size(pas_range_create_intersection(node->range, range)),
+                pas_free);
+            break;
+
+        case splat_boot_free_decommitted:
+            PAS_ASSERT(pas_range_subsumes(range, node->range));
+            node->is_committed = pas_decommitted;
             splat_live_bytes(
                 node,
                 pas_range_size(pas_range_create_intersection(node->range, range)),
@@ -916,7 +930,8 @@ static bool try_splat_impl(pas_range range,
             PAS_ASSERT(node->page_flags == page_flags);
             break;
 
-        case splat_boot_free:
+        case splat_boot_free_committed:
+        case splat_boot_free_decommitted:
             PAS_ASSERT(
                 node->synchronization_style
                 == pas_physical_memory_is_locked_by_virtual_range_common_lock);
@@ -957,7 +972,8 @@ done:
                     >= pas_range_size(pas_range_create_intersection(node->range, range)));
                 break;
             case splat_free:
-            case splat_boot_free:
+            case splat_boot_free_committed:
+            case splat_boot_free_decommitted:
                 PAS_ASSERT(
                     pas_range_size(node->range) - node->num_live_bytes
                     >= pas_range_size(pas_range_create_intersection(node->range, range)));
@@ -1027,18 +1043,34 @@ static void splat(pas_range range,
 void pas_large_sharing_pool_boot_free(
     pas_range range,
     pas_physical_memory_synchronization_style synchronization_style,
-    pas_page_flags page_flags)
+    pas_page_flags page_flags,
+    pas_commit_mode initial_commit_mode)
 {
+    splat_command command;
     uint64_t epoch;
+    size_t page_size;
 
     PAS_PROFILE(LARGE_SHARING_POOL_BOOT_FREE, range.begin, range.end);
     PAS_MTE_HANDLE(LARGE_SHARING_POOL_BOOT_FREE, range.begin, range.end);
 
+    page_size = pas_page_malloc_alignment();
+    PAS_ASSERT(pas_is_aligned(range.begin, page_size));
+    PAS_ASSERT(pas_is_aligned(range.end, page_size));
+
     if (!pas_large_sharing_pool_enabled)
         return;
-    
+
+    switch (initial_commit_mode) {
+    case pas_committed:
+        command = splat_boot_free_committed;
+        break;
+    case pas_decommitted:
+        command = splat_boot_free_decommitted;
+        break;
+    }
+
     epoch = pas_get_epoch();
-    splat(range, splat_boot_free, epoch, NULL, NULL, NULL, synchronization_style, page_flags);
+    splat(range, command, epoch, NULL, NULL, NULL, synchronization_style, page_flags);
 }
 
 void pas_large_sharing_pool_free(pas_range range,

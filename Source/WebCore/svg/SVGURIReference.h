@@ -61,7 +61,7 @@ public:
             return false;
 
         // If the URI matches our documents URL, we're dealing with a local reference.
-        URL url = document.completeURL(uri);
+        URL url = document.completeURL(uri, ScriptExecutionContext::ForceUTF8::No);
         ASSERT(!url.protocolIsData());
         return !equalIgnoringFragmentIdentifier(url, document.url());
     }

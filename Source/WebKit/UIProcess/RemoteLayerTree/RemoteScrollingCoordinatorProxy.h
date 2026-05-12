@@ -126,8 +126,8 @@ public:
     void adjustMainFrameDelegatedScrollPosition(WebCore::ScrollRequestData&&);
 
     bool hasFixedOrSticky() const;
-    bool NODELETE hasScrollableMainFrame() const;
-    bool NODELETE hasScrollableOrZoomedMainFrame() const;
+    bool hasScrollableMainFrame() const;
+    bool hasScrollableOrZoomedMainFrame() const;
 
     WebCore::ScrollbarWidth mainFrameScrollbarWidth() const;
     std::optional<WebCore::ScrollbarColor> mainFrameScrollbarColor() const;

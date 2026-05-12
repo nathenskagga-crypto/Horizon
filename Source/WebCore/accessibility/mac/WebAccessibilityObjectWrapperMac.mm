@@ -600,6 +600,9 @@ ALLOW_DEPRECATED_IMPLEMENTATIONS_END
     if (backingObject->errorMessageObjects().size())
         [additional addObject:NSAccessibilityErrorMessageElementsAttribute];
 
+    if (backingObject->labelForObjects().size())
+        [additional addObject:NSAccessibilityServesAsTitleForUIElementsAttribute];
+
     if (!backingObject->keyShortcuts().isEmpty())
         [additional addObject:NSAccessibilityKeyShortcutsAttribute];
 
@@ -2212,6 +2215,11 @@ static id handleErrorMessageElementsAttribute(WebAccessibilityObjectWrapper*, AX
     return makeNSArray(backingObject.errorMessageObjects());
 }
 
+static id handleServesAsTitleForUIElementsAttribute(WebAccessibilityObjectWrapper*, AXCoreObject& backingObject)
+{
+    return makeNSArray(backingObject.labelForObjects());
+}
+
 static id handleFocusableAncestorAttribute(WebAccessibilityObjectWrapper*, AXCoreObject& backingObject)
 {
     RefPtr object = backingObject.focusableAncestor();
@@ -2413,6 +2421,7 @@ static MemoryCompactLookupOnlyRobinHoodHashMap<String, AttributeHandlerEntry> cr
         { NSAccessibilityIsInDescriptionListTermAttribute, { handleIsInDescriptionListTermAttribute, { } } },
         { NSAccessibilityDetailsElementsAttribute, { handleDetailsElementsAttribute, { } } },
         { NSAccessibilityErrorMessageElementsAttribute, { handleErrorMessageElementsAttribute, { } } },
+        { NSAccessibilityServesAsTitleForUIElementsAttribute, { handleServesAsTitleForUIElementsAttribute, { } } },
         { NSAccessibilityFocusableAncestorAttribute, { handleFocusableAncestorAttribute, { } } },
         { NSAccessibilityEditableAncestorAttribute, { handleEditableAncestorAttribute, { } } },
         { NSAccessibilityHighestEditableAncestorAttribute, { handleHighestEditableAncestorAttribute, { } } },
@@ -2561,9 +2570,6 @@ id attributeValueForTesting(const RefPtr<AXCoreObject>& backingObject, NSString 
 
     if ([attributeName isEqualToString:NSAccessibilityLabelledByAttribute])
         return makeNSArray(backingObject->labeledByObjects());
-
-    if ([attributeName isEqualToString:NSAccessibilityLabelForAttribute])
-        return makeNSArray(backingObject->labelForObjects());
 
     if ([attributeName isEqualToString:NSAccessibilityOwnersAttribute])
         return makeNSArray(backingObject->owners());

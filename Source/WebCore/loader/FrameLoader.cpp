@@ -3557,7 +3557,7 @@ void FrameLoader::scheduleRefreshIfNeeded(Document& document, const String& cont
     double delay = 0;
     String urlString;
     if (parseMetaHTTPEquivRefresh(content, delay, urlString)) {
-        auto completedURL = urlString.isEmpty() ? document.url() : document.completeURL(urlString);
+        auto completedURL = urlString.isEmpty() ? document.url() : document.completeURL(urlString, ScriptExecutionContext::ForceUTF8::No);
         if (!completedURL.protocolIsJavaScript())
             m_frame->navigationScheduler().scheduleRedirect(document, delay, WTF::move(completedURL), isMetaRefresh);
         else {

@@ -326,7 +326,7 @@ void HTMLObjectElement::addSubresourceAttributeURLs(ListHashSet<URL>& urls) cons
 {
     HTMLPlugInElement::addSubresourceAttributeURLs(urls);
 
-    addSubresourceURL(urls, protect(document())->completeURL(attributeWithoutSynchronization(dataAttr)));
+    addSubresourceURL(urls, protect(document())->completeURL(attributeWithoutSynchronization(dataAttr), ScriptExecutionContext::ForceUTF8::No));
 }
 
 void HTMLObjectElement::didMoveToNewDocument(Document& oldDocument, Document& newDocument)

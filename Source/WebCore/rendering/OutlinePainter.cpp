@@ -730,7 +730,7 @@ void OutlinePainter::addPDFURLAnnotationForLink(const RenderElement& renderer, c
             return;
         }
     }
-    m_paintInfo.context().setURLForRect(protect(element->document())->completeURL(href), urlRect);
+    m_paintInfo.context().setURLForRect(protect(element->document())->completeURL(href, ScriptExecutionContext::ForceUTF8::No), urlRect);
 }
 
 } // namespace WebCore

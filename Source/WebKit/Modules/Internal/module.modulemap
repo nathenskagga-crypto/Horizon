@@ -296,6 +296,12 @@ module WebKit_Internal [system] {
         requires objc
     }
 
+    module WKDeferringGestureRecognizer {
+        header "../../UIProcess/Cocoa/WKDeferringGestureRecognizer.h"
+        export *
+        requires objc
+    }
+
     module UIWindowScene_Extras {
         header "../../UIProcess/Cocoa/UIWindowScene+Extras.h"
         export *

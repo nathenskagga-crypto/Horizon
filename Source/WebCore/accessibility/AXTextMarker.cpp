@@ -732,9 +732,20 @@ int AXTextMarker::lineIndex() const
 
     unsigned index = 0;
     while (currentLineID && currentLineID != targetLineID) {
-        currentMarker = currentMarker.nextLineEnd();
-        currentLineID = currentMarker.lineID();
+        auto newMarker = currentMarker.nextLineEnd();
+        auto newLineID = newMarker.lineID();
         ++index;
+
+        if (currentLineID == newLineID && currentMarker == newMarker) {
+            // nextLineEnd() returned its input, so break. The line walk would loop
+            // forever otherwise, causing a hang. This indicates a bug elsewhere
+            // (e.g. a sibling lineID collision the caller couldn't disambiguate).
+            AX_ASSERT_NOT_REACHED();
+            break;
+        }
+
+        currentMarker = WTF::move(newMarker);
+        currentLineID = newLineID;
     }
     return index;
 }

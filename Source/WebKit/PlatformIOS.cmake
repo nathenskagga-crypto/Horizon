@@ -134,28 +134,13 @@ list(APPEND WebKit_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBKIT_DIR}/WebProcess/WebPage/ios"
 )
 
-set(XPCService_SOURCES
-    ${WEBKIT_DIR}/Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp
-    ${WEBKIT_DIR}/Shared/EntryPointUtilities/Cocoa/XPCService/XPCServiceEntryPoint.mm
-    ${WEBKIT_DIR}/Shared/EntryPointUtilities/Cocoa/XPCService/XPCServiceMain.mm
-)
-
 list(APPEND WebKit_SOURCES
     ${WEBKIT_DIR}/Shared/EntryPointUtilities/Cocoa/ExtensionEventHandler.mm
     ${WEBKIT_DIR}/WebProcess/InjectedBundle/API/c/mac/WKBundlePageMac.mm
 )
-set(WebProcess_SOURCES
-    ${WEBKIT_DIR}/WebProcess/EntryPoint/Cocoa/XPCService/WebContentServiceEntryPoint.mm
-    ${XPCService_SOURCES}
-)
-set(NetworkProcess_SOURCES
-    ${WEBKIT_DIR}/NetworkProcess/EntryPoint/Cocoa/XPCService/NetworkServiceEntryPoint.mm
-    ${XPCService_SOURCES}
-)
-set(GPUProcess_SOURCES
-    ${WEBKIT_DIR}/GPUProcess/EntryPoint/Cocoa/XPCService/GPUServiceEntryPoint.mm
-    ${XPCService_SOURCES}
-)
+set(WebProcess_SOURCES ${WEBKIT_DIR}/Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp)
+set(NetworkProcess_SOURCES ${WEBKIT_DIR}/Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp)
+set(GPUProcess_SOURCES ${WEBKIT_DIR}/Shared/EntryPointUtilities/Cocoa/AuxiliaryProcessMain.cpp)
 
 set(WebKit_USE_PREFIX_HEADER ON)
 

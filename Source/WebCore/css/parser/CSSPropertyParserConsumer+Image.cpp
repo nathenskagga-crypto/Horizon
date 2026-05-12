@@ -314,7 +314,7 @@ template<SupportsColorHints supportsColorHints, typename Stop, typename Consumer
 template<SupportsColorHints supportsColorHints> static std::optional<CSS::GradientLinearColorStopList> consumeLinearColorStopList(CSSParserTokenRange& range, CSS::PropertyParserState& state)
 {
     return consumeColorStopList<supportsColorHints, CSS::GradientLinearColorStop>(range, state, [&](auto& range) {
-        return MetaConsumer<CSS::LengthPercentage<CSS::AllUnzoomed>>::consume(range, state);
+        return MetaConsumer<CSS::LengthPercentage<CSS::AllLayoutUnitClampedUnzoomed>>::consume(range, state);
     });
 }
 

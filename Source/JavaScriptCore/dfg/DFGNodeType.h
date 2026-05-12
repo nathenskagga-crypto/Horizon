@@ -422,6 +422,10 @@ namespace JSC { namespace DFG {
     macro(NewArrayBuffer, NodeResultJS) \
     macro(NewArrayWithButterfly, NodeResultJS) \
     macro(NewButterflyWithSize, NodeResultStorage) \
+    macro(GetCellButterflySlot, NodeResultJS | NodeMustGenerate) \
+    macro(PutCellButterflySlot, NodeMustGenerate) \
+    macro(ArraySortCompact, NodeResultJS | NodeMustGenerate) \
+    macro(ArraySortCommit, NodeMustGenerate) \
     macro(NewInternalFieldObject, NodeResultJS) \
     macro(NewTypedArray, NodeResultJS | NodeMustGenerate) \
     macro(NewTypedArrayBuffer, NodeResultJS | NodeMustGenerate) \

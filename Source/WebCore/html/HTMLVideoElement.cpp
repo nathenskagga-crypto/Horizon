@@ -529,7 +529,7 @@ URL HTMLVideoElement::posterImageURL() const
     auto url = imageSourceURL().trim(isASCIIWhitespace);
     if (url.isEmpty())
         return URL();
-    return protect(document())->completeURL(url);
+    return protect(document())->completeURL(url, ScriptExecutionContext::ForceUTF8::No);
 }
 
 #if ENABLE(VIDEO_PRESENTATION_MODE)

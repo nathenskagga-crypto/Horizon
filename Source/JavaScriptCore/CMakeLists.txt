@@ -872,6 +872,7 @@ set(JavaScriptCore_PRIVATE_FRAMEWORK_HEADERS
     heap/WeakHandleOwner.h
     heap/WeakImpl.h
     heap/WeakInlines.h
+    heap/WeakInlinesLight.h
     heap/WeakSet.h
     heap/WeakSetInlines.h
 
@@ -1485,11 +1486,13 @@ set(JavaScriptCore_PRIVATE_FRAMEWORK_HEADERS
     runtime/WriteBarrierInlines.h
 
     runtime/temporal/core/CalendarArithmetic.h
+    runtime/temporal/core/CalendarICUBridge.h
     runtime/temporal/core/ISOArithmetic.h
     runtime/temporal/core/InstantCore.h
     runtime/temporal/core/Rounding.h
     runtime/temporal/core/TemporalCoreTypes.h
     runtime/temporal/core/TemporalEnums.h
+    runtime/temporal/core/TimeZoneICUBridge.h
 
     tools/Integrity.h
     tools/IntegrityInlines.h
@@ -1820,13 +1823,14 @@ endif ()
 
 WEBKIT_COMPUTE_SOURCES(JavaScriptCore)
 
-WEBKIT_DEFINE_SUBTARGET(JavaScriptCore JavaScriptCoreJIT
+WEBKIT_DEFINE_SUBTARGET_WITH_PREFIX(JavaScriptCore JavaScriptCoreJIT
     PREFIX JavaScriptCoreJITPrefix.h
+    PREFIX_LANGUAGES CXX
     DIRS jit dfg ftl bytecode bytecompiler llint lol tools)
 
 WEBKIT_FRAMEWORK(JavaScriptCore)
 
-WEBKIT_ADD_PREFIX_HEADER(JavaScriptCore JavaScriptCorePrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(JavaScriptCore JavaScriptCorePrefix.h PREFIX_LANGUAGES CXX)
 
 if (NOT "${PORT}" STREQUAL "Mac")
     if (${JavaScriptCore_LIBRARY_TYPE} STREQUAL "SHARED")

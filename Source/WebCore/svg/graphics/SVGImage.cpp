@@ -276,8 +276,8 @@ RefPtr<NativeImage> SVGImage::nativeImage(const FloatSize& size, const Destinati
     auto renderingMode = m_page->settings().acceleratedDrawingEnabled() ? RenderingMode::Accelerated : RenderingMode::Unaccelerated;
 
     HostWindow* hostWindow = nullptr;
-    if (CheckedPtr contentRenderer = embeddedContentBox())
-        hostWindow = contentRenderer->hostWindow();
+    if (CheckedPtr svgRoot = embeddedSVGRoot())
+        hostWindow = svgRoot->hostWindow();
 
     RefPtr imageBuffer = ImageBuffer::create(size, renderingMode, RenderingPurpose::DOM, 1, colorSpace, PixelFormat::BGRA8, hostWindow);
     if (!imageBuffer)
@@ -392,12 +392,12 @@ ImageDrawResult SVGImage::draw(GraphicsContext& context, const FloatRect& dstRec
     return ImageDrawResult::DidDraw;
 }
 
-RenderBox* SVGImage::embeddedContentBox() const
+RenderReplaced* SVGImage::embeddedSVGRoot() const
 {
     RefPtr rootElement = this->rootElement();
     if (!rootElement)
         return nullptr;
-    return downcast<RenderBox>(rootElement->renderer());
+    return downcast<RenderReplaced>(rootElement->renderer());
 }
 
 LocalFrameView* SVGImage::frameView() const

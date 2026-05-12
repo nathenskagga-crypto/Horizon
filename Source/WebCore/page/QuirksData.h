@@ -182,6 +182,7 @@ struct QuirksData {
         ShouldDispatchSimulatedMouseEventsAssumeDefaultPreventedQuirk,
 #if ENABLE(MEDIA_STREAM)
         ShouldEnableCameraAndMicrophonePermissionStateQuirk,
+        ShouldEnableCameraBackgroundPlayback,
         ShouldEnableEnumerateDeviceQuirk,
         ShouldEnableFacebookFlagQuirk,
 #endif

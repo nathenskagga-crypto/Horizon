@@ -97,8 +97,9 @@ public:
         RELEASE_ASSERT(key.condition().kind() == PropertyCondition::Equivalence);
     }
 
-
 private:
+    AdaptiveValuePropertyInlineCacheClearingWatchpoint(ClangVTableWorkaroundTag, WatchpointSet&);
+
     PolymorphicAccessJITStubRoutine* m_owner;
     const Ref<WatchpointSet> m_watchpointSet;
 };

@@ -1763,6 +1763,10 @@ public:
     void compileStrCat(Node*);
     void compileNewArrayBuffer(Node*);
     void compileNewButterflyWithSize(Node*);
+    void compileGetCellButterflySlot(Node*);
+    void compilePutCellButterflySlot(Node*);
+    void compileArraySortCompact(Node*);
+    void compileArraySortCommit(Node*);
     void compileNewArrayWithSize(Node*);
     void compileNewArrayWithButterfly(Node*);
     void compileNewArrayWithSpecies(Node*);

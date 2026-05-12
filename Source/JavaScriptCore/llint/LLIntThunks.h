@@ -121,6 +121,7 @@ MacroAssemblerCodeRef<JSEntryPtrTag> normalOSRExitTrampolineThunk();
 #if ENABLE(DFG_JIT)
 MacroAssemblerCodeRef<JSEntryPtrTag> checkpointOSRExitTrampolineThunk();
 MacroAssemblerCodeRef<JSEntryPtrTag> checkpointOSRExitFromInlinedCallTrampolineThunk();
+MacroAssemblerCodeRef<JSEntryPtrTag> arraySortComparatorReturnTrampolineThunk();
 MacroAssemblerCodeRef<JSEntryPtrTag> returnLocationThunk(OpcodeID, OpcodeSize);
 #endif
 

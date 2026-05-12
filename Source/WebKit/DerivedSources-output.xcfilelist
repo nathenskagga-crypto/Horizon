@@ -613,6 +613,7 @@ $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/TextStyleManager.swift
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/UIWindowScene+Extras.swift
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/USDModel.swift
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/WKApplicationUtilities.swift
+$(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/WKDeferringGestureRecognizerExtras.swift
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/WKIdentityDocumentPresentmentController.swift
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/WKIdentityDocumentPresentmentMobileDocumentRequest+Extras.swift
 $(BUILT_PRODUCTS_DIR)/DerivedSources/WebKit/WKIdentityDocumentPresentmentMobileDocumentRequest.swift

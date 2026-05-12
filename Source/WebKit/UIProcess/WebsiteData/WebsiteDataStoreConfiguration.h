@@ -76,6 +76,8 @@ public:
     void setTimeBasedEvictionThreshold(Seconds threshold) { m_timeBasedEvictionThreshold = threshold; }
     std::optional<Seconds> lastModificationTimeUpdateIntervalOverride() const { return m_lastModificationTimeUpdateIntervalOverride; }
     void setLastModificationTimeUpdateIntervalOverride(std::optional<Seconds> interval) { m_lastModificationTimeUpdateIntervalOverride = interval; }
+    std::optional<Seconds> timeBasedEvictionIntervalOverride() const { return m_timeBasedEvictionIntervalOverride; }
+    void setTimeBasedEvictionIntervalOverride(std::optional<Seconds> interval) { m_timeBasedEvictionIntervalOverride = interval; }
 
     std::optional<double> totalQuotaRatio() const { return m_totalQuotaRatio; }
     void setTotalQuotaRatio(std::optional<double> ratio) { m_totalQuotaRatio = ratio; }
@@ -313,6 +315,7 @@ private:
     bool m_timeBasedEvictionEnabled { false };
     Seconds m_timeBasedEvictionThreshold { 180 * 24_h };
     std::optional<Seconds> m_lastModificationTimeUpdateIntervalOverride;
+    std::optional<Seconds> m_timeBasedEvictionIntervalOverride;
     std::optional<double> m_totalQuotaRatio;
     std::optional<uint64_t> m_standardVolumeCapacity;
     std::optional<uint64_t> m_volumeCapacityOverride;

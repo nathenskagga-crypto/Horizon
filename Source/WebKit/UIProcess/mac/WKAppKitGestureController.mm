@@ -169,6 +169,7 @@ static WebCore::FloatSize toRawPlatformDelta(WebCore::FloatSize delta)
     bool _isClickHighlightIDValid;
     bool _hasHighlightForPotentialClick;
     bool _isExpectingFastClickCommit;
+    bool _isSuppressingSingleClickGestureForTextSelection;
 
     std::optional<WebKit::TransactionID> _layerTreeTransactionIdAtLastInteractionStart;
     Markable<WebKit::ClickIdentifier> _latestClickID;
@@ -298,12 +299,33 @@ static WebCore::FloatSize toRawPlatformDelta(WebCore::FloatSize delta)
     [gesture setEnabled:gestureEnabled];
 }
 
-- (void)cancelClick
+- (void)beginSuppressingSingleClickGestureForTextSelection
 {
-    [self _handleClickCancelled];
+    RefPtr page = _page.get();
+    if (!page) {
+        ASSERT_NOT_REACHED();
+        return;
+    }
 
-    if (RefPtr page = _page.get())
-        page->cancelPotentialClick();
+    WK_APPKIT_GESTURE_CONTROLLER_RELEASE_LOG(page->logIdentifier(), "Begin suppressing single-click gesture for text selection");
+
+    _isSuppressingSingleClickGestureForTextSelection = true;
+
+    [self _handleClickCancelled];
+    page->cancelPotentialClick();
+}
+
+- (void)endSuppressingSingleClickGestureForTextSelection
+{
+    RefPtr page = _page.get();
+    if (!page) {
+        ASSERT_NOT_REACHED();
+        return;
+    }
+
+    WK_APPKIT_GESTURE_CONTROLLER_RELEASE_LOG(page->logIdentifier(), "End suppressing single-click gesture for text selection");
+
+    _isSuppressingSingleClickGestureForTextSelection = false;
 }
 
 #pragma mark - Gesture Recognition
@@ -448,20 +470,35 @@ ALLOW_NEW_API_WITHOUT_GUARDS_END
 
 - (void)mouseTrackingGestureRecognized:(NSGestureRecognizer *)gesture
 {
-    if (_dragGestureHasSentMouseDown)
-        return;
-
     CheckedPtr viewImpl = _viewImpl.get();
-    if (!viewImpl)
+    if (!viewImpl) {
+        ASSERT_NOT_REACHED();
         return;
+    }
 
     RetainPtr webView = viewImpl->view();
-    if (!webView)
+    if (!webView) {
+        ASSERT_NOT_REACHED();
         return;
+    }
 
     RefPtr page = _page.get();
-    if (!page)
+    if (!page) {
+        ASSERT_NOT_REACHED();
         return;
+    }
+
+    WK_APPKIT_GESTURE_CONTROLLER_RELEASE_LOG(page->logIdentifier(), "%@", gesture);
+
+    if (_dragGestureHasSentMouseDown) {
+        WK_APPKIT_GESTURE_CONTROLLER_RELEASE_LOG(page->logIdentifier(), "Exiting early because _dragGestureHasSentMouseDown is true");
+        return;
+    }
+
+    if (_isSuppressingSingleClickGestureForTextSelection) {
+        WK_APPKIT_GESTURE_CONTROLLER_RELEASE_LOG(page->logIdentifier(), "Exiting early because _isSuppressingSingleClickGestureForTextSelection is true");
+        return;
+    }
 
     if (_mouseTrackingGestureRecognizer != gesture)
         return;
@@ -619,6 +656,9 @@ ALLOW_NEW_API_WITHOUT_GUARDS_END
 
 - (void)_handleClickBegan:(NSGestureRecognizer *)gesture
 {
+    if (_isSuppressingSingleClickGestureForTextSelection)
+        return;
+
     CheckedPtr viewImpl = _viewImpl.get();
     if (!viewImpl)
         return;
@@ -937,6 +977,7 @@ ALLOW_NEW_API_WITHOUT_GUARDS_END
     [self _handleClickCancelled];
     _mouseTrackingHasSentMouseDown = false;
     _isMomentumActive = false;
+    _isSuppressingSingleClickGestureForTextSelection = false;
     _latestClickID.reset();
     _layerTreeTransactionIdAtLastInteractionStart.reset();
 }

@@ -146,21 +146,7 @@ endforeach ()
 if (NOT _wka_found)
     message(WARNING "WebKitAdditions not found -- SPI headers referencing Additions will fail")
 endif ()
-set(_wka_found FALSE)
-set(_wka_cmake_paths
-    "${CMAKE_SOURCE_DIR}/../Internal/WebKit"
-    "${CMAKE_SOURCE_DIR}/WebKitBuild/Debug/usr/local/include"
-    "${CMAKE_SOURCE_DIR}/WebKitBuild/Release/usr/local/include"
-)
-foreach (_wka_path IN LISTS _wka_cmake_paths)
-    if (EXISTS "${_wka_path}/WebKitAdditions" AND NOT _wka_found)
-        set(WEBKIT_ADDITIONS_INCLUDE_PATH "${_wka_path}" CACHE PATH "WebKitAdditions include path" FORCE)
-        message(STATUS "WebKitAdditions (cmake): ${_wka_path}")
-        set(_wka_found TRUE)
-    endif ()
-endforeach ()
 unset(_wka_compile_paths)
-unset(_wka_cmake_paths)
 unset(_wka_found)
 
 if (CMAKE_OSX_SYSROOT)

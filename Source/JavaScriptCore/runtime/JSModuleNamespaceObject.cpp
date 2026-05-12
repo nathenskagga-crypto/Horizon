@@ -34,19 +34,11 @@ namespace JSC {
 
 const ClassInfo JSModuleNamespaceObject::s_info = { "ModuleNamespaceObject"_s, &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(JSModuleNamespaceObject) };
 
-JSModuleNamespaceObject::JSModuleNamespaceObject(VM& vm, Structure* structure)
+JSModuleNamespaceObject::JSModuleNamespaceObject(VM& vm, Structure* structure, AbstractModuleRecord* moduleRecord, Vector<std::pair<Identifier, AbstractModuleRecord::Resolution>>&& resolutions)
     : Base(vm, structure)
     , m_exports()
+    , m_moduleRecord(moduleRecord, WriteBarrierEarlyInit)
 {
-}
-
-void JSModuleNamespaceObject::finishCreation(JSGlobalObject* globalObject, AbstractModuleRecord* moduleRecord, Vector<std::pair<Identifier, AbstractModuleRecord::Resolution>>&& resolutions)
-{
-    VM& vm = globalObject->vm();
-    auto scope = DECLARE_THROW_SCOPE(vm);
-    Base::finishCreation(vm);
-    ASSERT(inherits(info()));
-
     // http://www.ecma-international.org/ecma-262/6.0/#sec-module-namespace-exotic-objects
     // Quoted from the spec:
     //     A List containing the String values of the exported names exposed as own properties of this object.
@@ -57,20 +49,20 @@ void JSModuleNamespaceObject::finishCreation(JSGlobalObject* globalObject, Abstr
         return StringView(resolution.first.impl());
     });
 
-    m_moduleRecord.set(vm, this, moduleRecord);
-    m_names = FixedVector<Identifier>(resolutions.size());
-    {
-        Locker locker { cellLock() };
-        unsigned index = 0;
-        for (const auto& pair : resolutions) {
-            m_names[index] = pair.first;
-            auto addResult = m_exports.add(pair.first.impl(), ExportEntry());
-            addResult.iterator->value.localName = pair.second.localName;
-            addResult.iterator->value.moduleRecord.set(vm, this, pair.second.moduleRecord);
-            ++index;
-        }
+    for (const auto& pair : resolutions) {
+        m_exports.add(pair.first.impl(), ExportEntry {
+            pair.second.localName,
+            WriteBarrier { pair.second.moduleRecord, WriteBarrierEarlyInit },
+        });
     }
+}
 
+void JSModuleNamespaceObject::finishCreation(JSGlobalObject* globalObject)
+{
+    VM& vm = globalObject->vm();
+    auto scope = DECLARE_THROW_SCOPE(vm);
+    Base::finishCreation(vm);
+    ASSERT(inherits(info()));
     putDirect(vm, vm.propertyNames->toStringTagSymbol, jsNontrivialString(vm, "Module"_s), PropertyAttribute::DontEnum | PropertyAttribute::DontDelete | PropertyAttribute::ReadOnly);
 
     // http://www.ecma-international.org/ecma-262/6.0/#sec-module-namespace-exotic-objects-getprototypeof
@@ -94,11 +86,8 @@ void JSModuleNamespaceObject::visitChildrenImpl(JSCell* cell, Visitor& visitor)
     ASSERT_GC_OBJECT_INHERITS(thisObject, info());
     Base::visitChildren(thisObject, visitor);
     visitor.append(thisObject->m_moduleRecord);
-    {
-        Locker locker { thisObject->cellLock() };
-        for (auto& pair : thisObject->m_exports)
-            visitor.appendHidden(pair.value.moduleRecord);
-    }
+    for (auto& entry : thisObject->m_exports.values())
+        visitor.appendHidden(entry.moduleRecord);
 }
 
 DEFINE_VISIT_CHILDREN(JSModuleNamespaceObject);
@@ -237,14 +226,14 @@ void JSModuleNamespaceObject::getOwnPropertyNames(JSObject* cell, JSGlobalObject
 
     // https://tc39.es/ecma262/#sec-module-namespace-exotic-objects-ownpropertykeys
     JSModuleNamespaceObject* thisObject = uncheckedDowncast<JSModuleNamespaceObject>(cell);
-    for (const auto& name : thisObject->m_names) {
+    for (const auto& name : thisObject->m_exports.keys()) {
         if (mode == DontEnumPropertiesMode::Exclude) {
             // Perform [[GetOwnProperty]] to throw ReferenceError if binding is uninitialized.
             PropertySlot slot(cell, PropertySlot::InternalMethodType::GetOwnProperty);
-            thisObject->getOwnPropertySlotCommon(globalObject, name.impl(), slot);
+            thisObject->getOwnPropertySlotCommon(globalObject, name.get(), slot);
             RETURN_IF_EXCEPTION(scope, void());
         }
-        propertyNames.add(name.impl());
+        propertyNames.add(name);
     }
     if (propertyNames.includeSymbolProperties()) {
         scope.release();

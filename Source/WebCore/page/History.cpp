@@ -276,7 +276,7 @@ ExceptionOr<void> History::stateObjectAdded(RefPtr<SerializedScriptValue>&& data
     };
 
     if (!urlString.isEmpty()) {
-        fullURL = document->completeURL(urlString);
+        fullURL = document->completeURL(urlString, ScriptExecutionContext::ForceUTF8::No);
         if (!fullURL.isValid())
             return createBlockedURLSecurityErrorWithMessageSuffix("URL is invalid"_s);
 

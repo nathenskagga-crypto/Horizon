@@ -91,12 +91,15 @@ RenderSVGViewportContainer* RenderSVGRoot::viewportContainer() const
 
 bool RenderSVGRoot::hasIntrinsicAspectRatio() const
 {
-    return computeIntrinsicAspectRatio();
+    return preferredAspectRatioAsSize().aspectRatioDouble();
 }
 
 FloatSize RenderSVGRoot::computeIntrinsicSize() const
 {
-    ASSERT_IMPLIES(view().frameView().layoutContext().isInRenderTreeLayout(), !shouldApplySizeContainment());
+    // Size containment suppresses intrinsic dimensions from content.
+    // The base class returns values from the cache / contain-intrinsic-size without querying image data.
+    if (shouldApplySizeOrInlineSizeContainment())
+        return { intrinsicLogicalWidth(), intrinsicLogicalHeight() };
     // https://www.w3.org/TR/SVG/coords.html#IntrinsicSizing
     FloatSize intrinsicSize = { svgSVGElement().intrinsicWidth(), svgSVGElement().intrinsicHeight() };
     // Transpose for vertical writing mode
@@ -105,9 +108,13 @@ FloatSize RenderSVGRoot::computeIntrinsicSize() const
     return intrinsicSize;
 }
 
-FloatSize RenderSVGRoot::preferredAspectRatio() const
+FloatSize RenderSVGRoot::preferredAspectRatioAsSize() const
 {
-    ASSERT(!shouldApplySizeContainment());
+    // Size containment suppresses intrinsic dimensions from content, but the
+    // aspect ratio from the CSS aspect-ratio property is still available via the
+    // base class (which doesn't query image data).
+    if (shouldApplySizeOrInlineSizeContainment())
+        return RenderReplaced::preferredAspectRatioAsSize();
 
     if (style().aspectRatio().isRatio())
         return FloatSize::narrowPrecision(style().aspectRatioLogicalWidth().value, style().aspectRatioLogicalHeight().value);
@@ -132,7 +139,6 @@ FloatSize RenderSVGRoot::preferredAspectRatio() const
     if (style().aspectRatio().isAutoAndRatio())
         return FloatSize::narrowPrecision(style().aspectRatioLogicalWidth().value, style().aspectRatioLogicalHeight().value);
     return { };
-
 }
 
 bool RenderSVGRoot::isEmbeddedThroughSVGImage() const

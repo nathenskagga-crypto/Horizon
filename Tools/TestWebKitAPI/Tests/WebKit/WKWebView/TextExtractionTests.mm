@@ -381,7 +381,7 @@ TEST(TextExtractionTests, InteractionResultSummary)
         [interaction setNodeIdentifier:testButtonID.get()];
         RetainPtr result = [webView synchronouslyPerformInteraction:interaction.get()];
         EXPECT_NULL([result error]);
-        EXPECT_WK_STREQ("Click on button labeled “Click Me” with id “test-button”, with rendered text “Test”", [result summary]);
+        EXPECT_WK_STREQ("Clicked on button labeled “Click Me” with id “test-button”, with rendered text “Test”", [result summary]);
     }
     {
         RetainPtr interaction = adoptNS([[_WKTextExtractionInteraction alloc] initWithAction:_WKTextExtractionActionTextInput]);
@@ -405,7 +405,7 @@ TEST(TextExtractionTests, InteractionResultSummary)
         [interaction setText:@"Subject"];
         RetainPtr result = [webView synchronouslyPerformInteraction:interaction.get()];
         EXPECT_NULL([result error]);
-        EXPECT_WK_STREQ("Click on “Subject” in child node of editable h3 labeled “Heading”, with rendered text “Subject”", [result summary]);
+        EXPECT_WK_STREQ("Clicked on “Subject” in child node of editable h3 labeled “Heading”, with rendered text “Subject”", [result summary]);
     }
     {
         RetainPtr interaction = adoptNS([[_WKTextExtractionInteraction alloc] initWithAction:_WKTextExtractionActionClick]);

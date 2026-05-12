@@ -739,6 +739,9 @@ void JSModuleLoader::innerModuleLoading(JSGlobalObject* globalObject, ModuleGrap
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
 
+    checkSafeToRecurse(globalObject, scope);
+    RETURN_IF_EXCEPTION(scope, void());
+
     // 1. Assert: state.[[IsLoading]] is true.
     ASSERT(state->isLoading());
     // 2. If module is a Cyclic Module Record, module.[[Status]] is NEW, and state.[[Visited]] does not contain module, then
@@ -757,8 +760,6 @@ void JSModuleLoader::innerModuleLoading(JSGlobalObject* globalObject, ModuleGrap
             // (Not possible.)
             // 2.d.ii. Else if module.[[LoadedModules]] contains a LoadedModuleRequest Record record such that ModuleRequestsEqual(record, request) is true, then
             if (auto iter = module->loadedModules().find(ModuleMapKey { request.m_specifier.impl(), request.type() }); iter != module->loadedModules().end()) {
-                checkSafeToRecurse(globalObject, scope);
-                RETURN_IF_EXCEPTION(scope, void());
                 // 2.d.ii.1. Perform InnerModuleLoading(state, record.[[Module]]).
                 innerModuleLoading(globalObject, state, iter->value.m_module.get());
                 RETURN_IF_EXCEPTION(scope, void());

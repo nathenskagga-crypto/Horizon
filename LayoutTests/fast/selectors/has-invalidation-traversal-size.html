@@ -46,6 +46,18 @@
 .c21 div:is(.other:has(.trigger)) .target { color: green; }
 /* Scope selector has no matching ancestor - invalidation is skipped entirely */
 .c22:has(.trigger22) .target { color: green; }
+/* Scope-bounded traversal for id change invalidation */
+.c23:has(#trigger23) .target { color: green; }
+/* Scope-bounded traversal for attribute change invalidation */
+.c24:has([data-trigger24]) .target { color: green; }
+/* Scope-bounded traversal for pseudo-class change invalidation */
+.c25:has(:checked) .target { color: green; }
+/* Scope-bounded class change with matching ancestor - bounded to .c26 subtree */
+.c26:has(.trigger26) .target { color: green; }
+/* Scope-bounded attribute change with matching ancestor - bounded to .c28 subtree */
+.c28:has([data-trigger28]) .target { color: green; }
+/* Scope-bounded pseudo-class change with matching ancestor - bounded to .c29 subtree */
+.c29:has(:checked) .target { color: green; }
 </style>
 <script>
 if (window.testRunner)
@@ -252,6 +264,69 @@ runTest(".c22:has(.trigger22) .target with no .c22 ancestor - skip invalidation"
     trigger.className = "trigger22";
     container.appendChild(trigger);
 }, false);
+
+runTest(".c22:has(.trigger22) .target class toggle with no .c22 ancestor - skip invalidation", null, function(existing) {
+    existing.className = "trigger22";
+}, false, { setup: function(container) {
+    // Pre-insert a class-less element; toggling .trigger22 on it exercises ClassChangeInvalidation
+    // without triggering invalidation from removing another class (like .other) used elsewhere.
+    var existing = document.createElement("div");
+    container.appendChild(existing);
+    return existing;
+} });
+
+runTest(".c23:has(#trigger23) .target id toggle with no .c23 ancestor - skip invalidation", null, function(existing) {
+    existing.id = "trigger23";
+}, false, { setup: function(container) {
+    var existing = document.createElement("div");
+    container.appendChild(existing);
+    return existing;
+} });
+
+runTest(".c24:has([data-trigger24]) .target attribute toggle with no .c24 ancestor - skip invalidation", null, function(existing) {
+    existing.setAttribute("data-trigger24", "");
+}, false, { setup: function(container) {
+    var existing = document.createElement("div");
+    container.appendChild(existing);
+    return existing;
+} });
+
+runTest(".c25:has(:checked) .target pseudo-class toggle with no .c25 ancestor - skip invalidation", null, function(existing) {
+    existing.checked = true;
+}, false, { setup: function(container) {
+    var existing = document.createElement("input");
+    existing.type = "checkbox";
+    container.appendChild(existing);
+    return existing;
+} });
+
+// The following cases exercise the same *ChangeInvalidation entry points when the scope
+// selector does match an ancestor. Without scope wired these would traverse document-wide;
+// with scope they are bounded to the .c26/28/29 subtree.
+runTest(".c26:has(.trigger26) .target class toggle with .c26 ancestor - bounded invalidation", "c26", function(existing) {
+    existing.className = "trigger26";
+}, true, { setup: function(container) {
+    var existing = document.createElement("div");
+    container.appendChild(existing);
+    return existing;
+} });
+
+runTest(".c28:has([data-trigger28]) .target attribute toggle with .c28 ancestor - bounded invalidation", "c28", function(existing) {
+    existing.setAttribute("data-trigger28", "");
+}, true, { setup: function(container) {
+    var existing = document.createElement("div");
+    container.appendChild(existing);
+    return existing;
+} });
+
+runTest(".c29:has(:checked) .target pseudo-class toggle with .c29 ancestor - bounded invalidation", "c29", function(existing) {
+    existing.checked = true;
+}, true, { setup: function(container) {
+    var existing = document.createElement("input");
+    existing.type = "checkbox";
+    container.appendChild(existing);
+    return existing;
+} });
 </script>
 </script>
 </body>

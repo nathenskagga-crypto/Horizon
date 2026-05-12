@@ -104,8 +104,17 @@ JSC_DEFINE_NOEXCEPT_JIT_OPERATION(operationPopulateObjectInOSR, void, (JSGlobalO
             // double-to-contiguous conversion. This is safe because values written to sunk double
             // arrays use DoubleRepRealUse (proven non-NaN), so any NaN here must be the hole
             // sentinel and is not user-visible.
+            //
+            // The analogous case for Int32/Contiguous arrays: an unwritten element's Phi resolves
+            // to the empty JSValue, which is the hole sentinel for these indexing types. For Int32
+            // arrays, putDirectIndex would spuriously convert the array to Contiguous because the
+            // empty JSValue is not an Int32. Contiguous is also handled here for the debug ASSERT
+            // in putDirectIndex that null-derefs on the empty JSValue. Write directly into the
+            // butterfly to preserve the indexing type.
             if (hasDouble(array->indexingType()) && value.isNumber() && std::isnan(value.asNumber())) [[unlikely]]
                 array->butterfly()->contiguousDouble().atUnsafe(index) = PNaN;
+            else if ((hasInt32(array->indexingType()) || hasContiguous(array->indexingType())) && !value) [[unlikely]]
+                array->butterfly()->contiguous().atUnsafe(index).setStartingValue(JSValue());
             else
                 array->putDirectIndex(globalObject, index, value);
 

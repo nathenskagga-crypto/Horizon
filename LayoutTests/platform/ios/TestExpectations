@@ -3026,6 +3026,7 @@ fast/mediastream/getDisplayMedia-max-constraints5.html [ Skip ]
 webkit.org/b/263466 fast/mediastream/getDisplayMedia-max-constraints4.html [ Failure ]
 webrtc/getDisplayMedia-pc.html [ Skip ]
 webrtc/getDisplayMedia-odd-size.html [ Skip ]
+webrtc/getDisplayMedia-pc-resolution.html [ Skip ]
 
 fast/mediastream/getDisplayMedia-size.html [ Skip ]
 
@@ -3146,7 +3147,6 @@ webkit.org/b/181838 js/slow-stress/Int32Array-alloc-huge-long-lived.html [ Slow 
 
 webkit.org/b/182592 webgl/webgl-texture-image-buffer-reuse.html [ Skip ]
 
-webkit.org/b/183219 editing/pasteboard/data-transfer-get-data-on-pasting-html-uses-blob-url.html [ Skip ]
 editing/pasteboard/paste-image-as-blob-url.html [ Skip ]
 
 [ Debug ] imported/w3c/web-platform-tests/hr-time/idlharness.any.html [ Slow ]
@@ -6637,6 +6637,7 @@ webkit.org/b/228114 imported/w3c/web-platform-tests/fetch/content-type/script.wi
 webkit.org/b/230418 imported/w3c/web-platform-tests/fetch/data-urls/base64.any.worker.html [ Pass Crash ]
 
 # These are timing out.
+imported/w3c/web-platform-tests/fetch/content-type/response.window.html [ Skip ]
 webkit.org/b/247632 imported/w3c/web-platform-tests/fetch/metadata/generated/element-a.sub.html [ Skip ]
 webkit.org/b/247632 imported/w3c/web-platform-tests/fetch/metadata/generated/element-area.sub.html [ Skip ]
 webkit.org/b/247632 imported/w3c/web-platform-tests/fetch/metadata/generated/element-meta-refresh.optional.sub.html [ Skip ]
@@ -8521,8 +8522,6 @@ webkit.org/b/304995 [ Release ] imported/w3c/web-platform-tests/largest-contentf
 
 webkit.org/b/305404 imported/w3c/web-platform-tests/css/css-text-decor/text-emphasis-position-auto-001.html [ Pass ImageOnlyFailure ]
 
-webkit.org/b/305508 http/tests/resourceLoadStatistics/log-cross-site-load-with-link-decoration.html [ Pass Failure ]
-
 webkit.org/b/309370 fast/css/vertical-text-overflow-ellipsis-text-align-center.html [ Failure Pass ]
 
 webkit.org/b/305605 media/volume-sleep-disable.html [ Failure ]
@@ -8623,6 +8622,8 @@ webkit.org/b/312120 imported/w3c/web-platform-tests/credential-management/creden
 # rdar://173890240 ([iOS] imported/w3c/web-platform-tests/css/css-images/gradient/gradient-analogous-missing-components-003.html has 2 component pixel difference)
 imported/w3c/web-platform-tests/css/css-images/gradient/gradient-analogous-missing-components-003.html [ Pass ImageOnlyFailure ]
 
+webkit.org/b/314560 http/tests/site-isolation/compositing/iframes/resize-from-zero-size.html [ Pass Failure ]
+
 # webkit.org/b/312385 NEW TEST (311246@main): [iOS] 7 tests in imported/w3c/web-platform-tests/html/semantics/popovers/ are failing
 imported/w3c/web-platform-tests/html/semantics/popovers/popover-focus-inside-slot.html [ Skip ]
 imported/w3c/web-platform-tests/html/semantics/popovers/popover-focus-overflow-visible.html [ Skip ]
@@ -8638,3 +8639,7 @@ webgl/webgl2-provoking-vertex-primitive-restart-uint16-nocrash.html [ Skip ]
 webkit.org/b/314022 [ Release ] fast/scrolling/ios/iframe-scroll-into-view.html [ Pass ImageOnlyFailure ]
 
 webkit.org/b/314216 imported/w3c/web-platform-tests/css/css-position/fixed-z-index-blend.html [ Pass ImageOnlyFailure ]
+
+# iOS UA stylesheet has :checked form-control rules that add self-invalidation, changing
+# traversal counts compared to macOS.
+fast/selectors/has-invalidation-traversal-size.html [ Skip ]

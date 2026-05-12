@@ -73,10 +73,10 @@ set(WebGPU_WGSL_SOURCES
 
 add_library(WebGPU SHARED ${WebGPU_SOURCES} ${WebGPU_WGSL_SOURCES})
 
-# WebGPU compiles all sources (including .cpp) as ObjC++ via the -ObjC++ flag
-# below; mark the WGSL .cpp sources as OBJCXX so the precompiled header agrees.
+# WGSL .cpp sources compile as ObjC++ via LANGUAGE OBJCXX so they share the
+# OBJCXX precompiled header with the .mm sources.
 set_source_files_properties(${WebGPU_WGSL_SOURCES} PROPERTIES LANGUAGE OBJCXX)
-WEBKIT_ADD_PREFIX_HEADER(WebGPU WebGPUPrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(WebGPU WebGPUPrefix.h PREFIX_LANGUAGES OBJCXX)
 
 set_target_properties(WebGPU PROPERTIES
     FRAMEWORK TRUE
@@ -124,7 +124,7 @@ target_compile_definitions(WebGPU PRIVATE
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cmakeconfig.h "")
 target_include_directories(WebGPU PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-target_compile_options(WebGPU PRIVATE "-ObjC++" -std=c++2b -fobjc-arc)
+target_compile_options(WebGPU PRIVATE -std=c++2b -fobjc-arc)
 
 set(WebGPU_FRAMEWORK_HEADERS_DIR "${CMAKE_BINARY_DIR}/WebGPU/Headers")
 file(MAKE_DIRECTORY ${WebGPU_FRAMEWORK_HEADERS_DIR}/WebGPU)

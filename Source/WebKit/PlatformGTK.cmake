@@ -515,7 +515,7 @@ endif ()
 
 # Commands for building the built-in injected bundle.
 add_library(webkit${WEBKITGTK_API_INFIX}gtkinjectedbundle MODULE "${WEBKIT_DIR}/WebProcess/InjectedBundle/API/glib/WebKitInjectedBundleMain.cpp")
-WEBKIT_ADD_PREFIX_HEADER(webkit${WEBKITGTK_API_INFIX}gtkinjectedbundle WebKitPrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(webkit${WEBKITGTK_API_INFIX}gtkinjectedbundle WebKitPrefix.h PREFIX_LANGUAGES CXX)
 target_link_libraries(webkit${WEBKITGTK_API_INFIX}gtkinjectedbundle WebKit)
 
 target_include_directories(webkit${WEBKITGTK_API_INFIX}gtkinjectedbundle PRIVATE

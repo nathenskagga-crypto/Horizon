@@ -188,7 +188,7 @@ void ServiceWorkerContainer::addRegistration(Variant<Ref<TrustedScriptURL>, Stri
     ServiceWorkerJobData jobData(protect(ensureSWClientConnection())->serverConnectionIdentifier(), contextIdentifier());
 
     Ref context = *scriptExecutionContext();
-    jobData.scriptURL = context->completeURL(trustedRelativeScriptURL);
+    jobData.scriptURL = context->completeURL(trustedRelativeScriptURL, ScriptExecutionContext::ForceUTF8::No);
 
     RefPtr document = dynamicDowncast<Document>(context);
     CheckedPtr contentSecurityPolicy = document ? document->contentSecurityPolicy() : nullptr;
@@ -224,7 +224,7 @@ void ServiceWorkerContainer::addRegistration(Variant<Ref<TrustedScriptURL>, Stri
     }
 
     if (!options.scope.isEmpty())
-        jobData.scopeURL = context->completeURL(options.scope);
+        jobData.scopeURL = context->completeURL(options.scope, ScriptExecutionContext::ForceUTF8::No);
     else
         jobData.scopeURL = URL(jobData.scriptURL, "./"_s);
 
@@ -333,7 +333,7 @@ void ServiceWorkerContainer::getRegistration(const String& clientURL, Ref<Deferr
     }
 
     Ref context = *scriptExecutionContext();
-    URL parsedURL = context->completeURL(clientURL);
+    URL parsedURL = context->completeURL(clientURL, ScriptExecutionContext::ForceUTF8::No);
     if (!protocolHostAndPortAreEqual(parsedURL, context->url())) {
         promise->reject(Exception { ExceptionCode::SecurityError, "Origin of clientURL is not client's origin"_s });
         return;

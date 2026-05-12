@@ -4119,7 +4119,7 @@ void Document::implicitOpen()
 
 RefPtr<FontLoadRequest> Document::fontLoadRequest(const String& url, bool isSVG, bool isInitiatingElementInUserAgentShadowTree, LoadedFromOpaqueSource loadedFromOpaqueSource)
 {
-    RefPtr cachedFont = protect(fontLoader())->cachedFont(completeURL(url), isSVG, isInitiatingElementInUserAgentShadowTree, loadedFromOpaqueSource);
+    RefPtr cachedFont = protect(fontLoader())->cachedFont(completeURL(url, ForceUTF8::No), isSVG, isInitiatingElementInUserAgentShadowTree, loadedFromOpaqueSource);
     if (!cachedFont)
         return nullptr;
     return CachedFontLoadRequest::create(*cachedFont, *this);
@@ -4895,7 +4895,7 @@ void Document::processBaseElement()
 
     URL baseElementURL;
     if (!href.isNull())
-        baseElementURL = completeURL(href, fallbackBaseURL());
+        baseElementURL = completeURL(href, fallbackBaseURL(), ForceUTF8::No);
     if (m_baseElementURL != baseElementURL) {
         if (settings().shouldRestrictBaseURLSchemes() && !baseElementURL.isEmpty() && !baseElementURL.isValid()) {
             m_baseElementURL = { };

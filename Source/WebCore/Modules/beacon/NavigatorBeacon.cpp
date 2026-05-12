@@ -111,7 +111,7 @@ void NavigatorBeacon::logError(const ResourceError& error)
 
 ExceptionOr<bool> NavigatorBeacon::sendBeacon(Document& document, const String& url, std::optional<FetchBody::Init>&& body)
 {
-    URL parsedUrl = document.completeURL(url);
+    URL parsedUrl = document.completeURL(url, ScriptExecutionContext::ForceUTF8::No);
 
     // Set parsedUrl to the result of the URL parser steps with url and base. If the algorithm returns an error, or if
     // parsedUrl's scheme is not "http" or "https", throw a "TypeError" exception and terminate these steps.

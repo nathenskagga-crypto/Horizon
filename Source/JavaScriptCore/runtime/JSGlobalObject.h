@@ -536,6 +536,7 @@ public:
     InlineWatchpointSet m_numberToStringWatchpointSet { IsWatched };
     InlineWatchpointSet m_stringToStringWatchpointSet { IsWatched };
     InlineWatchpointSet m_stringValueOfWatchpointSet { IsWatched };
+    InlineWatchpointSet m_objectPrototypeValueOfWatchpointSet { IsWatched };
     InlineWatchpointSet m_structureCacheClearedWatchpointSet { IsWatched };
     InlineWatchpointSet m_arrayBufferSpeciesWatchpointSet { ClearWatchpoint };
     InlineWatchpointSet m_sharedArrayBufferSpeciesWatchpointSet { ClearWatchpoint };
@@ -593,6 +594,7 @@ public:
     InlineWatchpointSet& arraySymbolToPrimitiveWatchpointSet() LIFETIME_BOUND { return m_arraySymbolToPrimitiveWatchpointSet; }
     InlineWatchpointSet& stringToStringWatchpointSet() LIFETIME_BOUND { return m_stringToStringWatchpointSet; }
     InlineWatchpointSet& stringValueOfWatchpointSet() LIFETIME_BOUND { return m_stringValueOfWatchpointSet; }
+    InlineWatchpointSet& objectPrototypeValueOfWatchpointSet() LIFETIME_BOUND { return m_objectPrototypeValueOfWatchpointSet; }
     InlineWatchpointSet& regExpPrimordialPropertiesWatchpointSet() LIFETIME_BOUND { return m_regExpPrimordialPropertiesWatchpointSet; }
     InlineWatchpointSet& mapSetWatchpointSet() LIFETIME_BOUND { return m_mapSetWatchpointSet; }
     InlineWatchpointSet& setAddWatchpointSet() LIFETIME_BOUND { return m_setAddWatchpointSet; }

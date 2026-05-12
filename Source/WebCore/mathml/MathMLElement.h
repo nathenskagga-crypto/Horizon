@@ -86,6 +86,7 @@ private:
     bool NODELETE allowsHref() const;
     bool supportsFocus() const final;
     int defaultTabIndex() const final;
+    Node::NeedsPostConnectionSteps insertionSteps(InsertionType, ContainerNode& parentOfInsertedTree) final;
 };
 
 inline bool Node::hasTagName(const MathMLQualifiedName& name) const

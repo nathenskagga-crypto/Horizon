@@ -3839,6 +3839,27 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
         clearForNode(node);
         break;
 
+    case GetCellButterflySlot:
+        switch (node->arrayMode().type()) {
+        case Array::Int32:
+            setNonCellTypeForNode(node, SpecInt32Only);
+            break;
+        default:
+            makeBytecodeTopForNode(node);
+            break;
+        }
+        break;
+
+    case PutCellButterflySlot:
+        break;
+
+    case ArraySortCompact:
+        setTypeForNode(node, SpecObjectOther);
+        break;
+
+    case ArraySortCommit:
+        break;
+
     case MaterializeNewArrayWithButterfly: {
 #if ASSERT_ENABLED
         SpeculatedType validTypes = [&]() {

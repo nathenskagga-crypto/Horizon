@@ -805,6 +805,55 @@ static std::optional<TimeZoneRecord> parseTimeZone(StringParsingBuffer<Character
     }
 }
 
+// parseTimeZoneForIdentifier — like parseTimeZone but restricts inline offsets to ±HH:MM (no sub-minute).
+// Used for TemporalTimeZoneString parsing per Stage 4 spec.
+template<typename CharacterType>
+static std::optional<TimeZoneRecord> parseTimeZoneForIdentifier(StringParsingBuffer<CharacterType>& buffer)
+{
+    if (buffer.atEnd())
+        return std::nullopt;
+    switch (static_cast<char16_t>(*buffer)) {
+    // UTCDesignator
+    // https://tc39.es/proposal-temporal/#prod-UTCDesignator
+    case 'z':
+    case 'Z': {
+        buffer.advance();
+        if (!buffer.atEnd() && *buffer == '[' && canBeTimeZone(buffer, *buffer)) {
+            auto timeZone = parseTimeZoneAnnotation(buffer);
+            if (!timeZone)
+                return std::nullopt;
+            return TimeZoneRecord { true, std::nullopt, WTF::move(timeZone.value()) };
+        }
+        return TimeZoneRecord { true, std::nullopt, { } };
+    }
+    // TimeZoneUTCOffsetSign
+    // https://tc39.es/proposal-temporal/#prod-TimeZoneUTCOffsetSign
+    case '+':
+    case '-': {
+        auto offset = parseUTCOffset(buffer, false);
+        if (!offset)
+            return std::nullopt;
+        if (!buffer.atEnd() && *buffer == '[' && canBeTimeZone(buffer, *buffer)) {
+            auto timeZone = parseTimeZoneAnnotation(buffer);
+            if (!timeZone)
+                return std::nullopt;
+            return TimeZoneRecord { false, offset.value(), WTF::move(timeZone.value()) };
+        }
+        return TimeZoneRecord { false, offset.value(), { } };
+    }
+    // TimeZoneAnnotation
+    // https://tc39.es/proposal-temporal/#prod-TimeZoneAnnotation
+    case '[': {
+        auto timeZone = parseTimeZoneAnnotation(buffer);
+        if (!timeZone)
+            return std::nullopt;
+        return TimeZoneRecord { false, std::nullopt, WTF::move(timeZone.value()) };
+    }
+    default:
+        return std::nullopt;
+    }
+}
+
 template<typename CharacterType>
 static std::optional<RFC9557Annotation> parseOneRFC9557Annotation(StringParsingBuffer<CharacterType>& buffer)
 {
@@ -1981,6 +2030,68 @@ PlainDate createISODateRecord(double year, double month, double day)
 {
     ASSERT(isValidISODate(year, month, day));
     return PlainDate(year, month, day);
+}
+
+// temporal_rs: TimeZone::try_from_str (src/builtins/core/time_zone.rs)
+// https://tc39.es/proposal-temporal/#sec-temporal-parsetemporaltimezonestring
+std::optional<TimeZone> parseTemporalTimeZoneIdentifier(StringView string)
+{
+    // 1. Let parseResult be ParseText(StringToCodePoints(timeZoneString), TimeZoneIdentifier).
+    // 2. If parseResult is a Parse Node, return ! ParseTimeZoneIdentifier(timeZoneString).
+    if (auto offset = parseUTCOffset(string, false))
+        return TimeZone::fromUTCOffset(*offset);
+    if (auto tzId = parseTimeZoneName(string))
+        return TimeZone::fromID(*tzId);
+
+    // 3. Let result be ? ParseISODateTime(timeZoneString, ...).
+    return readCharactersForParsing(string, [](auto buffer) -> std::optional<TimeZone> {
+        auto plainDate = parseDate(buffer, TemporalDateFormat::Date);
+        if (!plainDate)
+            return std::nullopt;
+
+        if (!buffer.atEnd() && (*buffer == 'T' || *buffer == 't' || *buffer == ' ')) {
+            buffer.advance();
+            auto plainTime = parseTimeSpec(buffer, Second60Mode::Accept);
+            if (!plainTime)
+                return std::nullopt;
+        }
+
+        if (buffer.atEnd() || !canBeTimeZone(buffer, *buffer))
+            return std::nullopt;
+
+        auto tzRecord = parseTimeZoneForIdentifier(buffer);
+        if (!tzRecord)
+            return std::nullopt;
+
+        if (!buffer.atEnd() && canBeRFC9557Annotation(buffer)) {
+            auto calendars = parseCalendar(buffer);
+            if (!calendars)
+                return std::nullopt;
+        }
+
+        if (!buffer.atEnd())
+            return std::nullopt;
+
+        // 4. Let timeZoneResult be result.[[TimeZone]].
+        // 5. If timeZoneResult.[[TimeZoneAnnotation]] is not ~empty~, return ! ParseTimeZoneIdentifier(timeZoneResult.[[TimeZoneAnnotation]]).
+        auto& nameOrOffset = tzRecord->m_nameOrOffset;
+        if (std::holds_alternative<int64_t>(nameOrOffset))
+            return TimeZone::fromUTCOffset(std::get<int64_t>(nameOrOffset));
+        auto& name = std::get<Vector<Latin1Character>>(nameOrOffset);
+        if (!name.isEmpty()) {
+            if (auto tzId = parseTimeZoneName(StringView(name.span())))
+                return TimeZone::fromID(*tzId);
+            return std::nullopt;
+        }
+        // 6. If timeZoneResult.[[Z]] is true, return ! ParseTimeZoneIdentifier("UTC").
+        if (tzRecord->m_z)
+            return TimeZone::fromUTCOffset(0);
+        // 7. If timeZoneResult.[[OffsetString]] is not ~empty~, return ? ParseTimeZoneIdentifier(timeZoneResult.[[OffsetString]]).
+        if (tzRecord->m_offset)
+            return TimeZone::fromUTCOffset(*tzRecord->m_offset);
+        // 8. Throw a RangeError exception.
+        return std::nullopt;
+    });
 }
 
 } // namespace ISO8601

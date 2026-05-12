@@ -103,6 +103,7 @@ enum class WebKit::AllowsCellularAccess : bool;
     bool shouldPerformTimeBasedEviction;
     Seconds timeBasedEvictionThreshold;
     std::optional<Seconds> lastModificationTimeUpdateIntervalOverride;
+    std::optional<Seconds> timeBasedEvictionIntervalOverride;
 #if ENABLE(DECLARATIVE_WEB_PUSH)
     bool isDeclarativeWebPushEnabled;
 #endif

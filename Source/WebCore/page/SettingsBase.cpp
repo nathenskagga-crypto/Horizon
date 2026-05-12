@@ -26,28 +26,21 @@
 #include "config.h"
 #include "SettingsBase.h"
 
-#include "AudioSession.h"
 #include "BackForwardCache.h"
-#include "BackForwardController.h"
 #include "Chrome.h"
 #include "ChromeClient.h"
 #include "DOMTimer.h"
-#include "Database.h"
 #include "DocumentResourceLoader.h"
 #include "DocumentView.h"
 #include "FontCache.h"
 #include "FrameTree.h"
-#include "HistoryItem.h"
 #include "LocalFrame.h"
 #include "LocalFrameView.h"
 #include "Page.h"
 #include "RenderObjectInlines.h"
 #include "RenderWidget.h"
 #include "Settings.h"
-#include "StorageMap.h"
 #include "SystemFontDatabase.h"
-#include <limits>
-#include <wtf/RuntimeApplicationChecks.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/TZoneMallocInlines.h>
 

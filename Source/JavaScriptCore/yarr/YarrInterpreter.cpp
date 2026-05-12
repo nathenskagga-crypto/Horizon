@@ -646,10 +646,14 @@ public:
                 return false;
         }
 
+        unsigned savedPos = input.getPos();
+
         for (unsigned i = 0; i < matchSize; ++i) {
             unsigned negativeInputOffset = term.inputPosition + matchSize - i;
-            if (term.matchDirection() == Backward && negativeInputOffset > input.getPos())
+            if (term.matchDirection() == Backward && negativeInputOffset > input.getPos()) {
+                input.setPos(savedPos);
                 return false;
+            }
 
             char32_t oldCh = input.reread(matchBegin + i);
             char32_t ch;
@@ -659,8 +663,11 @@ public:
             } else
                 ch = term.matchDirection() == Forward ? input.readCheckedDontAdvance(negativeInputOffset) : input.tryReadBackward(negativeInputOffset);
 
-            if (oldCh == errorCodePoint || ch == errorCodePoint)
+            if (oldCh == errorCodePoint || ch == errorCodePoint) {
+                if (term.matchDirection() == Backward)
+                    input.setPos(savedPos);
                 return false;
+            }
 
             if (oldCh == ch)
                 continue;
@@ -678,6 +685,8 @@ public:
 
             if (term.matchDirection() == Forward)
                 input.uncheckInput(matchSize);
+            else
+                input.setPos(savedPos);
 
             return false;
         }

@@ -121,7 +121,7 @@ public:
         m_useSystemHeap = !bmalloc::api::isEnabled();
 #if USE(LIBPAS)
         if (!m_useSystemHeap) [[likely]] {
-#if OS(WINDOWS) || PLATFORM(PLAYSTATION)
+#if PLATFORM(PLAYSTATION)
             // libpas isn't calling pas_page_malloc commit, so we've got to commit the region ourselves
             // https://bugs.webkit.org/show_bug.cgi?id=292771
             OSAllocator::commit((void *) g_jscConfig.startOfStructureHeap, MarkedBlock::blockSize, true, false);
@@ -146,7 +146,7 @@ public:
 #if USE(LIBPAS)
             void* result = bmalloc_try_allocate_auxiliary_with_alignment_inline(&structureHeap, MarkedBlock::blockSize, MarkedBlock::blockSize, pas_always_compact_allocation_mode);
 
-#if OS(WINDOWS) || PLATFORM(PLAYSTATION)
+#if PLATFORM(PLAYSTATION)
             // libpas isn't calling pas_page_malloc commit, so we've got to commit the region ourselves
             // https://bugs.webkit.org/show_bug.cgi?id=292771
             OSAllocator::commit(result, MarkedBlock::blockSize, true, false);

@@ -22,7 +22,6 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 
 import Foundation
-private import TestWebKitAPILibrary.Helpers.ios.UIKitMacHelperSPI
 import struct Swift.String
 
 #if WTF_PLATFORM_MAC

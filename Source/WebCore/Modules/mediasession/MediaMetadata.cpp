@@ -73,7 +73,7 @@ void ArtworkImageLoader::requestImageResource()
     RefPtr document = m_document.get();
     options.contentSecurityPolicyImposition = document->isInUserAgentShadowTree() ? ContentSecurityPolicyImposition::SkipPolicyCheck : ContentSecurityPolicyImposition::DoPolicyCheck;
 
-    CachedResourceRequest request(ResourceRequest(document->completeURL(m_src)), options);
+    CachedResourceRequest request(ResourceRequest(document->completeURL(m_src, ScriptExecutionContext::ForceUTF8::No)), options);
     request.setInitiatorType(AtomString { document->documentURI() });
     m_cachedImage = protect(document->cachedResourceLoader())->requestImage(WTF::move(request)).value_or(nullptr);
 
@@ -168,7 +168,7 @@ ExceptionOr<void> MediaMetadata::setArtwork(ScriptExecutionContext& context, Vec
     Vector<MediaImage> resolvedArtwork;
     resolvedArtwork.reserveInitialCapacity(artwork.size());
     for (auto& image : artwork) {
-        auto resolvedSrc = context.completeURL(image.src);
+        auto resolvedSrc = context.completeURL(image.src, ScriptExecutionContext::ForceUTF8::No);
         if (!resolvedSrc.isValid())
             return Exception { ExceptionCode::TypeError };
         resolvedArtwork.append(MediaImage { resolvedSrc.string(), image.sizes, image.type });

@@ -983,7 +983,7 @@ CachedResource* Internals::resourceFromMemoryCache(const String& url)
     if (!contextDocument() || !contextDocument()->page())
         return nullptr;
 
-    ResourceRequest request(contextDocument()->completeURL(url));
+    ResourceRequest request(contextDocument()->completeURL(url, ScriptExecutionContext::ForceUTF8::No));
     request.setDomainForCachePartition(contextDocument()->domainForCachePartition());
 
     return MemoryCache::singleton().resourceForRequest(request, contextDocument()->page()->sessionID());
@@ -6011,7 +6011,7 @@ RefPtr<File> Internals::createFile(const String& path)
     if (!document)
         return nullptr;
 
-    URL url = document->completeURL(path);
+    URL url = document->completeURL(path, ScriptExecutionContext::ForceUTF8::No);
     if (!url.protocolIsFile())
         return nullptr;
 
@@ -6028,7 +6028,7 @@ void Internals::asyncCreateFile(const String& path, DOMPromiseDeferred<IDLInterf
         return;
     }
 
-    URL url = document->completeURL(path);
+    URL url = document->completeURL(path, ScriptExecutionContext::ForceUTF8::No);
     if (!url.protocolIsFile()) {
         promise.reject(ExceptionCode::InvalidStateError);
         return;
@@ -7094,7 +7094,7 @@ void Internals::hasServiceWorkerRegistration(const String& clientURL, HasRegistr
     if (!contextDocument())
         return;
 
-    URL parsedURL = contextDocument()->completeURL(clientURL);
+    URL parsedURL = contextDocument()->completeURL(clientURL, ScriptExecutionContext::ForceUTF8::No);
 
     return ServiceWorkerProvider::singleton().serviceWorkerConnection().matchRegistration(SecurityOriginData { contextDocument()->topOrigin().data() }, parsedURL, [promise = WTF::move(promise)] (auto&& result) mutable {
         promise.resolve(!!result);

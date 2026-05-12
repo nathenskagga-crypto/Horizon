@@ -386,6 +386,9 @@ inline bool equalFieldTypes(FieldType a, IntraLookupA&& aIntra, FieldType b, Int
 template<typename IntraLookup>
 unsigned hashRTTForRecGroup(const RTT& rtt, IntraLookup&& intra)
 {
+    if (unsigned hash = rtt.hashMayBeEmpty())
+        return hash;
+
     unsigned h = static_cast<unsigned>(rtt.kind());
     h = WTF::pairIntHash(h, rtt.isFinalType() ? 1 : 0);
     h = WTF::pairIntHash(h, rtt.displaySizeExcludingThis());
@@ -415,6 +418,8 @@ unsigned hashRTTForRecGroup(const RTT& rtt, IntraLookup&& intra)
         h = WTF::pairIntHash(h, hashFieldType(rtt.arrayPayload().elementType(), intra));
         break;
     }
+
+    rtt.setHash(h);
     return h;
 }
 
@@ -659,11 +664,16 @@ Ref<const RTT> TypeInformation::getCanonicalRTT(TypeIndex type)
 // =====================================================================
 unsigned CanonicalRecursionGroupEntryHash::hash(const CanonicalRecursionGroupEntry& entry)
 {
+    if (unsigned hash = entry.group->hashMayBeEmpty())
+        return hash;
+
     const auto& rtts = entry.group->rtts();
     GroupLookup lookup { entry.group };
     unsigned h = rtts.size();
     for (const auto& rtt : rtts)
         h = WTF::pairIntHash(h, hashRTTForRecGroup(rtt, lookup));
+
+    entry.group->setHash(h);
     return h;
 }
 
@@ -1070,62 +1080,53 @@ void RTT::ensureArgumINTBytecode(const CallInformation& callCC) const
 {
     ASSERT(kind() == RTTKind::Function);
 
-    if (m_argumINTBytecode) [[likely]]
-        return;
-
-    auto numArgs = argumentCount();
-
     constexpr static int NUM_ARGUMINT_GPRS = 8;
     constexpr static int NUM_ARGUMINT_FPRS = 8;
 
     ASSERT_UNUSED(NUM_ARGUMINT_GPRS, wasmCallingConvention().jsrArgs.size() <= NUM_ARGUMINT_GPRS);
     ASSERT_UNUSED(NUM_ARGUMINT_FPRS, wasmCallingConvention().fprArgs.size() <= NUM_ARGUMINT_FPRS);
 
-    // Build outside the lock; race losers drop their candidate.
-    auto candidate = IPIntSharedBytecode::createWithSizeFromGenerator(numArgs + 1,
-        [&](size_t index) -> uint8_t {
-            if (index == numArgs)
-                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::End);
+    m_argumINTBytecode.ensure([&] {
+        auto numArgs = argumentCount();
+        auto candidate = IPIntSharedBytecode::createWithSizeFromGenerator(numArgs + 1,
+            [&](size_t index) -> uint8_t {
+                if (index == numArgs)
+                    return static_cast<uint8_t>(IPInt::ArgumINTBytecode::End);
 
-            const ArgumentLocation& argLoc = callCC.params[index];
-            const ValueLocation& loc = argLoc.location;
+                const ArgumentLocation& argLoc = callCC.params[index];
+                const ValueLocation& loc = argLoc.location;
 
-            if (loc.isGPR()) {
+                if (loc.isGPR()) {
 #if USE(JSVALUE64)
-                ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().gpr()) < NUM_ARGUMINT_GPRS);
-                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
+                    ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().gpr()) < NUM_ARGUMINT_GPRS);
+                    return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
 #elif USE(JSVALUE32_64)
-                ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_ARGUMINT_GPRS);
-                ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().tagGPR()) < NUM_ARGUMINT_GPRS);
-                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord)) / 2;
+                    ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_ARGUMINT_GPRS);
+                    ASSERT_UNUSED(NUM_ARGUMINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().tagGPR()) < NUM_ARGUMINT_GPRS);
+                    return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord)) / 2;
 #endif
-            }
+                }
 
-            if (loc.isFPR()) {
-                ASSERT_UNUSED(NUM_ARGUMINT_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_ARGUMINT_FPRS);
-                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgFPR) + FPRInfo::toArgumentIndex(loc.fpr());
-            }
+                if (loc.isFPR()) {
+                    ASSERT_UNUSED(NUM_ARGUMINT_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_ARGUMINT_FPRS);
+                    return static_cast<uint8_t>(IPInt::ArgumINTBytecode::ArgFPR) + FPRInfo::toArgumentIndex(loc.fpr());
+                }
 
-            RELEASE_ASSERT(loc.isStack());
-            switch (argLoc.width) {
-            case Width::Width64:
-                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::Stack);
-            case Width::Width128:
-                return static_cast<uint8_t>(IPInt::ArgumINTBytecode::StackVector);
-            default:
-                RELEASE_ASSERT_NOT_REACHED("No argumINT bytecode for result width");
-            }
-        });
+                RELEASE_ASSERT(loc.isStack());
+                switch (argLoc.width) {
+                case Width::Width64:
+                    return static_cast<uint8_t>(IPInt::ArgumINTBytecode::Stack);
+                case Width::Width128:
+                    return static_cast<uint8_t>(IPInt::ArgumINTBytecode::StackVector);
+                default:
+                    RELEASE_ASSERT_NOT_REACHED("No argumINT bytecode for result width");
+                }
+            });
 
-    ASSERT(candidate->size() == numArgs + 1u);
-    ASSERT(candidate->last() == static_cast<uint8_t>(IPInt::ArgumINTBytecode::End));
-
-    Locker locker { m_ipintBytecodeLock };
-    if (m_argumINTBytecode)
-        return;
-
-    WTF::storeStoreFence();
-    m_argumINTBytecode = candidate.moveToUniquePtr();
+        ASSERT(candidate->size() == numArgs + 1u);
+        ASSERT(candidate->last() == static_cast<uint8_t>(IPInt::ArgumINTBytecode::End));
+        return candidate;
+    });
 }
 
 void RTT::ensureUINTBytecode(const CallInformation& returnCC) const
@@ -1138,70 +1139,63 @@ void RTT::ensureUINTBytecode(const CallInformation& returnCC) const
     ASSERT_UNUSED(NUM_UINT_GPRS, wasmCallingConvention().jsrArgs.size() <= NUM_UINT_GPRS);
     ASSERT_UNUSED(NUM_UINT_FPRS, wasmCallingConvention().fprArgs.size() <= NUM_UINT_FPRS);
 
-    if (m_uINTBytecode) [[likely]]
-        return;
+    m_uINTBytecode.ensure([&] {
+        // Offset past the last stack-typed return, in signature order.
+        uint32_t topOfReturnStackFPOffset = 0;
+        for (const auto& argLoc : returnCC.results) {
+            if (argLoc.location.isStack())
+                topOfReturnStackFPOffset = argLoc.location.offsetFromFP() + bytesForWidth(argLoc.width);
+        }
 
-    // Offset past the last stack-typed return, in signature order.
-    uint32_t topOfReturnStackFPOffset = 0;
-    for (const auto& argLoc : returnCC.results) {
-        if (argLoc.location.isStack())
-            topOfReturnStackFPOffset = argLoc.location.offsetFromFP() + bytesForWidth(argLoc.width);
-    }
+        auto encode = [&](unsigned index) -> uint8_t {
+            const ArgumentLocation& argLoc = returnCC.results[index];
+            const ValueLocation& loc = argLoc.location;
 
-    auto encode = [&](unsigned index) -> uint8_t {
-        const ArgumentLocation& argLoc = returnCC.results[index];
-        const ValueLocation& loc = argLoc.location;
-
-        if (loc.isGPR()) {
+            if (loc.isGPR()) {
 #if USE(JSVALUE64)
-            ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().gpr()) < NUM_UINT_GPRS);
-            return static_cast<uint8_t>(IPInt::UINTBytecode::RetGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
+                ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().gpr()) < NUM_UINT_GPRS);
+                return static_cast<uint8_t>(IPInt::UINTBytecode::RetGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr());
 #elif USE(JSVALUE32_64)
-            ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_UINT_GPRS);
-            ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().tagGPR()) < NUM_UINT_GPRS);
-            return static_cast<uint8_t>(IPInt::UINTBytecode::RetGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord));
+                ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().payloadGPR()) < NUM_UINT_GPRS);
+                ASSERT_UNUSED(NUM_UINT_GPRS, GPRInfo::toArgumentIndex(loc.jsr().tagGPR()) < NUM_UINT_GPRS);
+                return static_cast<uint8_t>(IPInt::UINTBytecode::RetGPR) + GPRInfo::toArgumentIndex(loc.jsr().gpr(WhichValueWord::PayloadWord));
 #endif
-        }
+            }
 
-        if (loc.isFPR()) {
-            ASSERT_UNUSED(NUM_UINT_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_UINT_FPRS);
-            return static_cast<uint8_t>(IPInt::UINTBytecode::RetFPR) + FPRInfo::toArgumentIndex(loc.fpr());
-        }
+            if (loc.isFPR()) {
+                ASSERT_UNUSED(NUM_UINT_FPRS, FPRInfo::toArgumentIndex(loc.fpr()) < NUM_UINT_FPRS);
+                return static_cast<uint8_t>(IPInt::UINTBytecode::RetFPR) + FPRInfo::toArgumentIndex(loc.fpr());
+            }
 
-        RELEASE_ASSERT(loc.isStack());
-        switch (argLoc.width) {
-        case Width::Width64:
-            return static_cast<uint8_t>(IPInt::UINTBytecode::Stack);
-        case Width::Width128:
-            return static_cast<uint8_t>(IPInt::UINTBytecode::StackVector);
-        default:
-            RELEASE_ASSERT_NOT_REACHED("No uINT bytecode for result width");
-        }
-    };
+            RELEASE_ASSERT(loc.isStack());
+            switch (argLoc.width) {
+            case Width::Width64:
+                return static_cast<uint8_t>(IPInt::UINTBytecode::Stack);
+            case Width::Width128:
+                return static_cast<uint8_t>(IPInt::UINTBytecode::StackVector);
+            default:
+                RELEASE_ASSERT_NOT_REACHED("No uINT bytecode for result width");
+            }
+        };
 
-    // Layout: [topOfReturnStackFPOffset : u32][encode(last)..encode(first)][End].
-    // Results are consumed in reverse by the uINT dispatcher, so emit in reverse.
-    unsigned size = returnCC.results.size();
-    auto headerBytes = std::bit_cast<std::array<uint8_t, sizeof(uint32_t)>>(topOfReturnStackFPOffset);
-    auto candidate = IPIntSharedBytecode::createWithSizeFromGenerator(sizeof(uint32_t) + size + 1,
-        [&](size_t index) -> uint8_t {
-            if (index < sizeof(uint32_t))
-                return headerBytes[index];
-            size_t i = index - sizeof(uint32_t);
-            if (i == size)
-                return static_cast<uint8_t>(IPInt::UINTBytecode::End);
-            return encode(size - 1 - i);
-        });
+        // Layout: [topOfReturnStackFPOffset : u32][encode(last)..encode(first)][End].
+        // Results are consumed in reverse by the uINT dispatcher, so emit in reverse.
+        unsigned size = returnCC.results.size();
+        auto headerBytes = std::bit_cast<std::array<uint8_t, sizeof(uint32_t)>>(topOfReturnStackFPOffset);
+        auto candidate = IPIntSharedBytecode::createWithSizeFromGenerator(sizeof(uint32_t) + size + 1,
+            [&](size_t index) -> uint8_t {
+                if (index < sizeof(uint32_t))
+                    return headerBytes[index];
+                size_t i = index - sizeof(uint32_t);
+                if (i == size)
+                    return static_cast<uint8_t>(IPInt::UINTBytecode::End);
+                return encode(size - 1 - i);
+            });
 
-    ASSERT(candidate->size() == sizeof(uint32_t) + size + 1u);
-    ASSERT(candidate->last() == static_cast<uint8_t>(IPInt::UINTBytecode::End));
-
-    Locker locker { m_ipintBytecodeLock };
-    if (m_uINTBytecode)
-        return;
-
-    WTF::storeStoreFence();
-    m_uINTBytecode = candidate.moveToUniquePtr();
+        ASSERT(candidate->size() == sizeof(uint32_t) + size + 1u);
+        ASSERT(candidate->last() == static_cast<uint8_t>(IPInt::UINTBytecode::End));
+        return candidate;
+    });
 }
 
 template<bool isTailCall>
@@ -1341,68 +1335,52 @@ void RTT::ensureCallBytecode() const
 {
     ASSERT(kind() == RTTKind::Function);
 
-    if (m_callBytecode) [[likely]]
-        return;
+    m_callBytecode.ensure([&] {
+        // Build [arg bytecode][Call][CallReturnMetadata][result bytecode][End] -- the same
+        // layout the generator used to emit inline into m_metadata. MC walks the whole
+        // thing during one call: arg dispatch leaves MC at CallReturnMetadata (inside the
+        // buffer), and ret dispatch continues from there.
+        auto callConvention = wasmCallingConvention().callInformationFor(*this, CallRole::Caller);
+        Vector<uint8_t, 16> bytes = buildCallArgumentBytecode</* isTailCall */ false>(callConvention);
 
-    // Build [arg bytecode][Call][CallReturnMetadata][result bytecode][End] -- the same
-    // layout the generator used to emit inline into m_metadata. MC walks the whole
-    // thing during one call: arg dispatch leaves MC at CallReturnMetadata (inside the
-    // buffer), and ret dispatch continues from there.
-    auto callConvention = wasmCallingConvention().callInformationFor(*this, CallRole::Caller);
-    Vector<uint8_t, 16> bytes = buildCallArgumentBytecode</* isTailCall */ false>(callConvention);
+        Checked<uint32_t> frameSize = WTF::roundUpToMultipleOf<stackAlignmentBytes()>(callConvention.headerAndArgumentStackSizeInBytes);
+        IPInt::CallReturnMetadata returnMeta {
+            .stackFrameSize = frameSize,
+            .firstStackResultSPOffset = 0,
+        };
 
-    Checked<uint32_t> frameSize = WTF::roundUpToMultipleOf<stackAlignmentBytes()>(callConvention.headerAndArgumentStackSizeInBytes);
-    IPInt::CallReturnMetadata returnMeta {
-        .stackFrameSize = frameSize,
-        .firstStackResultSPOffset = 0,
-    };
+        Vector<uint8_t, 16> resultBytes;
+        Checked<uint32_t> firstStackResultSPOffset = buildCallResultBytecode(resultBytes, callConvention);
+        returnMeta.firstStackResultSPOffset = firstStackResultSPOffset;
 
-    Vector<uint8_t, 16> resultBytes;
-    Checked<uint32_t> firstStackResultSPOffset = buildCallResultBytecode(resultBytes, callConvention);
-    returnMeta.firstStackResultSPOffset = firstStackResultSPOffset;
+        auto toSpan = [&](auto& value) {
+            auto start = std::bit_cast<const uint8_t*>(&value);
+            return std::span { start, start + sizeof(value) };
+        };
+        bytes.append(toSpan(returnMeta));
+        bytes.append(resultBytes.span());
 
-    auto toSpan = [&](auto& value) {
-        auto start = std::bit_cast<const uint8_t*>(&value);
-        return std::span { start, start + sizeof(value) };
-    };
-    bytes.append(toSpan(returnMeta));
-    bytes.append(resultBytes.span());
-
-    auto candidate = IPIntSharedBytecode::createFromVector(WTF::move(bytes));
-
-    Locker locker { m_ipintBytecodeLock };
-    if (m_callBytecode)
-        return;
-
-    WTF::storeStoreFence();
-    m_callBytecode = candidate.moveToUniquePtr();
+        return IPIntSharedBytecode::createFromVector(WTF::move(bytes));
+    });
 }
 
 void RTT::ensureTailCallBytecode() const
 {
     ASSERT(kind() == RTTKind::Function);
 
-    if (m_tailCallBytecode) [[likely]]
-        return;
+    m_tailCallBytecode.ensure([&] {
+        // [arg bytecode][TailCall terminator][stackArgumentsAndResultsInBytes (u32)].
+        // The trailing u32 is read by .ipint_perform_tail_call via `loadi [MC]`
+        // after mINT dispatch hits TailCall, so MC naturally lands on it.
+        auto callConvention = wasmCallingConvention().callInformationFor(*this, CallRole::Caller);
+        auto bytes = buildCallArgumentBytecode</* isTailCall */ true>(callConvention);
 
-    // [arg bytecode][TailCall terminator][stackArgumentsAndResultsInBytes (u32)].
-    // The trailing u32 is read by .ipint_perform_tail_call via `loadi [MC]`
-    // after mINT dispatch hits TailCall, so MC naturally lands on it.
-    auto callConvention = wasmCallingConvention().callInformationFor(*this, CallRole::Caller);
-    auto bytes = buildCallArgumentBytecode</* isTailCall */ true>(callConvention);
+        uint32_t stackArgumentsAndResultsInBytes = roundUpToMultipleOf<stackAlignmentBytes()>(callConvention.headerAndArgumentStackSizeInBytes) - callConvention.headerIncludingThisSizeInBytes;
+        ASSERT(!(stackArgumentsAndResultsInBytes % 16));
+        bytes.append(std::span { std::bit_cast<const uint8_t*>(&stackArgumentsAndResultsInBytes), sizeof(stackArgumentsAndResultsInBytes) });
 
-    uint32_t stackArgumentsAndResultsInBytes = roundUpToMultipleOf<stackAlignmentBytes()>(callConvention.headerAndArgumentStackSizeInBytes) - callConvention.headerIncludingThisSizeInBytes;
-    ASSERT(!(stackArgumentsAndResultsInBytes % 16));
-    bytes.append(std::span { std::bit_cast<const uint8_t*>(&stackArgumentsAndResultsInBytes), sizeof(stackArgumentsAndResultsInBytes) });
-
-    auto candidate = IPIntSharedBytecode::createFromVector(WTF::move(bytes));
-
-    Locker locker { m_ipintBytecodeLock };
-    if (m_tailCallBytecode)
-        return;
-
-    WTF::storeStoreFence();
-    m_tailCallBytecode = candidate.moveToUniquePtr();
+        return IPIntSharedBytecode::createFromVector(WTF::move(bytes));
+    });
 }
 
 } } // namespace JSC::Wasm

@@ -69,6 +69,7 @@ set(WebCore_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBCORE_DIR}/Modules/speech"
     "${WEBCORE_DIR}/Modules/storage"
     "${WEBCORE_DIR}/Modules/streams"
+    "${WEBCORE_DIR}/Modules/system-preview"
     "${WEBCORE_DIR}/Modules/url-pattern"
     "${WEBCORE_DIR}/Modules/web-locks"
     "${WEBCORE_DIR}/Modules/webaudio"
@@ -1926,52 +1927,82 @@ set(WebCore_SUPPLEMENTAL_IDL_FILES
     Modules/WebGPU/GPUProgrammablePassEncoder.idl
     Modules/WebGPU/GPURenderEncoderBase.idl
     Modules/WebGPU/NavigatorGPU.idl
+
     Modules/async-clipboard/Navigator+Clipboard.idl
+
     Modules/audiosession/Navigator+AudioSession.idl
+
     Modules/badge/NavigatorBadge.idl
+
     Modules/beacon/Navigator+Beacon.idl
+
     Modules/cache/WindowOrWorkerGlobalScope+Caches.idl
+
     Modules/contact-picker/Navigator+Contacts.idl
+
     Modules/cookie-store/DOMWindow+CookieStore.idl
+
     Modules/credentialmanagement/Navigator+Credentials.idl
+
     Modules/encryptedmedia/Navigator+EME.idl
+
     Modules/entriesapi/HTMLInputElement+EntriesAPI.idl
+
     Modules/fetch/FetchBody.idl
     Modules/fetch/WindowOrWorkerGlobalScope+Fetch.idl
+
     Modules/filesystem/StorageManager+FileSystem.idl
+
     Modules/gamepad/Navigator+Gamepad.idl
     Modules/gamepad/WindowEventHandlers+Gamepad.idl
+
     Modules/geolocation/Navigator+Geolocation.idl
+
     Modules/indexeddb/WindowOrWorkerGlobalScope+IndexedDatabase.idl
+
     Modules/mediacapabilities/Navigator+MediaCapabilities.idl
     Modules/mediacapabilities/WorkerNavigator+MediaCapabilities.idl
+
     Modules/mediacontrols/DOMWindow+MediaControls.idl
+
     Modules/mediasession/MediaMetadataPlaylistMixin.idl
     Modules/mediasession/MediaSessionCoordinatorMixin.idl
     Modules/mediasession/MediaSessionPlaylistMixin.idl
     Modules/mediasession/Navigator+MediaSession.idl
+
     Modules/mediasource/AudioTrack+MediaSource.idl
     Modules/mediasource/DOMURL+MediaSource.idl
     Modules/mediasource/TextTrack+MediaSource.idl
     Modules/mediasource/VideoTrack+MediaSource.idl
+
     Modules/mediastream/Navigator+MediaDevices.idl
     Modules/mediastream/RTCRtpReceiver+Transform.idl
     Modules/mediastream/RTCRtpScriptTransformProvider.idl
     Modules/mediastream/RTCRtpSender+Transform.idl
+
     Modules/permissions/Navigator+Permissions.idl
     Modules/permissions/WorkerNavigator+Permissions.idl
+
     Modules/pictureinpicture/Document+PictureInPicture.idl
     Modules/pictureinpicture/DocumentOrShadowRoot+PictureInPicture.idl
     Modules/pictureinpicture/HTMLVideoElement+PictureInPicture.idl
+
     Modules/push-api/ServiceWorkerGlobalScope+PushAPI.idl
     Modules/push-api/ServiceWorkerRegistration+PushAPI.idl
     Modules/push-api/WindowPush.idl
+
     Modules/screen-wake-lock/Navigator+ScreenWakeLock.idl
+
     Modules/speech/DOMWindow+SpeechSynthesis.idl
+
     Modules/streams/GenericTransformStream.idl
+
     Modules/web-locks/NavigatorLocks.idl
+
     Modules/webdatabase/DOMWindow+WebDatabase.idl
+
     Modules/webdriver/Navigator+WebDriver.idl
+
     Modules/webxr/Navigator+WebXR.idl
     Modules/webxr/WebXRFrame+HandInput.idl
     Modules/webxr/WebXRFrame+HitTest.idl
@@ -1981,14 +2012,17 @@ set(WebCore_SUPPLEMENTAL_IDL_FILES
     Modules/webxr/WebXRSession+AR.idl
     Modules/webxr/WebXRSession+HitTest.idl
     Modules/webxr/WebXRSession+Layers.idl
+
     accessibility/AccessibilityRole.idl
     accessibility/AriaAttributes.idl
+
     animation/Animatable.idl
     animation/AnimationFrameProvider.idl
     animation/Document+WebAnimations.idl
     animation/DocumentOrShadowRoot+WebAnimations.idl
     animation/GlobalEventHandlers+CSSAnimations.idl
     animation/GlobalEventHandlers+CSSTransitions.idl
+
     css/CSSStyleRule+Typedom.idl
     css/DOMCSSNamespace+CSSNumericFactory.idl
     css/DOMCSSNamespace+CSSPainting.idl
@@ -1997,6 +2031,7 @@ set(WebCore_SUPPLEMENTAL_IDL_FILES
     css/ElementCSSInlineStyle.idl
     css/FontFaceSource.idl
     css/LinkStyle.idl
+
     dom/ChildNode.idl
     dom/Document+CSSOMView.idl
     dom/Document+CaretPositionFromPoint.idl
@@ -2036,6 +2071,7 @@ set(WebCore_SUPPLEMENTAL_IDL_FILES
     dom/Slotable.idl
     dom/ViewTransition+Types.idl
     dom/WindowOrWorkerGlobalScope+TrustedTypes.idl
+
     html/HTMLBodyElement+Compat.idl
     html/HTMLElement+CSSOMView.idl
     html/HTMLHyperlinkElementUtils.idl
@@ -2045,6 +2081,7 @@ set(WebCore_SUPPLEMENTAL_IDL_FILES
     html/HTMLVideoElement+CaptionDisplaySettings.idl
     html/HTMLVideoElement+RequestVideoFrameCallback.idl
     html/PopoverInvokerElement.idl
+
     html/canvas/CanvasCompositing.idl
     html/canvas/CanvasDrawImage.idl
     html/canvas/CanvasDrawPath.idl
@@ -2063,6 +2100,7 @@ set(WebCore_SUPPLEMENTAL_IDL_FILES
     html/canvas/CanvasTransform.idl
     html/canvas/CanvasUserInterface.idl
     html/canvas/WebGLRenderingContextBase.idl
+
     page/DOMWindow+CSSOM.idl
     page/DOMWindow+CSSOMView.idl
     page/DOMWindow+Compat.idl
@@ -2093,15 +2131,19 @@ set(WebCore_SUPPLEMENTAL_IDL_FILES
     page/WindowOrWorkerGlobalScope+Performance.idl
     page/WindowOrWorkerGlobalScope.idl
     page/WindowSessionStorage.idl
+
     svg/Document+SVG.idl
     svg/SVGFilterPrimitiveStandardAttributes.idl
     svg/SVGFitToViewBox.idl
     svg/SVGTests.idl
     svg/SVGURIReference.idl
     svg/SVGZoomAndPan.idl
+
     workers/AbstractWorker.idl
+
     workers/service/background-fetch/ServiceWorkerGlobalScope+BackgroundFetchAPI.idl
     workers/service/background-fetch/ServiceWorkerRegistration+BackgroundFetchAPI.idl
+
     xml/XPathEvaluatorBase.idl
 )
 
@@ -2739,8 +2781,16 @@ set(WebCoreTestSupport_INTERFACE_INCLUDE_DIRECTORIES
     ${WebCore_PRIVATE_FRAMEWORK_HEADERS_DIR}/WebCoreTestSupport
 )
 
+if (ENABLE_LAYOUT_TESTS OR ENABLE_API_TESTS)
+    set(ENABLE_WEBCORE_TEST_SUPPORT ON)
+else ()
+    set(ENABLE_WEBCORE_TEST_SUPPORT OFF)
+endif ()
+
 WEBKIT_FRAMEWORK_DECLARE(WebCore)
-WEBKIT_LIBRARY_DECLARE(WebCoreTestSupport)
+if (ENABLE_WEBCORE_TEST_SUPPORT)
+    WEBKIT_LIBRARY_DECLARE(WebCoreTestSupport)
+endif ()
 WEBKIT_INCLUDE_CONFIG_FILES_IF_EXISTS()
 
 if (PORT STREQUAL GTK OR PORT STREQUAL WPE)
@@ -2917,11 +2967,16 @@ list(APPEND WebCore_SOURCES ${WebCore_DERIVED_SOURCES_DIR}/Settings.cpp)
 list(APPEND WebCoreTestSupport_SOURCES ${WebCore_DERIVED_SOURCES_DIR}/InternalSettingsGenerated.cpp)
 list(APPEND WebCoreTestSupport_IDL_FILES ${WebCore_DERIVED_SOURCES_DIR}/InternalSettingsGenerated.idl)
 
+set(WebCore_BINDINGS_PP_INPUT_FILES ${WebCore_IDL_FILES} ${WebCore_SUPPLEMENTAL_IDL_FILES})
+if (ENABLE_WEBCORE_TEST_SUPPORT)
+    list(APPEND WebCore_BINDINGS_PP_INPUT_FILES ${WebCoreTestSupport_IDL_FILES})
+endif ()
+
 GENERATE_BINDINGS(WebCoreBindings
     OUTPUT_SOURCE WebCore_SOURCES
     INPUT_FILES ${WebCore_IDL_FILES}
     SUPPLEMENTAL_IDL_FILES ${WebCore_SUPPLEMENTAL_IDL_FILES}
-    PP_INPUT_FILES ${WebCore_IDL_FILES} ${WebCore_SUPPLEMENTAL_IDL_FILES} ${WebCoreTestSupport_IDL_FILES}
+    PP_INPUT_FILES ${WebCore_BINDINGS_PP_INPUT_FILES}
     BASE_DIR ${WEBCORE_DIR}
     FEATURES ${FEATURE_DEFINES_JAVASCRIPT}
     DESTINATION ${WebCore_DERIVED_SOURCES_DIR}
@@ -2948,20 +3003,22 @@ if (ENABLE_WEBINSPECTORUI)
     list(APPEND WebCore_DEPENDENCIES WebInspectorUI)
 endif ()
 
-GENERATE_BINDINGS(WebCoreTestSupportBindings
-    OUTPUT_SOURCE WebCoreTestSupport_SOURCES
-    INPUT_FILES ${WebCoreTestSupport_IDL_FILES}
-    BASE_DIR ${WEBCORE_DIR}
-    INCLUDED_FILES ${WebCore_IDL_FILES} ${WebCore_SUPPLEMENTAL_IDL_FILES}
-    FEATURES ${FEATURE_DEFINES_JAVASCRIPT}
-    DESTINATION ${WebCore_DERIVED_SOURCES_DIR}
-    GENERATOR JS)
+if (ENABLE_WEBCORE_TEST_SUPPORT)
+    GENERATE_BINDINGS(WebCoreTestSupportBindings
+        OUTPUT_SOURCE WebCoreTestSupport_SOURCES
+        INPUT_FILES ${WebCoreTestSupport_IDL_FILES}
+        BASE_DIR ${WEBCORE_DIR}
+        INCLUDED_FILES ${WebCore_IDL_FILES} ${WebCore_SUPPLEMENTAL_IDL_FILES}
+        FEATURES ${FEATURE_DEFINES_JAVASCRIPT}
+        DESTINATION ${WebCore_DERIVED_SOURCES_DIR}
+        GENERATOR JS)
 
-# WebCoreTestSupportBindings needs to have a direct or indirect
-# dependency to WebCoreBindings for CMake Visual Studio generator to
-# eliminate duplicated custom commands. Otherwise,
-# GenerateSettings.rb will be triggered in both projects.
-add_dependencies(WebCoreTestSupportBindings WebCoreBindings)
+    # WebCoreTestSupportBindings needs to have a direct or indirect
+    # dependency to WebCoreBindings for CMake Visual Studio generator to
+    # eliminate duplicated custom commands. Otherwise,
+    # GenerateSettings.rb will be triggered in both projects.
+    add_dependencies(WebCoreTestSupportBindings WebCoreBindings)
+endif ()
 
 # WebCore JS Builtins
 
@@ -3082,11 +3139,24 @@ list(APPEND WebCore_SOURCES ${WebCore_DERIVED_SOURCES_DIR}/Namespace.cpp)
 
 WEBKIT_COMPUTE_SOURCES(WebCore)
 
-WEBKIT_DEFINE_SUBTARGET(WebCore WebCoreJSBindings
+WEBKIT_DEFINE_SUBTARGET_WITH_PREFIX(WebCore WebCoreJSBindings
     PREFIX WebCoreJSBindingsPrefix.h
+    PREFIX_LANGUAGES CXX
     DIRS JSBindings bindings)
+WEBKIT_DEFINE_SUBTARGET_WITH_PREFIX(WebCore WebCoreDOMAndRendering
+    PREFIX WebCoreDOMAndRenderingPrefix.h
+    PREFIX_LANGUAGES CXX OBJCXX
+    DIRS accessibility animation dom html page rendering style)
+WEBKIT_DEFINE_SUBTARGET_WITH_PREFIX(WebCore WebCoreInspector
+    PREFIX WebCoreInspectorPrefix.h
+    PREFIX_LANGUAGES CXX
+    DIRS inspector)
+WEBKIT_DEFINE_SUBTARGET_WITH_PREFIX(WebCore WebCoreAVFoundation
+    PREFIX WebCoreAVFoundationPrefix.h
+    PREFIX_LANGUAGES OBJCXX
+    DIRS avfoundation)
 
-WEBKIT_ADD_PREFIX_HEADER(WebCore WebCorePrefix.h)
+WEBKIT_ADD_PREFIX_HEADER(WebCore WebCorePrefix.h PREFIX_LANGUAGES CXX OBJCXX)
 
 list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
     ${WebCore_DERIVED_SOURCES_DIR}/DocumentSyncData.serialization.in
@@ -3118,7 +3188,9 @@ WEBKIT_SYMLINK_FILES(WebCore_CopyPrivateHeaders
     FLATTENED
 )
 list(APPEND WebCore_INTERFACE_DEPENDENCIES WebCore_CopyPrivateHeaders)
-list(APPEND WebCoreTestSupport_INTERFACE_DEPENDENCIES WebCore_CopyPrivateHeaders)
+if (ENABLE_WEBCORE_TEST_SUPPORT)
+    list(APPEND WebCoreTestSupport_INTERFACE_DEPENDENCIES WebCore_CopyPrivateHeaders)
+endif ()
 
 WEBKIT_FRAMEWORK(WebCore)
 
@@ -3165,20 +3237,22 @@ if (WTF_CPU_ARM AND NOT CMAKE_CROSSCOMPILING)
         SKIP_PRECOMPILE_HEADERS ON)
 endif ()
 
-WEBKIT_ADD_PREFIX_HEADER(WebCoreTestSupport testing/js/WebCoreTestSupportPrefix.h)
+if (ENABLE_WEBCORE_TEST_SUPPORT)
+    WEBKIT_ADD_PREFIX_HEADER(WebCoreTestSupport testing/js/WebCoreTestSupportPrefix.h PREFIX_LANGUAGES CXX)
 
-WEBKIT_COPY_FILES(Copy_WebCoreTestSupportPrivateHeaders
-    DESTINATION ${WebCore_PRIVATE_FRAMEWORK_HEADERS_DIR}/WebCoreTestSupport
-    FILES ${WebCoreTestSupport_PRIVATE_HEADERS}
-    FLATTENED
-)
-list(APPEND WebCoreTestSupport_INTERFACE_DEPENDENCIES Copy_WebCoreTestSupportPrivateHeaders)
+    WEBKIT_COPY_FILES(Copy_WebCoreTestSupportPrivateHeaders
+        DESTINATION ${WebCore_PRIVATE_FRAMEWORK_HEADERS_DIR}/WebCoreTestSupport
+        FILES ${WebCoreTestSupport_PRIVATE_HEADERS}
+        FLATTENED
+    )
+    list(APPEND WebCoreTestSupport_INTERFACE_DEPENDENCIES Copy_WebCoreTestSupportPrivateHeaders)
 
-list(APPEND WebCoreTestSupport_INCLUDE_DIRECTORIES ${WebCore_INCLUDE_DIRECTORIES})
-list(APPEND WebCoreTestSupport_PRIVATE_INCLUDE_DIRECTORIES ${WebCore_PRIVATE_INCLUDE_DIRECTORIES})
-list(APPEND WebCoreTestSupport_SYSTEM_INCLUDE_DIRECTORIES ${WebCore_SYSTEM_INCLUDE_DIRECTORIES})
+    list(APPEND WebCoreTestSupport_INCLUDE_DIRECTORIES ${WebCore_INCLUDE_DIRECTORIES})
+    list(APPEND WebCoreTestSupport_PRIVATE_INCLUDE_DIRECTORIES ${WebCore_PRIVATE_INCLUDE_DIRECTORIES})
+    list(APPEND WebCoreTestSupport_SYSTEM_INCLUDE_DIRECTORIES ${WebCore_SYSTEM_INCLUDE_DIRECTORIES})
 
-WEBKIT_LIBRARY(WebCoreTestSupport)
+    WEBKIT_LIBRARY(WebCoreTestSupport)
+endif ()
 
 if (${WebCore_LIBRARY_TYPE} MATCHES "SHARED")
     # Unquoted empty PROJECT_VERSION_MAJOR makes CMake parse SOVERSION as VERSION's value

@@ -6676,11 +6676,7 @@ void SpeculativeJIT::compileArithRounding(Node* node)
             case ArithRound: {
                 FPRTemporary result(this);
                 FPRReg resultFPR = result.fpr();
-                if (producesInteger(node->arithRoundingMode()) && !shouldCheckNegativeZero(node->arithRoundingMode())) {
-                    move64ToDouble(TrustedImm64(std::bit_cast<uint64_t>(0.5)), resultFPR);
-                    addDouble(valueFPR, resultFPR);
-                    floorDouble(resultFPR, resultFPR);
-                } else {
+                {
                     ceilDouble(valueFPR, resultFPR);
 
                     FPRTemporary scratch(this);
@@ -9410,6 +9406,24 @@ void SpeculativeJIT::compileSpread(Node* node)
         JumpList done;
 
         using Helper = JSSet::Helper;
+
+        // Guard: any non-default structure (changed prototype, or own properties
+        // including Symbol.iterator) means we cannot assume the standard iterator
+        // protocol applies to this instance. Route such sets to the slow path,
+        // which performs the authoritative isIteratorProtocolFastAndNonObservable
+        // check. The check can be folded when an upstream CheckStructure has
+        // already proven that the operand carries the original Set structure.
+        JSGlobalObject* globalObject = m_graph.globalObjectFor(node->origin.semantic);
+        Structure* originalSetStructure = globalObject->setStructureConcurrently();
+        if (!originalSetStructure)
+            slowPath.append(jump());
+        else {
+            RegisteredStructure registeredSetStructure = m_graph.registerStructure(originalSetStructure);
+            if (!m_state.forNode(node->child1()).m_structure.isSubsetOf(RegisteredStructureSet { registeredSetStructure })) {
+                load32(Address(argument, JSCell::structureIDOffset()), scratch2GPR);
+                slowPath.append(branch32(NotEqual, scratch2GPR, TrustedImm32(registeredSetStructure->id().bits())));
+            }
+        }
 
         // Load Set storage pointer.
         loadPtr(Address(argument, JSSet::offsetOfStorage()), scratch1GPR);
@@ -15382,6 +15396,112 @@ void SpeculativeJIT::compileNewButterflyWithSize(Node* node)
         emitInitializeButterfly(storageGPR, sizeGPR, scratchRegs, sizeGPR);
     }
     storageResult(storageGPR, node);
+}
+
+void SpeculativeJIT::compileGetCellButterflySlot(Node* node)
+{
+    SpeculateCellOperand scratch(this, node->child1());
+    SpeculateInt32Operand index(this, node->child2());
+    GPRTemporary result(this);
+
+    GPRReg scratchGPR = scratch.gpr();
+    GPRReg indexGPR = index.gpr();
+    GPRReg resultGPR = result.gpr();
+
+    load64(BaseIndex(scratchGPR, indexGPR, TimesEight, JSCellButterfly::offsetOfData()), resultGPR);
+    jsValueResult(resultGPR, node);
+}
+
+void SpeculativeJIT::compilePutCellButterflySlot(Node* node)
+{
+    SpeculateCellOperand scratch(this, node->child1());
+    SpeculateInt32Operand index(this, node->child2());
+    JSValueOperand value(this, node->child3());
+
+    GPRReg scratchGPR = scratch.gpr();
+    GPRReg indexGPR = index.gpr();
+    JSValueRegs valueRegs = value.jsValueRegs();
+
+    store64(valueRegs.gpr(), BaseIndex(scratchGPR, indexGPR, TimesEight, JSCellButterfly::offsetOfData()));
+    noResult(node);
+}
+
+void SpeculativeJIT::compileArraySortCompact(Node* node)
+{
+    SpeculateCellOperand array(this, node->child1());
+    SpeculateInt32Operand length(this, node->child2());
+
+    GPRReg arrayGPR = array.gpr();
+    GPRReg lengthGPR = length.gpr();
+
+    GPRTemporary scratch(this);
+    GPRTemporary counter(this);
+    GPRTemporary value(this);
+    GPRTemporary butterfly(this);
+
+    GPRReg scratchGPR = scratch.gpr();
+    GPRReg counterGPR = counter.gpr();
+    GPRReg valueGPR = value.gpr();
+    GPRReg butterflyGPR = butterfly.gpr();
+
+    loadPtr(&vm().m_cachedSortScratch, scratchGPR);
+    move(TrustedImmPtr(nullptr), butterflyGPR);
+    storePtr(butterflyGPR, &vm().m_cachedSortScratch);
+
+    JumpList slowCases;
+    slowCases.append(branchTestPtr(Zero, scratchGPR));
+    addSlowPathGenerator(slowPathCall(slowCases, this, operationAcquireSortScratch, scratchGPR, TrustedImmPtr(&vm())));
+
+    loadPtr(Address(arrayGPR, JSObject::butterflyOffset()), butterflyGPR);
+
+    move(lengthGPR, counterGPR);
+    auto loop = label();
+    auto done = branchSub32(Signed, counterGPR, TrustedImm32(1), counterGPR);
+    load64(BaseIndex(butterflyGPR, counterGPR, TimesEight, 0), valueGPR);
+    JumpList holes;
+    holes.append(branchTest64(Zero, valueGPR));
+    if (node->arrayMode().type() == Array::Contiguous)
+        holes.append(branch64(Equal, valueGPR, TrustedImm64(JSValue::encode(jsUndefined()))));
+    store64(valueGPR, BaseIndex(scratchGPR, counterGPR, TimesEight, JSCellButterfly::offsetOfData()));
+    jump().linkTo(loop, this);
+
+    holes.link(this);
+    move(TrustedImmPtr(std::bit_cast<void*>(vm().m_sortScratchSentinel.get())), scratchGPR);
+
+    done.link(this);
+    cellResult(scratchGPR, node);
+}
+
+void SpeculativeJIT::compileArraySortCommit(Node* node)
+{
+    SpeculateCellOperand array(this, node->child1());
+    SpeculateCellOperand storage(this, node->child2());
+    SpeculateInt32Operand length(this, node->child3());
+
+    GPRReg arrayGPR = array.gpr();
+    GPRReg storageGPR = storage.gpr();
+    GPRReg lengthGPR = length.gpr();
+
+    GPRTemporary counter(this);
+    GPRTemporary butterfly(this);
+
+    GPRReg counterGPR = counter.gpr();
+    GPRReg butterflyGPR = butterfly.gpr();
+
+    // If array.length gets modified during sorting, let's reject commit and do OSR exit.
+    loadPtr(Address(arrayGPR, JSObject::butterflyOffset()), butterflyGPR);
+    speculationCheck(BadIndexingType, JSValueRegs(), node, branch32(NotEqual, Address(butterflyGPR, Butterfly::offsetOfPublicLength()), lengthGPR));
+
+    move(lengthGPR, counterGPR);
+    auto loop = label();
+    auto done = branchSub32(Signed, counterGPR, TrustedImm32(1), counterGPR);
+    transfer64(BaseIndex(storageGPR, counterGPR, TimesEight, JSCellButterfly::offsetOfData()), BaseIndex(butterflyGPR, counterGPR, TimesEight, 0));
+    jump().linkTo(loop, this);
+
+    done.link(this);
+    emitFillStorageWithJSEmpty(storageGPR, JSCellButterfly::offsetOfData(), sortScratchSlotCount, counterGPR);
+    storePtr(storageGPR, &vm().m_cachedSortScratch);
+    noResult(node);
 }
 
 void SpeculativeJIT::compileNewArrayWithButterfly(Node* node)

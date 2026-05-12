@@ -584,7 +584,7 @@ static inline Variant<SkipExtraction, ItemData, URL, Editable> extractItemData(N
 
     if (element->isLink()) {
         if (auto href = element->attributeWithoutSynchronization(HTMLNames::hrefAttr); !href.isEmpty()) {
-            if (auto url = protect(element->document())->completeURL(href); !url.isEmpty()) {
+            if (auto url = protect(element->document())->completeURL(href, ScriptExecutionContext::ForceUTF8::No); !url.isEmpty()) {
                 if (context.mergeParagraphs)
                     return { WTF::move(url) };
 
@@ -2475,32 +2475,33 @@ static String textDescription(LocalFrame& frame, FloatPoint locationInRootView, 
     return textDescription(targetNode.get(), stringsToValidate);
 }
 
-InteractionDescription interactionDescription(const Interaction& interaction, LocalFrame& frame)
+InteractionDescription interactionDescription(const Interaction& interaction, LocalFrame& frame, Tense tense)
 {
     auto action = interaction.action;
+    bool pastTense = tense == Tense::Past;
     bool isSingleKeyPress = action == Action::KeyPress && PlatformKeyboardEvent::syntheticEventFromText(PlatformEvent::Type::KeyUp, interaction.text);
 
     StringBuilder description;
     description.append([&] -> String {
         if (isSingleKeyPress)
-            return makeString("Press the "_s, interaction.text, " key"_s);
+            return makeString(pastTense ? "Pressed"_s : "Press"_s, " the "_s, interaction.text, " key"_s);
 
         switch (action) {
         case Action::Click:
-            return "Click"_s;
+            return pastTense ? "Clicked"_s : "Click"_s;
         case Action::SelectText:
-            return "Select text"_s;
+            return makeString(pastTense ? "Selected"_s : "Select"_s, " text"_s);
         case Action::SelectMenuItem:
-            return "Select menu item"_s;
+            return makeString(pastTense ? "Selected"_s : "Select"_s, " menu item"_s);
         case Action::TextInput:
         case Action::KeyPress:
-            return "Enter text"_s;
+            return makeString(pastTense ? "Entered"_s : "Enter"_s, " text"_s);
         case Action::HighlightText:
-            return "Highlight text"_s;
+            return makeString(pastTense ? "Highlighted"_s : "Highlight"_s, " text"_s);
         case Action::Scroll:
-            return "Scroll"_s;
+            return pastTense ? "Scrolled"_s : "Scroll"_s;
         case Action::Hover:
-            return "Hover"_s;
+            return pastTense ? "Hovered"_s : "Hover"_s;
         }
         ASSERT_NOT_REACHED();
         return { };

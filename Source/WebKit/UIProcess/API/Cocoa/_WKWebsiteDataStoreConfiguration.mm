@@ -539,6 +539,23 @@ static WebKit::UnifiedOriginStorageLevel NODELETE toUnifiedOriginStorageLevel(_W
         _configuration->setLastModificationTimeUpdateIntervalOverride(std::nullopt);
 }
 
+- (NSNumber *)timeBasedEvictionIntervalOverride
+{
+    auto interval = _configuration->timeBasedEvictionIntervalOverride();
+    if (!interval)
+        return nil;
+
+    return [NSNumber numberWithDouble:interval->seconds()];
+}
+
+- (void)setTimeBasedEvictionIntervalOverride:(NSNumber *)seconds
+{
+    if (seconds)
+        _configuration->setTimeBasedEvictionIntervalOverride(Seconds([seconds doubleValue]));
+    else
+        _configuration->setTimeBasedEvictionIntervalOverride(std::nullopt);
+}
+
 - (NSNumber *)originQuotaRatio
 {
     auto ratio = _configuration->originQuotaRatio();
