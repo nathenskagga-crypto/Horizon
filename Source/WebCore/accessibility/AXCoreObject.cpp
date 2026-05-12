@@ -1157,25 +1157,24 @@ bool AXCoreObject::isRadioInput() const
     return type ? *type == InputType::Type::Radio : false;
 }
 
-String AXCoreObject::popupValue() const
+String AXCoreObject::popupValueString() const
 {
-    String explicitValue = explicitPopupValue();
-    if (!explicitValue.isEmpty())
-        return explicitValue;
-
-    // In ARIA 1.1, the implicit value for combobox became "listbox."
-    if (isComboBox())
+    switch (popupValue()) {
+    case AccessibilityPopupValue::False:
+        return "false"_s;
+    case AccessibilityPopupValue::True:
+    case AccessibilityPopupValue::Menu:
+        return "menu"_s;
+    case AccessibilityPopupValue::Listbox:
         return "listbox"_s;
-
-    // The spec states that "User agents must treat any value of aria-haspopup that is not
-    // included in the list of allowed values, including an empty string, as if the value
-    // false had been provided."
+    case AccessibilityPopupValue::Tree:
+        return "tree"_s;
+    case AccessibilityPopupValue::Grid:
+        return "grid"_s;
+    case AccessibilityPopupValue::Dialog:
+        return "dialog"_s;
+    }
     return "false"_s;
-}
-
-bool AXCoreObject::hasPopup() const
-{
-    return !equalLettersIgnoringASCIICase(popupValue(), "false"_s);
 }
 
 bool AXCoreObject::selfOrAncestorLinkHasPopup() const

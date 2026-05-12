@@ -310,7 +310,7 @@ private:
     int layoutCount() const final;
     double loadingProgress() const final { return tree().loadingProgress(); }
     bool supportsARIAOwns() const final { return boolAttributeValue(AXProperty::SupportsARIAOwns); }
-    String explicitPopupValue() const final { return stringAttributeValue(AXProperty::ExplicitPopupValue); }
+    AccessibilityPopupValue popupValue() const final { return static_cast<AccessibilityPopupValue>(intAttributeValue(AXProperty::PopupValue)); }
     bool pressedIsPresent() const final;
     String explicitInvalidStatus() const final { return stringAttributeValue(AXProperty::ExplicitInvalidStatus); }
     bool supportsExpanded() const final { return boolAttributeValue(AXProperty::SupportsExpanded); }

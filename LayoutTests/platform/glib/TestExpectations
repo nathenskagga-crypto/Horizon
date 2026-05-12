@@ -2834,7 +2834,7 @@ fast/mediastream/video-rotation2.html [ Failure ]
 
 http/wpt/mediastream/webrtc-vp9-colorspace.html [ Failure ]
 
-webrtc/getDisplayMedia-pc-resolution.html [ Failure ]
+webkit.org/b/314659 webrtc/getDisplayMedia-pc-resolution.html [ Failure Timeout ]
 
 # Regressions introduced by https://commits.webkit.org/263750@main
 fast/mediastream/apply-constraints-advanced.html [ Failure ]
@@ -4969,8 +4969,6 @@ webkit.org/b/217821 imported/w3c/web-platform-tests/density-size-correction/ [ S
 
 # platformLayerTreeAsText is only implemented for Cocoa ports.
 fast/harness/platform-layer-tree-as-text.html [ Skip ]
-
-webkit.org/b/286580 http/tests/media/clearkey/clear-key-session-id.html [ Failure ]
 
 http/tests/iframe-memory-monitor/media-video-autoplay-in-frames.html [ Skip ] # Timeout.
 media/media-source/media-source-rendering-update-count.html [ Skip ] # Timeout.

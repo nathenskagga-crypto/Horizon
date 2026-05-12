@@ -2167,7 +2167,7 @@ IsolatedObjectData createIsolatedObjectData(const Ref<AccessibilityObject>& axOb
         setProperty(AXProperty::MaxValueForRange, object.maxValueForRange());
         setProperty(AXProperty::MinValueForRange, object.minValueForRange());
         setProperty(AXProperty::SupportsARIAOwns, object.supportsARIAOwns());
-        setProperty(AXProperty::ExplicitPopupValue, object.explicitPopupValue().isolatedCopy());
+        setProperty(AXProperty::PopupValue, static_cast<int>(object.popupValue()));
         setProperty(AXProperty::ExplicitInvalidStatus, object.explicitInvalidStatus().isolatedCopy());
         setProperty(AXProperty::SupportsExpanded, object.supportsExpanded());
         setProperty(AXProperty::SortDirection, static_cast<int>(object.sortDirection()));

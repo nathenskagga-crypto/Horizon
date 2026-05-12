@@ -895,8 +895,10 @@ macro(WEBKIT_SETUP_SWIFT_AND_GENERATE_SWIFT_CPP_INTEROP_HEADER _target _module_n
         endif ()
 
         set(_header_tmp_path "${_header_path}.tmp")
+        set(_header_stamp_path "${_header_path}.stamp")
         add_custom_command(
-            OUTPUT ${_header_path}
+            OUTPUT ${_header_stamp_path}
+            BYPRODUCTS ${_header_path}
             DEPENDS ${_swift_sources}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             COMMAND
@@ -918,6 +920,8 @@ macro(WEBKIT_SETUP_SWIFT_AND_GENERATE_SWIFT_CPP_INTEROP_HEADER _target _module_n
                 ${CMAKE_COMMAND} -E copy_if_different ${_header_tmp_path} ${_header_path}
             COMMAND
                 ${CMAKE_COMMAND} -E rm -f ${_header_tmp_path}
+            COMMAND
+                ${CMAKE_COMMAND} -E touch ${_header_stamp_path}
             DEPFILE ${_depfile_path}
             COMMENT
                 "Generating ${_target} C++ bindings to Swift at '${_header_path}'"
@@ -931,7 +935,7 @@ macro(WEBKIT_SETUP_SWIFT_AND_GENERATE_SWIFT_CPP_INTEROP_HEADER _target _module_n
             # custom target so it does NOT inherit
             # cmake_object_order_depends_target_${_target} (which would gate it
             # on every link dependency) and can start as soon as headers exist.
-            add_custom_target(${_target}_SwiftCxxHeader DEPENDS ${_header_path})
+            add_custom_target(${_target}_SwiftCxxHeader DEPENDS ${_header_stamp_path})
             add_dependencies(${_target}_SwiftCxxHeader ${${_target}_SWIFT_HEADER_DEPENDS})
             add_dependencies(${_target} ${_target}_SwiftCxxHeader)
         else ()

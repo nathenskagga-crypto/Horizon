@@ -599,7 +599,7 @@ struct AccessibilityElementsResult {
     if (![self _prepareAccessibilityCall])
         return nil;
 
-    return self.axBackingObject->popupValue().createNSString().autorelease();
+    return self.axBackingObject->popupValueString().createNSString().autorelease();
 }
 
 - (BOOL)accessibilityIsInDescriptionListDefinition

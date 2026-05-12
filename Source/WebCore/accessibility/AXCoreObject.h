@@ -187,7 +187,17 @@ enum class AccessibilityObjectInclusion : uint8_t {
     DefaultBehavior,
 };
 
-enum class AccessibilityCurrentState { False, True, Page, Step, Location, Date, Time };
+enum class AccessibilityCurrentState : uint8_t { False, True, Page, Step, Location, Date, Time };
+
+enum class AccessibilityPopupValue : uint8_t {
+    False,
+    True,
+    Menu,
+    Listbox,
+    Tree,
+    Grid,
+    Dialog,
+};
 
 enum class AccessibilityButtonState {
     Off = 0,
@@ -803,10 +813,10 @@ public:
     virtual bool containsOnlyStaticText() const;
     bool isStaticTextLabel() const { return role() == AccessibilityRole::Label && containsOnlyStaticText(); }
 
-    bool hasPopup() const;
+    bool hasPopup() const { return popupValue() != AccessibilityPopupValue::False; }
     bool selfOrAncestorLinkHasPopup() const;
-    virtual String explicitPopupValue() const = 0;
-    String popupValue() const;
+    virtual AccessibilityPopupValue popupValue() const = 0;
+    String popupValueString() const;
     virtual bool supportsHasPopup() const = 0;
     virtual bool pressedIsPresent() const = 0;
     virtual String explicitInvalidStatus() const = 0;

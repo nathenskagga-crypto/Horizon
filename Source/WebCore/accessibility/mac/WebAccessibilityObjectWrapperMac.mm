@@ -1484,7 +1484,7 @@ static id handleRequiredAttribute(WebAccessibilityObjectWrapper*, AXCoreObject& 
 
 static id handlePopupValueAttribute(WebAccessibilityObjectWrapper*, AXCoreObject& backingObject)
 {
-    return backingObject.popupValue().createNSString().autorelease();
+    return backingObject.popupValueString().createNSString().autorelease();
 }
 
 static id handleInvalidAttribute(WebAccessibilityObjectWrapper*, AXCoreObject& backingObject)

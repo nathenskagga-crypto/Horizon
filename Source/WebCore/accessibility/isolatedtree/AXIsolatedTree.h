@@ -181,7 +181,6 @@ enum class AXProperty : uint16_t {
     ExplicitLiveRegionRelevant,
     ExplicitLiveRegionStatus,
     ExplicitOrientation,
-    ExplicitPopupValue,
     ExtendedDescription,
 #if PLATFORM(COCOA)
     Font,
@@ -269,6 +268,7 @@ enum class AXProperty : uint16_t {
 #if PLATFORM(COCOA)
     PlatformWidget,
 #endif
+    PopupValue,
     PosInSet,
     PreventKeyboardDOMEventDispatch,
     RadioButtonGroupMembers,

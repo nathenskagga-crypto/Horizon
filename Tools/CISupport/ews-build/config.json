@@ -364,7 +364,7 @@
       "workernames": ["ews104", "ews106", "ews107", "ews113", "ews115", "ews144", "ews146", "ews149", "ews169", "ews186", "ews187", "ews188", "ews189"]
     },
     {
-      "name": "macOS-Sequoia-Release-Site-Isolation-Tests-EWS", "shortname": "mac-SI", "icon": "testOnly",
+      "name": "macOS-Sequoia-Release-Site-Isolation-Tests-EWS", "shortname": "mac-site-isolation", "icon": "testOnly",
       "factory": "macOSSiteIsolationFactory", "platform": "mac-sequoia",
       "configuration": "release",
       "triggered_by": ["macos-sequoia-release-build-ews"],

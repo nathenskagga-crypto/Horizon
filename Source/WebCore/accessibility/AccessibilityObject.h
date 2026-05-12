@@ -318,7 +318,7 @@ public:
 
     bool supportsARIAOwns() const override { return false; }
 
-    String explicitPopupValue() const final;
+    AccessibilityPopupValue popupValue() const final;
     bool hasDatalist() const;
     bool supportsHasPopup() const final;
     bool pressedIsPresent() const final;
